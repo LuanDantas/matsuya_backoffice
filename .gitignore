@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+.turbo/
+coverage/
+*.tsbuildinfo
+
+# Segredos nunca entram. A API já pagou esse preço uma vez.
+.env
+.env.*
+!.env.example
+
+.DS_Store
+*.log

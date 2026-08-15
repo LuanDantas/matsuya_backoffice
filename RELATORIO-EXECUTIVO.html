@@ -1,0 +1,943 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arquitetura Matsuya — Relatório executivo</title>
+<meta name="description" content="Sumário executivo da especificação arquitetural do ecossistema administrativo Matsuya: Corporate, Portal da Unidade e Order Hub.">
+<style>
+  /* ── tokens: paleta derivada do design system especificado (vermillion + sumi) ── */
+  :root {
+    --canvas:      #FBF8F6;
+    --surface:     #FFFFFF;
+    --sunken:      #F3EEEA;
+    --ink:         #1A1512;
+    --ink-2:       #574E48;
+    --ink-3:       #8A7F77;
+    --rule:        #E5DCD5;
+    --rule-strong: #CFC2B8;
+    --accent:      #C1401E;
+    --accent-soft: #FBEDE8;
+    --accent-ink:  #8E2E14;
+    --ok:          #0E6B52;
+    --ok-soft:     #E3F1EC;
+    --warn:        #9A5D06;
+    --warn-soft:   #FAEEDA;
+    --crit:        #A81F19;
+    --crit-soft:   #FAE7E5;
+
+    --display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --canvas:      #14100E;
+      --surface:     #1C1715;
+      --sunken:      #241E1B;
+      --ink:         #F6F1ED;
+      --ink-2:       #BCAFA6;
+      --ink-3:       #8B7E75;
+      --rule:        #322A26;
+      --rule-strong: #473C36;
+      --accent:      #F0663E;
+      --accent-soft: #33170F;
+      --accent-ink:  #F79370;
+      --ok:          #4FC49F;
+      --ok-soft:     #0E2A22;
+      --warn:        #E0A54A;
+      --warn-soft:   #2E2110;
+      --crit:        #F1786F;
+      --crit-soft:   #331512;
+    }
+  }
+  :root[data-theme="dark"] {
+    --canvas:      #14100E;
+    --surface:     #1C1715;
+    --sunken:      #241E1B;
+    --ink:         #F6F1ED;
+    --ink-2:       #BCAFA6;
+    --ink-3:       #8B7E75;
+    --rule:        #322A26;
+    --rule-strong: #473C36;
+    --accent:      #F0663E;
+    --accent-soft: #33170F;
+    --accent-ink:  #F79370;
+    --ok:          #4FC49F;
+    --ok-soft:     #0E2A22;
+    --warn:        #E0A54A;
+    --warn-soft:   #2E2110;
+    --crit:        #F1786F;
+    --crit-soft:   #331512;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .shell { max-width: 1180px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px) 96px; }
+  main { max-width: 74ch; }
+
+  /* ── cabeçalho ── */
+  header.masthead {
+    padding: clamp(44px, 8vw, 80px) 0 clamp(30px, 5vw, 48px);
+    border-bottom: 1px solid var(--rule);
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--accent); margin: 0;
+  }
+  h1 {
+    font-family: var(--display); font-weight: 600;
+    font-size: clamp(38px, 6vw, 62px); line-height: 1.04;
+    letter-spacing: -.015em; margin: 0; text-wrap: balance; max-width: 20ch;
+  }
+  .standfirst {
+    font-size: clamp(17px, 2vw, 19.5px); line-height: 1.55;
+    color: var(--ink-2); margin: 0; max-width: 62ch; text-wrap: pretty;
+  }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 8px 28px;
+    font-family: var(--mono); font-size: 12px; color: var(--ink-3);
+    padding-top: 6px;
+  }
+  .meta b { color: var(--ink-2); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* ── seções ── */
+  section { padding-top: clamp(46px, 6vw, 70px); }
+  h2 {
+    font-family: var(--display); font-weight: 600;
+    font-size: clamp(25px, 3.2vw, 33px); line-height: 1.15;
+    letter-spacing: -.01em; margin: 0 0 6px; text-wrap: balance;
+  }
+  h3 {
+    font-family: var(--body); font-weight: 650; font-size: 15.5px;
+    letter-spacing: -.005em; margin: 32px 0 8px;
+  }
+  .kicker {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--ink-3); margin: 0 0 14px;
+  }
+  p { margin: 0 0 16px; text-wrap: pretty; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+  code {
+    font-family: var(--mono); font-size: .87em;
+    background: var(--sunken); padding: 1.5px 5px; border-radius: 3px;
+    color: var(--ink);
+  }
+
+  /* ── lista de defeitos ── */
+  .findings { display: flex; flex-direction: column; margin-top: 24px; }
+  .finding {
+    display: grid; grid-template-columns: 76px 1fr; gap: 20px;
+    padding: 18px 0; border-top: 1px solid var(--rule);
+    break-inside: avoid;
+  }
+  .finding:last-child { border-bottom: 1px solid var(--rule); }
+  .sev {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .09em;
+    text-transform: uppercase; font-weight: 600;
+    padding: 3px 0; align-self: start; white-space: nowrap;
+  }
+  .sev.crit { color: var(--crit); }
+  .sev.high { color: var(--warn); }
+  .finding p { margin: 0; font-size: 15.5px; line-height: 1.6; }
+  .finding .src {
+    font-family: var(--mono); font-size: 12px; color: var(--ink-3);
+    display: block; margin-top: 5px;
+  }
+
+  /* ── decisões ── */
+  .decisions { border-top: 1px solid var(--rule); margin-top: 26px; }
+  .decision { padding: 20px 0; border-bottom: 1px solid var(--rule); break-inside: avoid; }
+  .decision h3 {
+    margin: 0 0 6px; font-family: var(--display); font-weight: 600;
+    font-size: 19.5px; letter-spacing: -.005em;
+  }
+  .decision p { margin: 0; color: var(--ink-2); font-size: 15.5px; }
+  .decision .against {
+    display: block; margin-top: 9px; padding-left: 13px;
+    border-left: 2px solid var(--rule-strong);
+    font-size: 14px; color: var(--ink-3);
+  }
+  .decision .against b { color: var(--ink-2); font-weight: 600; }
+
+  /* ── tabelas ── */
+  .tablewrap { overflow-x: auto; margin: 22px 0 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; min-width: 460px; }
+  th, td { text-align: left; padding: 11px 14px 11px 0; vertical-align: top; border-bottom: 1px solid var(--rule); }
+  th {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--ink-3); font-weight: 600;
+    border-bottom: 1px solid var(--rule-strong); white-space: nowrap;
+  }
+  td:first-child { font-weight: 600; }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* ── chips ── */
+  .chip {
+    display: inline-block; font-family: var(--mono); font-size: 10.5px;
+    letter-spacing: .07em; text-transform: uppercase; font-weight: 600;
+    padding: 2.5px 8px; border-radius: 3px; white-space: nowrap;
+  }
+  .chip.crit { background: var(--crit-soft); color: var(--crit); }
+  .chip.warn { background: var(--warn-soft); color: var(--warn); }
+  .chip.acc  { background: var(--accent-soft); color: var(--accent-ink); }
+
+  /* ── figuras ── */
+  figure.plate { margin: 28px 0 0; break-inside: avoid; }
+  .plate .frame {
+    background: var(--sunken); border: 1px solid var(--rule);
+    border-radius: 4px; padding: 20px 18px; overflow-x: auto;
+  }
+  .plate svg { display: block; max-width: 100%; height: auto; }
+  .plate .scroll-hint {
+    font-family: var(--mono); font-size: 10.5px; color: var(--ink-3);
+    margin: 0 0 8px; letter-spacing: .05em;
+  }
+  figcaption {
+    font-family: var(--mono); font-size: 11.5px; color: var(--ink-3);
+    margin-top: 9px; letter-spacing: .02em; line-height: 1.5;
+  }
+  /* rótulos dentro dos diagramas */
+  .dlabel { font-family: system-ui, sans-serif; font-size: 12.5px; fill: currentColor; }
+  .dlabel-sm { font-family: system-ui, sans-serif; font-size: 11px; fill: currentColor; opacity: .72; }
+  .dmono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; fill: currentColor; }
+  .dmono-sm { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 10.5px; fill: currentColor; opacity: .7; }
+
+  /* ── roadmap ── */
+  .phases { margin-top: 26px; border-top: 1px solid var(--rule); }
+  .phase {
+    display: grid; grid-template-columns: 44px 1fr auto; gap: 18px; align-items: baseline;
+    padding: 15px 0; border-bottom: 1px solid var(--rule); break-inside: avoid;
+  }
+  .phase .n {
+    font-family: var(--mono); font-size: 22px; font-weight: 600;
+    color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1;
+  }
+  .phase .body strong { display: block; font-size: 15.5px; font-weight: 650; }
+  .phase .body span { font-size: 14px; color: var(--ink-2); }
+  .phase .dur {
+    font-family: var(--mono); font-size: 12.5px; color: var(--ink-3);
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+
+  /* ── perguntas ── */
+  ul.asks { list-style: none; padding: 0; margin: 22px 0 0; }
+  ul.asks li {
+    padding: 14px 0; border-top: 1px solid var(--rule);
+    display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: baseline;
+    break-inside: avoid;
+  }
+  ul.asks li:last-child { border-bottom: 1px solid var(--rule); }
+  ul.asks .q { font-size: 15.5px; }
+  ul.asks .rec { display: block; font-size: 13.5px; color: var(--ink-3); margin-top: 4px; }
+
+  /* ── índice ── */
+  .index { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 1px;
+           background: var(--rule); border: 1px solid var(--rule); margin-top: 26px; }
+  .chapter { background: var(--surface); padding: 14px 16px; display: flex; flex-direction: column; gap: 3px; }
+  .chapter .no {
+    font-family: var(--mono); font-size: 11px; color: var(--accent);
+    letter-spacing: .08em; font-variant-numeric: tabular-nums;
+  }
+  .chapter .ttl { font-size: 14.5px; font-weight: 600; line-height: 1.3; }
+  .chapter .sub { font-size: 12.5px; color: var(--ink-3); line-height: 1.45; }
+
+  .closing {
+    margin-top: clamp(46px, 6vw, 70px); padding: 26px 28px;
+    background: var(--sunken); border-left: 3px solid var(--accent); border-radius: 0 4px 4px 0;
+    break-inside: avoid;
+  }
+  .closing p { margin: 0; font-family: var(--display); font-size: 19px; line-height: 1.5; }
+  .closing .note { font-family: var(--body); font-size: 14px; color: var(--ink-2); margin-top: 12px; }
+
+  footer {
+    margin-top: 54px; padding-top: 22px; border-top: 1px solid var(--rule);
+    font-family: var(--mono); font-size: 12px; color: var(--ink-3);
+    display: flex; flex-wrap: wrap; gap: 6px 24px;
+  }
+
+  @media (max-width: 640px) {
+    .finding { grid-template-columns: 1fr; gap: 6px; }
+    .phase { grid-template-columns: 34px 1fr; }
+    .phase .dur { grid-column: 2; }
+    ul.asks li { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  /* ── impressão: sempre claro, quebras controladas ── */
+  @media print {
+    :root {
+      --canvas: #FFFFFF; --surface: #FFFFFF; --sunken: #F5F1EE;
+      --ink: #14100E; --ink-2: #4A423C; --ink-3: #756C65;
+      --rule: #DDD3CC; --rule-strong: #BFB2A8;
+      --accent: #A83617; --accent-ink: #7C2711; --accent-soft: #F8E9E3;
+      --crit: #96201A; --crit-soft: #F9E6E4;
+      --warn: #86520A; --warn-soft: #F8EDDC;
+      --ok: #0C5B46; --ok-soft: #E4F0EB;
+    }
+    body { background: #fff; font-size: 11pt; line-height: 1.5; }
+    .shell { max-width: none; padding: 0; }
+    main { max-width: none; }
+    @page { margin: 18mm 16mm; }
+    header.masthead { padding-top: 0; }
+    section { padding-top: 26px; break-before: auto; }
+    h2 { break-after: avoid; }
+    .plate .frame { background: #fff; }
+    .plate .scroll-hint { display: none; }
+    .index { grid-template-columns: repeat(3, 1fr); }
+    footer { position: static; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <header class="masthead">
+    <p class="eyebrow">Relatório executivo · Especificação arquitetural v1</p>
+    <h1>Ecossistema administrativo Matsuya</h1>
+    <p class="standfirst">
+      Corporate, Portal da Unidade e Order Hub — três experiências administrativas sobre duas bases de
+      código de front-end e um modular monolith na API que já existe. Sem reescrita, sem microsserviços,
+      e com a operação em produção intacta durante toda a transição.
+    </p>
+    <div class="meta">
+      <span><b>26</b> capítulos</span>
+      <span><b>17</b> decisões registradas</span>
+      <span><b>66</b> telas especificadas</span>
+      <span><b>31</b> cenários de falha</span>
+      <span>Auditado em <b>14/08/2026</b></span>
+    </div>
+  </header>
+
+  <main>
+
+    <section id="hoje">
+      <p class="kicker">O ponto de partida</p>
+      <h2>Cinco fatos que motivaram este trabalho</h2>
+      <p>
+        Cada afirmação abaixo foi verificada no código-fonte, não em documentação. São o motivo de a
+        Fase 0 ser um portão bloqueante, e não um item de backlog.
+      </p>
+
+      <div class="findings">
+        <div class="finding">
+          <span class="sev crit">Crítico</span>
+          <p>
+            O segredo do JWT está escrito no código e os arquivos <code>.env</code> de produção estão
+            versionados no git — credenciais de banco, SMS, WhatsApp e SMTP inclusive.
+            <span class="src">src/services/jwtService.ts:3</span>
+          </p>
+        </div>
+        <div class="finding">
+          <span class="sev crit">Crítico</span>
+          <p>
+            Nove endpoints de escrita não têm autenticação alguma. Entre eles, o que <b>cria cashback</b>,
+            o que emite cupons e o que <b>dispara push para toda a base de usuários</b>.
+            <span class="src">src/routes.ts</span>
+          </p>
+        </div>
+        <div class="finding">
+          <span class="sev crit">Crítico</span>
+          <p>
+            A fórmula de saldo compensa expiração em agregado e, por isso, <b>exibe cashback que o cliente
+            não tem</b>. O erro é unidirecional e cresce com a idade do programa — nunca gera reclamação,
+            por isso ninguém reportou.
+            <span class="src">src/services/pointService.ts:189-254</span>
+          </p>
+        </div>
+        <div class="finding">
+          <span class="sev high">Alto</span>
+          <p>
+            O débito pendente de um resgate abandonado <b>nunca é liberado</b>: o único timer que o cancela
+            vive no aplicativo do cliente. Se o app é morto, o saldo some em silêncio.
+            <span class="src">RedeemModal.tsx · sem job no servidor</span>
+          </p>
+        </div>
+        <div class="finding">
+          <span class="sev high">Alto</span>
+          <p>
+            Existem exatamente <b>dois</b> endpoints administrativos de pedido: listar e mudar status.
+            Nenhum tempo real, som, SLA, chat, impressão ou despacho.
+            <span class="src">/delivery/admin/orders</span>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="proposta">
+      <p class="kicker">A proposta</p>
+      <h2>Três experiências, duas bases de código</h2>
+      <p>
+        Corporate e Portal da Unidade são o mesmo produto em dois níveis de escopo — cerca de 70% de
+        sobreposição real. Viram um artefato único cujo comportamento deriva das permissões e do escopo
+        do usuário, com URL própria para cada público. O Order Hub tem restrições de runtime genuinamente
+        diferentes: quiosque de balcão, som, offline, impressão térmica, doze horas ligado.
+      </p>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>Aplicação</th><th>Pergunta que responde</th><th>Escopo</th><th class="num">Telas</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Corporate</td><td>Como vai a rede?</td><td>rede, grupo ou unidade</td><td class="num">36</td></tr>
+            <tr><td>Portal da Unidade</td><td>Como vai a minha loja, e como eu a configuro?</td><td>unidades autorizadas</td><td class="num">18</td></tr>
+            <tr><td>Order Hub</td><td>O que eu faço agora?</td><td>uma unidade por dispositivo</td><td class="num">12</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <figure class="plate">
+        <div class="frame">
+          <svg viewBox="0 0 780 352" role="img"
+               aria-label="O app mobile continua no roteador legado congelado enquanto o console web e o Order Hub usam a nova superfície /api/v1; as duas rotas delegam aos mesmos serviços de domínio.">
+            <defs>
+              <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+              </marker>
+              <marker id="a1acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+              </marker>
+            </defs>
+
+            <!-- clientes -->
+            <rect x="30" y="24" width="190" height="42" rx="3" fill="var(--surface)" stroke="currentColor" stroke-width="1"/>
+            <text class="dlabel" x="125" y="43" text-anchor="middle">App mobile</text>
+            <text class="dlabel-sm" x="125" y="58" text-anchor="middle">Matclub + Delivery · produção</text>
+
+            <rect x="330" y="24" width="150" height="42" rx="3" fill="var(--surface)" stroke="currentColor" stroke-width="1"/>
+            <text class="dlabel" x="405" y="43" text-anchor="middle">Console web</text>
+            <text class="dlabel-sm" x="405" y="58" text-anchor="middle">Corporate + Unidade</text>
+
+            <rect x="510" y="24" width="140" height="42" rx="3" fill="var(--surface)" stroke="currentColor" stroke-width="1"/>
+            <text class="dlabel" x="580" y="43" text-anchor="middle">Order Hub</text>
+            <text class="dlabel-sm" x="580" y="58" text-anchor="middle">PWA de balcão</text>
+
+            <!-- superfícies -->
+            <rect x="30" y="140" width="240" height="52" rx="3" fill="var(--surface)"
+                  stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="5 3"/>
+            <text class="dmono" x="150" y="163" text-anchor="middle" fill="var(--accent)">roteador legado</text>
+            <text class="dlabel-sm" x="150" y="180" text-anchor="middle" fill="var(--accent)">congelado · Deprecation + Sunset</text>
+
+            <rect x="330" y="140" width="320" height="52" rx="3" fill="var(--surface)" stroke="currentColor" stroke-width="1.5"/>
+            <text class="dmono" x="490" y="163" text-anchor="middle">/api/v1</text>
+            <text class="dlabel-sm" x="490" y="180" text-anchor="middle">envelope, escopo e idempotência novos</text>
+
+            <!-- serviços -->
+            <rect x="30" y="252" width="620" height="52" rx="3" fill="var(--surface)" stroke="currentColor" stroke-width="1"/>
+            <text class="dlabel" x="340" y="275" text-anchor="middle">serviços de domínio · 11 contextos delimitados</text>
+            <text class="dlabel-sm" x="340" y="292" text-anchor="middle">uma implementação — nenhuma regra de negócio duplicada</text>
+
+            <!-- setas clientes → superfícies -->
+            <line x1="125" y1="66" x2="146" y2="136" stroke="currentColor" stroke-width="1.2" marker-end="url(#a1)"/>
+            <line x1="405" y1="66" x2="440" y2="136" stroke="currentColor" stroke-width="1.2" marker-end="url(#a1)"/>
+            <line x1="580" y1="66" x2="545" y2="136" stroke="currentColor" stroke-width="1.2" marker-end="url(#a1)"/>
+
+            <!-- delega -->
+            <line x1="272" y1="166" x2="324" y2="166" stroke="var(--accent)" stroke-width="1.2"
+                  stroke-dasharray="4 3" marker-end="url(#a1acc)"/>
+            <text class="dmono-sm" x="298" y="156" text-anchor="middle" fill="var(--accent)">delega</text>
+
+            <!-- superfícies → serviços -->
+            <line x1="150" y1="192" x2="190" y2="248" stroke="currentColor" stroke-width="1.2" marker-end="url(#a1)"/>
+            <line x1="490" y1="192" x2="450" y2="248" stroke="currentColor" stroke-width="1.2" marker-end="url(#a1)"/>
+
+            <text class="dmono-sm" x="340" y="332" text-anchor="middle" fill="var(--accent)">
+              duas superfícies · uma implementação · zero deriva
+            </text>
+          </svg>
+        </div>
+        <figcaption>
+          O app em produção nunca é tocado: continua chamando as rotas na raiz, que passam a delegar aos
+          mesmos serviços que atendem <code>/api/v1</code>. A aposentadoria de cada rota legada é guiada
+          pelo log de tráfego por versão de app, não por calendário.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section id="assincrono">
+      <p class="kicker">O que muda por dentro</p>
+      <h2>Nenhum efeito externo fora do outbox</h2>
+      <p>
+        Hoje, push, SMS, WhatsApp e e-mail são chamadas HTTP feitas dentro do handler da requisição. Isso
+        quebra nos dois sentidos: uma falha do provedor pode derrubar a criação de um pedido, e um rollback
+        de transação pode acontecer <em>depois</em> de a notificação já ter saído.
+      </p>
+
+      <figure class="plate">
+        <div class="frame">
+          <svg viewBox="0 0 800 306" role="img"
+               aria-label="Comparação entre o envio inline atual, em que uma falha de provedor derruba o pedido, e o desenho alvo, em que a escrita e o evento entram na mesma transação e um worker entrega depois do commit.">
+            <defs>
+              <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+              </marker>
+              <marker id="a2crit" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--crit)"/>
+              </marker>
+            </defs>
+
+            <!-- HOJE -->
+            <text class="dmono-sm" x="20" y="24" fill="var(--crit)">HOJE</text>
+            <rect x="20" y="36" width="160" height="42" rx="3" fill="var(--surface)" stroke="currentColor"/>
+            <text class="dlabel" x="100" y="62" text-anchor="middle">handler HTTP</text>
+
+            <line x1="182" y1="57" x2="266" y2="57" stroke="var(--crit)" stroke-width="1.3" marker-end="url(#a2crit)"/>
+            <text class="dmono-sm" x="224" y="47" text-anchor="middle" fill="var(--crit)">chamada inline</text>
+
+            <rect x="270" y="36" width="200" height="42" rx="3" fill="var(--surface)" stroke="var(--crit)"/>
+            <text class="dlabel" x="370" y="55" text-anchor="middle" fill="var(--crit)">Expo · SMS · WhatsApp</text>
+            <text class="dlabel-sm" x="370" y="70" text-anchor="middle" fill="var(--crit)">sem retry, sem registro</text>
+
+            <text class="dlabel-sm" x="492" y="52" fill="var(--crit)">falha do provedor derruba o pedido</text>
+            <text class="dlabel-sm" x="492" y="69" fill="var(--crit)">rollback pode ocorrer depois do envio</text>
+
+            <line x1="20" y1="104" x2="780" y2="104" stroke="currentColor" stroke-width="1" opacity=".25"/>
+
+            <!-- ALVO -->
+            <text class="dmono-sm" x="20" y="134" fill="var(--ok)">ALVO</text>
+
+            <rect x="20" y="146" width="300" height="64" rx="3" fill="var(--surface)"
+                  stroke="var(--ok)" stroke-width="1.5" stroke-dasharray="5 3"/>
+            <text class="dlabel" x="170" y="170" text-anchor="middle" fill="var(--ok)">uma transação</text>
+            <text class="dlabel-sm" x="170" y="188" text-anchor="middle" fill="var(--ok)">pedido · evento de status · auditoria</text>
+            <text class="dlabel-sm" x="170" y="202" text-anchor="middle" fill="var(--ok)">+ linha no outbox</text>
+
+            <line x1="322" y1="178" x2="378" y2="178" stroke="currentColor" stroke-width="1.2" marker-end="url(#a2)"/>
+            <text class="dmono-sm" x="350" y="168" text-anchor="middle">commit</text>
+
+            <rect x="382" y="157" width="86" height="42" rx="3" fill="var(--surface)" stroke="currentColor"/>
+            <text class="dlabel" x="425" y="182" text-anchor="middle">relay</text>
+
+            <line x1="470" y1="178" x2="506" y2="178" stroke="currentColor" stroke-width="1.2" marker-end="url(#a2)"/>
+
+            <rect x="510" y="157" width="110" height="42" rx="3" fill="var(--surface)" stroke="currentColor"/>
+            <text class="dlabel" x="565" y="182" text-anchor="middle">fila Redis</text>
+
+            <line x1="622" y1="178" x2="658" y2="178" stroke="currentColor" stroke-width="1.2" marker-end="url(#a2)"/>
+
+            <rect x="662" y="157" width="100" height="42" rx="3" fill="var(--surface)" stroke="currentColor"/>
+            <text class="dlabel" x="712" y="182" text-anchor="middle">worker</text>
+
+            <line x1="712" y1="201" x2="712" y2="240" stroke="currentColor" stroke-width="1.2" marker-end="url(#a2)"/>
+
+            <rect x="530" y="244" width="232" height="42" rx="3" fill="var(--surface)" stroke="currentColor"/>
+            <text class="dlabel" x="646" y="263" text-anchor="middle">provedores externos</text>
+            <text class="dlabel-sm" x="646" y="278" text-anchor="middle">retry com backoff · DLQ · impressão</text>
+
+            <text class="dlabel-sm" x="20" y="256" fill="var(--ok)">nada sai sem commit</text>
+            <text class="dlabel-sm" x="20" y="273" fill="var(--ok)">nenhum commit fica sem seu efeito</text>
+            <text class="dlabel-sm" x="20" y="290" fill="var(--ok)">nenhum provedor pode derrubar um pedido</text>
+          </svg>
+        </div>
+        <figcaption>
+          A idade da linha mais antiga não publicada no outbox vira a métrica interna mais importante do
+          sistema: se o relay trava, nada acontece downstream e nada mais parece quebrado.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section id="pedidos">
+      <p class="kicker">Operação</p>
+      <h2>O ciclo de vida do pedido</h2>
+      <p>
+        A máquina atual tem seis estados e não cobre a operação real: falta recusa pela loja (que é um KPI
+        diferente de cancelamento pelo cliente), aguardando pagamento, pronto, aguardando entregador e as
+        exceções de entrega. Os estados novos são strings aditivas, e um serializador legado — só ele —
+        mapeia de volta para o que o app já entende.
+      </p>
+
+      <figure class="plate">
+        <p class="scroll-hint">↔ role para ver o diagrama completo</p>
+        <div class="frame">
+          <svg viewBox="0 0 1160 392" role="img"
+               aria-label="Máquina de estados do pedido: aguardando pagamento, pendente, confirmado, em preparo, pronto, aguardando entregador, saiu para entrega e entregue, com recusa e falha de pagamento como terminais negativos, cancelamento a partir de qualquer estado ativo, entrega direta no balcão para retirada, e falha de entrega recuperável.">
+            <defs>
+              <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+              </marker>
+              <marker id="a3crit" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--crit)"/>
+              </marker>
+              <marker id="a3warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--warn)"/>
+              </marker>
+            </defs>
+
+            <!-- espinha dorsal -->
+            <rect x="16"   y="180" width="138" height="40" rx="20" fill="var(--surface)" stroke="currentColor"/>
+            <text class="dmono" x="85"   y="205" text-anchor="middle">awaiting_payment</text>
+
+            <rect x="186"  y="180" width="96"  height="40" rx="20" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.8"/>
+            <text class="dmono" x="234"  y="205" text-anchor="middle" fill="var(--accent)">pending</text>
+
+            <rect x="314"  y="180" width="104" height="40" rx="20" fill="var(--surface)" stroke="currentColor"/>
+            <text class="dmono" x="366"  y="205" text-anchor="middle">confirmed</text>
+
+            <rect x="450"  y="180" width="100" height="40" rx="20" fill="var(--surface)" stroke="currentColor"/>
+            <text class="dmono" x="500"  y="205" text-anchor="middle">preparing</text>
+
+            <rect x="582"  y="180" width="78"  height="40" rx="20" fill="var(--surface)" stroke="currentColor"/>
+            <text class="dmono" x="621"  y="205" text-anchor="middle">ready</text>
+
+            <rect x="692"  y="180" width="142" height="40" rx="20" fill="var(--surface)" stroke="currentColor"/>
+            <text class="dmono" x="763"  y="205" text-anchor="middle">awaiting_courier</text>
+
+            <rect x="866"  y="180" width="140" height="40" rx="20" fill="var(--surface)" stroke="currentColor"/>
+            <text class="dmono" x="936"  y="205" text-anchor="middle">out_for_delivery</text>
+
+            <rect x="1038" y="180" width="98"  height="40" rx="20" fill="var(--surface)" stroke="currentColor"/>
+            <text class="dmono" x="1087" y="205" text-anchor="middle">delivered</text>
+
+            <!-- setas da espinha -->
+            <line x1="154"  y1="200" x2="182"  y2="200" stroke="currentColor" stroke-width="1.3" marker-end="url(#a3)"/>
+            <line x1="282"  y1="200" x2="310"  y2="200" stroke="currentColor" stroke-width="1.3" marker-end="url(#a3)"/>
+            <line x1="418"  y1="200" x2="446"  y2="200" stroke="currentColor" stroke-width="1.3" marker-end="url(#a3)"/>
+            <line x1="550"  y1="200" x2="578"  y2="200" stroke="currentColor" stroke-width="1.3" marker-end="url(#a3)"/>
+            <line x1="660"  y1="200" x2="688"  y2="200" stroke="currentColor" stroke-width="1.3" marker-end="url(#a3)"/>
+            <line x1="834"  y1="200" x2="862"  y2="200" stroke="currentColor" stroke-width="1.3" marker-end="url(#a3)"/>
+            <line x1="1006" y1="200" x2="1034" y2="200" stroke="currentColor" stroke-width="1.3" marker-end="url(#a3)"/>
+
+            <text class="dmono-sm" x="168"  y="192" text-anchor="middle">pago</text>
+            <text class="dmono-sm" x="296"  y="192" text-anchor="middle">aceite</text>
+            <text class="dmono-sm" x="432"  y="192" text-anchor="middle">início</text>
+            <text class="dmono-sm" x="564"  y="192" text-anchor="middle">pronto</text>
+            <text class="dmono-sm" x="674"  y="192" text-anchor="middle">despacho</text>
+            <text class="dmono-sm" x="848"  y="192" text-anchor="middle">saída</text>
+            <text class="dmono-sm" x="1020" y="192" text-anchor="middle">entrega</text>
+
+            <!-- terminais negativos, acima -->
+            <rect x="16"  y="34" width="138" height="34" rx="17" fill="var(--surface)" stroke="var(--crit)"/>
+            <text class="dmono" x="85"  y="56" text-anchor="middle" fill="var(--crit)">payment_failed</text>
+            <line x1="85" y1="176" x2="85" y2="72" stroke="var(--crit)" stroke-width="1.2" marker-end="url(#a3crit)"/>
+
+            <rect x="186" y="34" width="96"  height="34" rx="17" fill="var(--surface)" stroke="var(--crit)"/>
+            <text class="dmono" x="234" y="56" text-anchor="middle" fill="var(--crit)">rejected</text>
+            <line x1="234" y1="176" x2="234" y2="72" stroke="var(--crit)" stroke-width="1.2" marker-end="url(#a3crit)"/>
+            <text class="dmono-sm" x="244" y="128" fill="var(--crit)">recusa da loja</text>
+
+            <!-- cancelamento: barramento sobre os estados ativos -->
+            <rect x="470" y="34" width="106" height="34" rx="17" fill="var(--surface)" stroke="var(--crit)"/>
+            <text class="dmono" x="523" y="56" text-anchor="middle" fill="var(--crit)">cancelled</text>
+            <line x1="234" y1="118" x2="763" y2="118" stroke="var(--crit)" stroke-width="1.1" opacity=".55"/>
+            <line x1="366" y1="176" x2="366" y2="118" stroke="var(--crit)" stroke-width="1.1" opacity=".55"/>
+            <line x1="500" y1="176" x2="500" y2="118" stroke="var(--crit)" stroke-width="1.1" opacity=".55"/>
+            <line x1="621" y1="176" x2="621" y2="118" stroke="var(--crit)" stroke-width="1.1" opacity=".55"/>
+            <line x1="763" y1="176" x2="763" y2="118" stroke="var(--crit)" stroke-width="1.1" opacity=".55"/>
+            <line x1="523" y1="118" x2="523" y2="72" stroke="var(--crit)" stroke-width="1.2" marker-end="url(#a3crit)"/>
+            <text class="dmono-sm" x="600" y="110" fill="var(--crit)">de qualquer estado ativo · exige motivo</text>
+
+            <!-- retirada: atalho ready → delivered -->
+            <path d="M621,220 C621,262 700,268 880,268 C1000,268 1087,262 1087,224"
+                  fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#a3)"/>
+            <text class="dmono-sm" x="854" y="282" text-anchor="middle">retirada no balcão · pula a rota</text>
+
+            <!-- exceções recuperáveis -->
+            <rect x="846" y="326" width="200" height="44" rx="6" fill="var(--surface)" stroke="var(--warn)"/>
+            <text class="dmono" x="946" y="345" text-anchor="middle" fill="var(--warn)">delivery_failed</text>
+            <text class="dmono" x="946" y="361" text-anchor="middle" fill="var(--warn)">customer_not_found</text>
+            <line x1="960" y1="322" x2="960" y2="224" stroke="var(--warn)" stroke-width="1.2"
+                  marker-start="url(#a3warn)" marker-end="url(#a3warn)"/>
+            <text class="dmono-sm" x="972" y="300" fill="var(--warn)">nova tentativa</text>
+          </svg>
+        </div>
+        <figcaption>
+          Cancelamento parcial e reembolso deliberadamente <em>não</em> são estados: viram uma flag no
+          pedido e um status de pagamento. A coluna do quadro precisa significar onde o pedido está
+          fisicamente — se fosse estado, o operador teria que sair da fila de trabalho para consertar um item.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section id="decisoes">
+      <p class="kicker">Fundamentos</p>
+      <h2>As sete decisões que importam</h2>
+      <p>
+        Cada uma virou um registro de decisão com contexto, alternativas rejeitadas e consequências
+        aceitas. O que segue é o resumo delas.
+      </p>
+
+      <div class="decisions">
+        <div class="decision">
+          <h3>Modular monolith, não microsserviços</h3>
+          <p>
+            Um time de uma a três pessoas, uma dúzia de lojas, e um pedido que precisa de consistência
+            entre catálogo, pagamento e carteira. Num monolito isso é uma transação de banco.
+          </p>
+          <span class="against"><b>Rejeitado:</b> distribuir converteria cada transação de hoje numa saga com compensação em cada passo. As fronteiras de contexto existem para tornar a extração possível depois — não para pagá-la agora.</span>
+        </div>
+
+        <div class="decision">
+          <h3>O cashback vira um ledger de verdade</h3>
+          <p>
+            Lançamentos imutáveis, lotes FIFO com expiração, consumo persistido, dinheiro em centavos
+            inteiros. O passivo de cashback passa a ser calculável — hoje ninguém consegue responder qual é.
+          </p>
+          <span class="against"><b>Rejeitado:</b> corrigir a fórmula atual. Ela não tem como saber de qual lote um débito saiu, então a compensação agregada não é remendável.</span>
+        </div>
+
+        <div class="decision">
+          <h3>Reserva com TTL e varredura no servidor</h3>
+          <p>
+            Um resgate abandonado passa a ser liberado sozinho. É entregável isoladamente, na primeira onda,
+            sem tocar no módulo de delivery.
+          </p>
+          <span class="against"><b>Rejeitado:</b> continuar confiando no timer do cliente — que é o comportamento atual, e está destruindo resgates de clientes reais.</span>
+        </div>
+
+        <div class="decision">
+          <h3>O tempo real é otimização; a correção vem do cursor</h3>
+          <p>
+            Todo evento carrega um número de sequência, e um endpoint devolve tudo que mudou desde um cursor.
+            O Order Hub nunca perde um pedido, duplicatas são inofensivas, e o painel continua correto — a dez
+            segundos de latência — com o WebSocket inteiramente fora do ar.
+          </p>
+          <span class="against"><b>Rejeitado:</b> confiar na entrega do socket. Nenhum transporte garante entrega através de uma reconexão.</span>
+        </div>
+
+        <div class="decision">
+          <h3>Autorização se impõe na camada de query</h3>
+          <p>
+            Um repositório com escopo torna impossível escrever uma consulta sem contexto. Linha fora de
+            escopo devolve 404, não 403 — para que ninguém descubra pedidos de outra loja sondando códigos
+            de status.
+          </p>
+          <span class="against"><b>Rejeitado:</b> checar no controller. É o padrão atual, e já falhou em praticamente todos os endpoints.</span>
+        </div>
+
+        <div class="decision">
+          <h3>O catálogo ganha um mestre</h3>
+          <p>
+            Hoje o mesmo prato existe como doze linhas com doze preços — é por isso que existe um endpoint
+            só para traduzir carrinho entre lojas. Com catálogo de rede e override por unidade, abrir uma
+            loja nova vira um clique.
+          </p>
+          <span class="against"><b>Rejeitado:</b> fusão automática por similaridade de nome. Corromperia o histórico de relatórios de forma irreversível — a consolidação passa por revisão humana.</span>
+        </div>
+
+        <div class="decision">
+          <h3>A Fase 0 de segurança é um portão</h3>
+          <p>
+            Treze correções ordenadas por risco, cada uma com nota de compatibilidade — porque várias
+            quebram o app em produção se aplicadas sem cuidado.
+          </p>
+          <span class="against"><b>Rejeitado:</b> tratar como backlog. Não faz sentido publicar três painéis administrativos contra uma API cujo token qualquer pessoa consegue forjar.</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="roadmap">
+      <p class="kicker">Execução</p>
+      <h2>Sete fases, cada uma com portão de saída</h2>
+      <p>
+        As fases 1 e 2 correm em paralelo após a fundação: o Order Hub não depende do ledger, e o ledger não
+        depende do Hub. Estimativas para duas a três pessoas de engenharia.
+      </p>
+
+      <div class="phases">
+        <div class="phase">
+          <span class="n">0</span>
+          <span class="body"><strong>Remediação e fundação</strong>
+            <span>Os treze itens de segurança, o kernel de plataforma e o monorepo com o design system.</span></span>
+          <span class="dur">~6 sem</span>
+        </div>
+        <div class="phase">
+          <span class="n">1</span>
+          <span class="body"><strong>Order Hub MVP</strong>
+            <span>Tempo real, SLA com som, chat, impressão e modo offline, em duas unidades piloto.</span></span>
+          <span class="dur">~6 sem</span>
+        </div>
+        <div class="phase">
+          <span class="n">2</span>
+          <span class="body"><strong>Ledger de cashback e pagamentos</strong>
+            <span>Nove ondas com portão próprio. A varredura de reservas sai cedo e sozinha.</span></span>
+          <span class="dur">~10 sem</span>
+        </div>
+        <div class="phase">
+          <span class="n">3</span>
+          <span class="body"><strong>Corporate leitura e RBAC</strong>
+            <span>Visão de rede, agregação no servidor, papéis com escopo, auditoria consultável.</span></span>
+          <span class="dur">~7 sem</span>
+        </div>
+        <div class="phase">
+          <span class="n">4</span>
+          <span class="body"><strong>Fidelidade — absorção do admin atual</strong>
+            <span>Congelamento de features no legado e regra de deletar ao migrar.</span></span>
+          <span class="dur">~8 sem</span>
+        </div>
+        <div class="phase">
+          <span class="n">5</span>
+          <span class="body"><strong>Catálogo mestre e Portal da Unidade</strong>
+            <span>Consolidação com revisão humana; abertura para franqueados.</span></span>
+          <span class="dur">~6 sem</span>
+        </div>
+        <div class="phase">
+          <span class="n">6</span>
+          <span class="body"><strong>Analytics e aposentadoria do legado</strong>
+            <span>Sete critérios objetivos verificados — não decisão de calendário.</span></span>
+          <span class="dur">~4 sem</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="riscos">
+      <p class="kicker">Atenção contínua</p>
+      <h2>Os cinco riscos de acompanhamento semanal</h2>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>Risco</th><th>Sinal de alerta antecipado</th><th>Nível</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Comprometimento já ocorrido</td>
+              <td>Uso anômalo dos provedores de SMS; créditos de cashback fora de padrão</td>
+              <td><span class="chip crit">Crítico</span></td>
+            </tr>
+            <tr>
+              <td>Relay de eventos travado</td>
+              <td>Idade da linha mais antiga não publicada acima de 60 segundos</td>
+              <td><span class="chip crit">Crítico</span></td>
+            </tr>
+            <tr>
+              <td>Custo da migração do cashback</td>
+              <td>O próprio valor agregado, no relatório de reconciliação — antes do cutover</td>
+              <td><span class="chip warn">Alto</span></td>
+            </tr>
+            <tr>
+              <td>Som desativado no Order Hub</td>
+              <td>Pedidos expirando numa unidade que está online</td>
+              <td><span class="chip warn">Alto</span></td>
+            </tr>
+            <tr>
+              <td>Capacidade do time</td>
+              <td>Portão de fase não atingido no prazo previsto</td>
+              <td><span class="chip warn">Alto</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:18px;font-size:14.5px;color:var(--ink-2)">
+        O primeiro é o único cujo dano pode já estar em curso. O segundo é uma falha silenciosa: tudo
+        parece funcionar enquanto nada acontece.
+      </p>
+    </section>
+
+    <section id="pendentes">
+      <p class="kicker">Do lado do negócio</p>
+      <h2>O que precisa de decisão</h2>
+      <p>
+        Nenhuma bloqueia o início — cada uma tem uma recomendação provisória para seguir sem travar. Mas
+        cada uma tem prazo.
+      </p>
+
+      <ul class="asks">
+        <li>
+          <span class="q">Franqueados são terceiros com contrato, ou gerentes assalariados?
+            <span class="rec">Recomendação: modelar como terceiros — é o caso mais restritivo e degrada bem.</span></span>
+          <span class="chip acc">Fase 3</span>
+        </li>
+        <li>
+          <span class="q">O cashback pode pagar 100% de um pedido, ou existe teto?
+            <span class="rec">Recomendação: teto configurável, começando em 50% do subtotal.</span></span>
+          <span class="chip acc">Fase 2</span>
+        </li>
+        <li>
+          <span class="q">Quem absorve a diferença quando um item é substituído por outro mais caro?
+            <span class="rec">Recomendação: a loja absorve — nunca cobrar a mais sem novo consentimento.</span></span>
+          <span class="chip acc">Fase 1</span>
+        </li>
+        <li>
+          <span class="q">Quantas vias de impressão, e quais impressoras existem hoje em cada loja?
+            <span class="rec">Suposição atual: cozinha e balcão, com etiqueta opcional.</span></span>
+          <span class="chip acc">Fase 1</span>
+        </li>
+        <li>
+          <span class="q">O PDV de loja escreve diretamente na tabela de pontos?
+            <span class="rec">Muda a forma da migração do ledger — precisa ser confirmado antes de começar.</span></span>
+          <span class="chip acc">Fase 2</span>
+        </li>
+        <li>
+          <span class="q">Existe exigência fiscal (NFC-e) no delivery?
+            <span class="rec">Fora do escopo atual. Se existir, é um contexto novo e muda o ciclo do pedido.</span></span>
+          <span class="chip acc">Go-live</span>
+        </li>
+      </ul>
+    </section>
+
+    <section id="indice">
+      <p class="kicker">O documento</p>
+      <h2>Vinte e seis capítulos</h2>
+      <p>
+        Versionados em Markdown no repositório <code>matsuya_backoffice</code>, com diagramas Mermaid,
+        DDL, contratos de API e o registro das decisões. Este relatório é o resumo; a especificação
+        executável está em <code>docs/</code>.
+      </p>
+
+      <div class="index">
+        <div class="chapter"><span class="no">00</span><span class="ttl">Sumário executivo</span><span class="sub">A proposta em linguagem de CTO</span></div>
+        <div class="chapter"><span class="no">01</span><span class="ttl">Premissas e lacunas</span><span class="sub">Suposições explícitas e prazos</span></div>
+        <div class="chapter"><span class="no">02</span><span class="ttl">Estado atual</span><span class="sub">Auditoria e dívida herdada</span></div>
+        <div class="chapter"><span class="no">03</span><span class="ttl">As três aplicações</span><span class="sub">UX do Order Hub em profundidade</span></div>
+        <div class="chapter"><span class="no">04</span><span class="ttl">Arquitetura front-end</span><span class="sub">Monorepo, estado, impressão, migração</span></div>
+        <div class="chapter"><span class="no">05</span><span class="ttl">Design System</span><span class="sub">Tokens, dark mode, componentes</span></div>
+        <div class="chapter"><span class="no">06</span><span class="ttl">Arquitetura back-end</span><span class="sub">Modular monolith e concorrência</span></div>
+        <div class="chapter"><span class="no">07</span><span class="ttl">Domínios</span><span class="sub">Os 11 contextos delimitados</span></div>
+        <div class="chapter"><span class="no">08</span><span class="ttl">Banco de dados</span><span class="sub">Catálogo mestre e ERD</span></div>
+        <div class="chapter"><span class="no">09</span><span class="ttl">Pedidos</span><span class="sub">Ciclo de vida e máquina de estados</span></div>
+        <div class="chapter"><span class="no">10</span><span class="ttl">Cashback (ledger)</span><span class="sub">Lotes FIFO, reservas, migração</span></div>
+        <div class="chapter"><span class="no">11</span><span class="ttl">Pagamentos</span><span class="sub">Saga e matriz de compensação</span></div>
+        <div class="chapter"><span class="no">12</span><span class="ttl">API</span><span class="sub">Catálogo REST /api/v1</span></div>
+        <div class="chapter"><span class="no">13</span><span class="ttl">Eventos</span><span class="sub">Outbox transacional e filas</span></div>
+        <div class="chapter"><span class="no">14</span><span class="ttl">WebSockets</span><span class="sub">Rooms e resync por cursor</span></div>
+        <div class="chapter"><span class="no">15</span><span class="ttl">RBAC</span><span class="sub">Papéis × permissões × escopo</span></div>
+        <div class="chapter"><span class="no">16</span><span class="ttl">Inventário de telas</span><span class="sub">36 + 18 + 12 telas</span></div>
+        <div class="chapter"><span class="no">17</span><span class="ttl">UX e navegação</span><span class="sub">IA, copy pt-BR, notificações</span></div>
+        <div class="chapter"><span class="no">18</span><span class="ttl">Segurança</span><span class="sub">Fase 0, OWASP, LGPD, PCI</span></div>
+        <div class="chapter"><span class="no">19</span><span class="ttl">Observabilidade</span><span class="sub">Logs, métricas, alertas</span></div>
+        <div class="chapter"><span class="no">20</span><span class="ttl">Cenários de falha</span><span class="sub">31 casos com reação projetada</span></div>
+        <div class="chapter"><span class="no">21</span><span class="ttl">Roadmap</span><span class="sub">Fases e portões de saída</span></div>
+        <div class="chapter"><span class="no">22</span><span class="ttl">Backlog</span><span class="sub">Épico → Feature → User Story</span></div>
+        <div class="chapter"><span class="no">23</span><span class="ttl">Priorização</span><span class="sub">P0 a P3 com critério de corte</span></div>
+        <div class="chapter"><span class="no">24</span><span class="ttl">Riscos</span><span class="sub">Com sinal de alerta antecipado</span></div>
+        <div class="chapter"><span class="no">25</span><span class="ttl">Evoluções futuras</span><span class="sub">E o que a arquitetura inviabiliza</span></div>
+        <div class="chapter"><span class="no">ADR</span><span class="ttl">Decisões arquiteturais</span><span class="sub">17 registros com alternativas</span></div>
+      </div>
+    </section>
+
+    <div class="closing">
+      <p>
+        A solução mais simples capaz de atender bem o cenário atual, sem impedir a evolução futura.
+      </p>
+      <p class="note">
+        Onde a resposta sofisticada foi rejeitada, o motivo está escrito. E onde a resposta simples não
+        bastava — lote FIFO, lock por conta, resync por cursor, auditoria transacional — a complexidade
+        foi paga por inteiro, porque ali ela compra correção, e não elegância.
+      </p>
+    </div>
+
+    <footer>
+      <span>Matsuya · ecossistema administrativo</span>
+      <span>Relatório executivo · especificação v1 · 14 de agosto de 2026</span>
+      <span>matsuya_backoffice/RELATORIO-EXECUTIVO.html</span>
+    </footer>
+
+  </main>
+</div>
+
+</body>
+</html>
