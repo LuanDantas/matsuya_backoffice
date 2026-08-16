@@ -924,3 +924,194 @@
 .chat__aviso--erro {
   color: var(--perigo);
 }
+
+/* ── Abas de navegação na barra ─────────────────────────────────────────── */
+
+.barra__abas {
+  display: flex;
+  gap: var(--e-1);
+  margin-left: var(--e-4);
+}
+
+.barra__aba {
+  min-height: var(--alvo);
+  padding: 0 var(--e-3);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--texto-fraco);
+  font: inherit;
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+  transition: color var(--duracao-rapida) var(--curva);
+}
+
+/* Aba corrente marcada por cor E sublinhado — cor sozinha não sobrevive a
+   daltonismo nem a contraluz de janela. */
+.barra__aba[aria-current='page'] {
+  color: var(--texto);
+  border-bottom-color: var(--marca);
+  font-weight: var(--peso-forte);
+}
+
+/* ── Home da unidade ────────────────────────────────────────────────────── */
+
+.inicio {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--e-5) var(--e-4);
+  padding-bottom: max(var(--e-5), env(safe-area-inset-bottom));
+}
+
+.inicio__saudacao {
+  max-width: 1100px;
+  margin: 0 auto var(--e-5);
+}
+
+.inicio__saudacao h1 {
+  margin: 0;
+  font-size: var(--texto-2xl);
+  font-weight: var(--peso-normal);
+  line-height: var(--linha-apertada);
+}
+
+.inicio__saudacao h1 strong {
+  font-weight: var(--peso-forte);
+}
+
+.inicio__saudacao p {
+  margin: var(--e-1) 0 0;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.inicio__grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--e-3);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* Ocupa a linha inteira, como o cartão de pedidos do mês na referência. */
+.inicio__largo {
+  grid-column: 1 / -1;
+}
+
+.inicio__conteudo,
+.inicio__avaliacoes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  padding: 0 var(--e-2) var(--e-2);
+}
+
+.inicio__avaliacoes {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--e-5);
+  align-items: flex-start;
+}
+
+.inicio__linha-de-numeros {
+  display: flex;
+  gap: var(--e-8);
+}
+
+.inicio__linha-de-numeros > div,
+.inicio__destaque,
+.inicio__comparacao {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/*
+ * A escala de números da home é maior que a do quadro de propósito: aqui se lê
+ * sentado, uma vez, para decidir; lá se lê de pé, o tempo todo, para agir.
+ */
+.inicio__numero {
+  font-size: 34px;
+  font-weight: var(--peso-forte);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--texto);
+}
+
+.inicio__numero--grande { font-size: 56px; }
+.inicio__numero--medio { font-size: 34px; color: var(--texto-fraco); }
+
+.inicio__linha-de-numeros > div[data-alerta] .inicio__numero {
+  color: var(--perigo);
+}
+
+.inicio__rotulo {
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.inicio__nota {
+  display: flex;
+  align-items: center;
+  gap: var(--e-1);
+  margin: 0;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.inicio__conteudo .ui-botao {
+  align-self: flex-start;
+}
+
+.inicio__comparacao {
+  padding-top: var(--e-3);
+  border-top: 1px solid var(--borda);
+}
+
+.inicio__variacao {
+  align-self: flex-start;
+  margin-top: var(--e-1);
+  padding: 2px var(--e-2);
+  border-radius: var(--raio-total);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+}
+
+.inicio__variacao[data-sentido='alta'] {
+  background: var(--marca-suave);
+  color: var(--marca);
+}
+
+.inicio__variacao[data-sentido='baixa'] {
+  background: var(--perigo-suave);
+  color: var(--perigo);
+}
+
+.inicio__comentarios {
+  flex: 1;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+.inicio__comentario {
+  margin: 0;
+  padding: var(--e-3);
+  background: var(--superficie-1);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-1);
+}
+
+.inicio__comentario p {
+  margin: 0;
+  font-size: var(--texto-sm);
+  line-height: var(--linha-normal);
+}
+
+.inicio__comentario footer {
+  margin-top: var(--e-1);
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}

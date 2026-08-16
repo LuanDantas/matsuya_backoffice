@@ -13,6 +13,7 @@ import { useQuadro } from '../dados/useQuadro'
 import { Quadros } from '../modules/quadro/Quadros'
 import { Expedicao } from '../modules/quadro/Expedicao'
 import { Ferramentas, normalizar, type ModoDoQuadro } from '../modules/quadro/Ferramentas'
+import { Inicio } from '../modules/inicio/Inicio'
 import { ConfirmacaoDeAcao } from '../modules/quadro/ConfirmacaoDeAcao'
 import { DetalheDoPedido } from '../modules/quadro/DetalheDoPedido'
 import { Excecoes, apurarExcecoes } from '../modules/excecoes/Excecoes'
@@ -33,6 +34,17 @@ import { config } from './config'
  */
 
 const CHAVE_MODO = 'matsuya.hub.modo'
+
+/**
+ * Telas do Hub.
+ *
+ * O quadro é o destino padrão: o tablet de balcão é ligado para trabalhar
+ * pedido, e uma home no caminho custa um toque a cada abertura de turno.
+ * `inicio` fica a um toque, e some para quem não tem `reports:read` — que é o
+ * caso do atendente. Oferecer uma aba que responde 403 ensina o operador a não
+ * confiar na navegação.
+ */
+type Tela = 'pedidos' | 'inicio'
 
 const ROTULO_DA_CONEXAO: Record<string, string> = {
   conectando: 'Conectando',
@@ -128,6 +140,7 @@ function QuadroDaLoja({
     pedido: PedidoDoQuadro
     acao: OrderAction
   } | null>(null)
+  const [tela, definirTela] = useState<Tela>('pedidos')
   const [busca, definirBusca] = useState('')
   const [modo, definirModo] = useState<ModoDoQuadro>(
     () => (localStorage.getItem(CHAVE_MODO) as ModoDoQuadro | null) ?? 'quadros'
@@ -147,6 +160,10 @@ function QuadroDaLoja({
 
   const unidade = sessao.identidade?.units.find((u) => u.id === unidadeId)
   const podeTrocar = (sessao.identidade?.units.length ?? 0) > 1
+
+  // A home lê número consolidado, não opera pedido. O atendente não tem esta
+  // permissão, e a aba simplesmente não existe para ele.
+  const podeVerPainel = sessao.permissoes.has('reports:read')
 
   const agora = quadro.agoraDoServidor()
 
@@ -311,6 +328,22 @@ function QuadroDaLoja({
           </div>
         </div>
 
+        {podeVerPainel && (
+          <nav className="barra__abas" aria-label="Seções do Hub">
+            {(['pedidos', 'inicio'] as const).map((destino) => (
+              <button
+                key={destino}
+                type="button"
+                className="barra__aba"
+                aria-current={tela === destino ? 'page' : undefined}
+                onClick={() => definirTela(destino)}
+              >
+                {destino === 'pedidos' ? 'Pedidos' : 'Início'}
+              </button>
+            ))}
+          </nav>
+        )}
+
         <div className="barra__estado">
           <Selo
             tom={TOM_DA_CONEXAO[quadro.conexao] ?? 'neutro'}
@@ -358,6 +391,7 @@ function QuadroDaLoja({
         </Faixa>
       )}
 
+      {tela === 'pedidos' && (
       <Ferramentas
         modo={modo}
         aoTrocarModo={definirModo}
@@ -366,6 +400,7 @@ function QuadroDaLoja({
         ocultados={quadro.pedidos.length - visiveis.length}
         aoAtualizar={quadro.recarregar}
       />
+      )}
 
       {fila.pendentes.length > 0 && (
         <Faixa
@@ -437,7 +472,16 @@ function QuadroDaLoja({
         </Faixa>
       )}
 
-      {quadro.carregando ? (
+      {tela === 'inicio' ? (
+        <Inicio
+          unityId={unidadeId}
+          nomeDaUnidade={unidade?.name ?? `Unidade ${unidadeId}`}
+          nomeDoUsuario={sessao.identidade?.user.name ?? ''}
+          token={sessao.token}
+          agora={agora}
+          aoIrParaOQuadro={() => definirTela('pedidos')}
+        />
+      ) : quadro.carregando ? (
         <main className="carregando">
           <span className="carregando__giro" aria-hidden="true" />
           <p role="status">Carregando o quadro…</p>
