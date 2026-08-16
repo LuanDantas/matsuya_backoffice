@@ -1,0 +1,345 @@
+/*
+ * Estilos dos componentes do design system.
+ *
+ * CSS puro sobre os tokens, sem framework: o Hub tem orçamento de bundle e
+ * roda offline, e o conjunto de componentes é pequeno e estável. Uma camada de
+ * utilitários pagaria por flexibilidade que este produto não usa.
+ */
+
+.ui-visualmente-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Botão ──────────────────────────────────────────────────────────────── */
+
+.ui-botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-2);
+
+  /* Piso de toque. Vale para todas as variantes: não existe botão pequeno. */
+  min-height: var(--alvo);
+  min-width: var(--alvo);
+  padding: 0 var(--e-4);
+
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-1);
+  background: var(--superficie-2);
+  color: var(--texto);
+
+  font-family: inherit;
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+
+  transition:
+    background-color var(--duracao-rapida) var(--curva),
+    border-color var(--duracao-rapida) var(--curva),
+    transform var(--duracao-rapida) var(--curva);
+}
+
+.ui-botao[data-largo] {
+  width: 100%;
+}
+
+/* Retorno tátil sem deslocar o layout: só a escala, que não reflui nada. */
+.ui-botao:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.ui-botao:hover:not(:disabled) {
+  background: var(--superficie-3);
+}
+
+/* Texto escuro sobre esmeralda: 7,58:1 medido. Branco sobre o esmeralda
+   escuro dava 3,77:1 e reprovava — no botão que o operador mais aperta. */
+.ui-botao[data-enfase='primaria'] {
+  background: var(--marca);
+  border-color: var(--marca);
+  color: var(--texto-inverso);
+  font-weight: var(--peso-forte);
+}
+.ui-botao[data-enfase='primaria']:hover:not(:disabled) {
+  background: var(--marca-hover);
+  border-color: var(--marca-hover);
+}
+
+/* Destrutiva é contornada, não preenchida: peso visual de ação irreversível
+   deve ser menor que o da ação desejada, não maior. */
+.ui-botao[data-enfase='destrutiva'] {
+  background: transparent;
+  border-color: var(--perigo);
+  color: var(--perigo);
+}
+.ui-botao[data-enfase='destrutiva']:hover:not(:disabled) {
+  background: var(--perigo-suave);
+}
+
+.ui-botao[data-enfase='fantasma'] {
+  background: transparent;
+  border-color: transparent;
+  color: var(--texto-fraco);
+}
+.ui-botao[data-enfase='fantasma']:hover:not(:disabled) {
+  background: var(--superficie-2);
+  color: var(--texto);
+}
+
+/* Desabilitado: opacidade reduzida + cursor, para o estado ser óbvio antes do
+   toque, e não só depois de nada acontecer. */
+.ui-botao:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ui-botao__giro {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: ui-girar 700ms linear infinite;
+}
+
+@keyframes ui-girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Selo ───────────────────────────────────────────────────────────────── */
+
+.ui-selo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  padding: 3px var(--e-2);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-total);
+  background: var(--superficie-2);
+  color: var(--texto-fraco);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-medio);
+  white-space: nowrap;
+}
+
+.ui-selo[data-tom='informativo'] { color: var(--info); border-color: var(--info); background: var(--info-suave); }
+.ui-selo[data-tom='sucesso']     { color: var(--marca); border-color: var(--marca); background: var(--marca-suave); }
+.ui-selo[data-tom='atencao']     { color: var(--atencao); border-color: var(--atencao); background: var(--atencao-suave); }
+.ui-selo[data-tom='perigo']      { color: var(--perigo); border-color: var(--perigo); background: var(--perigo-suave); }
+.ui-selo[data-tom='urgente']     { color: var(--urgente); border-color: var(--urgente); background: var(--urgente-suave); }
+
+/* ── Campos ─────────────────────────────────────────────────────────────── */
+
+.ui-campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+.ui-campo__rotulo {
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  color: var(--texto);
+}
+
+.ui-campo__obrigatorio {
+  color: var(--perigo);
+  margin-left: 2px;
+}
+
+.ui-campo select,
+.ui-campo textarea {
+  min-height: var(--alvo);
+  padding: var(--e-3);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-1);
+  background: var(--superficie-base);
+  color: var(--texto);
+  font-family: inherit;
+  font-size: var(--texto-base);
+  line-height: var(--linha-normal);
+}
+
+.ui-campo textarea {
+  resize: vertical;
+}
+
+.ui-campo select[aria-invalid='true'],
+.ui-campo textarea[aria-invalid='true'] {
+  border-color: var(--perigo);
+}
+
+.ui-campo__erro,
+.ui-campo__ajuda {
+  display: flex;
+  align-items: center;
+  gap: var(--e-1);
+  margin: 0;
+  font-size: var(--texto-sm);
+}
+
+.ui-campo__erro {
+  color: var(--perigo);
+}
+
+.ui-campo__ajuda {
+  color: var(--texto-fraco);
+}
+
+/* ── Estado vazio ───────────────────────────────────────────────────────── */
+
+.ui-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--e-2);
+  padding: var(--e-6) var(--e-4);
+  color: var(--texto-fraco);
+  text-align: center;
+}
+
+.ui-vazio__titulo {
+  margin: 0;
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  color: var(--texto);
+}
+
+.ui-vazio__descricao {
+  margin: 0;
+  font-size: var(--texto-sm);
+  max-width: 28ch;
+}
+
+/* ── Faixa ──────────────────────────────────────────────────────────────── */
+
+.ui-faixa {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  border-left: 3px solid var(--borda-forte);
+  background: var(--superficie-2);
+  color: var(--texto);
+  font-size: var(--texto-sm);
+}
+
+.ui-faixa__texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.ui-faixa[data-tom='informativo'] { border-left-color: var(--info); background: var(--info-suave); }
+.ui-faixa[data-tom='atencao']     { border-left-color: var(--atencao); background: var(--atencao-suave); }
+.ui-faixa[data-tom='sucesso']     { border-left-color: var(--marca); background: var(--marca-suave); }
+.ui-faixa[data-tom='perigo']      { border-left-color: var(--perigo); background: var(--perigo-suave); }
+.ui-faixa[data-tom='urgente']     { border-left-color: var(--urgente); background: var(--urgente-suave); }
+
+/* ── Modal ──────────────────────────────────────────────────────────────── */
+
+.ui-modal__veu {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--e-4);
+  /* 66%: acima do mínimo de 40%, porque o quadro atrás é denso e colorido e
+     precisa parar de competir de verdade. */
+  background: var(--sombra-modal);
+  animation: ui-surgir var(--duracao) var(--curva);
+}
+
+.ui-modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: calc(100dvh - var(--e-8));
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-3);
+  background: var(--superficie-1);
+  box-shadow: 0 24px 48px rgb(0 0 0 / 0.4);
+  animation: ui-subir var(--duracao) var(--curva);
+}
+
+.ui-modal[data-largura='estreito'] { max-width: 460px; }
+.ui-modal[data-largura='largo']    { max-width: 780px; }
+
+@keyframes ui-surgir {
+  from { opacity: 0; }
+}
+
+/* Entra de baixo, discretamente: dá continuidade espacial sem virar
+   apresentação de slides. 12 px é o suficiente para o olho registrar. */
+@keyframes ui-subir {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
+  }
+}
+
+.ui-modal__cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--e-4);
+  padding: var(--e-4) var(--e-4) var(--e-3);
+  border-bottom: 1px solid var(--borda);
+}
+
+.ui-modal__cabecalho h2 {
+  margin: 0;
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-forte);
+  line-height: var(--linha-apertada);
+}
+
+.ui-modal__descricao {
+  margin: var(--e-1) 0 0;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.ui-modal__corpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--e-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-4);
+}
+
+.ui-modal__rodape {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--e-2);
+  padding: var(--e-3) var(--e-4);
+  border-top: 1px solid var(--borda);
+  background: var(--superficie-2);
+  border-radius: 0 0 var(--raio-3) var(--raio-3);
+}
+
+/* Em tela estreita o rodapé empilha, com a ação primária embaixo — onde o
+   polegar alcança sem reposicionar a mão. */
+@media (max-width: 480px) {
+  .ui-modal__rodape {
+    flex-direction: column-reverse;
+  }
+  .ui-modal__rodape .ui-botao {
+    width: 100%;
+  }
+}

@@ -2,14 +2,18 @@
   "name": "matsuya-admin-suite",
   "private": true,
   "packageManager": "pnpm@9.9.0",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "lint": "turbo run lint",
-    "contracts:drift": "node tooling/verificar-deriva-de-contrato.mjs"
+    "contracts:drift": "node tooling/verificar-deriva-de-contrato.mjs",
+    "ui:contraste": "node tooling/verificar-contraste.mjs",
+    "verificar": "pnpm contracts:drift && pnpm ui:contraste && turbo run typecheck test build"
   },
   "devDependencies": {
     "turbo": "^2.5.8",

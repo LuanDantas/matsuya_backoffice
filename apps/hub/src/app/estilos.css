@@ -1,107 +1,599 @@
+@import '@matsuya/ui/tokens.css';
+@import '@matsuya/ui/componentes.css';
+
 /*
- * Estilos provisórios do Hub.
+ * Layout do Order Hub.
  *
- * O design system (`packages/ui`) ainda não existe; isto é o mínimo para o
- * quadro ser legível num tablet. Escuro por padrão porque o Hub fica ligado o
- * turno inteiro num balcão, muitas vezes com pouca luz.
- *
- * Alvos de toque com 44 px de altura mínima: o operador clica com o polegar,
- * às vezes de luva.
+ * Tudo aqui parte de uma premissa: um tablet apoiado no balcão, a meio metro do
+ * rosto, operado com o polegar por alguém que está fazendo outra coisa ao mesmo
+ * tempo. Densidade alta, alvo grande, nada que exija precisão.
  */
 
-:root {
-  --fundo: #0b0f14;
-  --superficie: #151b23;
-  --superficie-alta: #1d252f;
-  --borda: #2a3441;
-  --texto: #e6edf3;
-  --texto-fraco: #93a1b0;
-  --marca: #059669;
-  --atencao: #d97706;
-  --perigo: #dc2626;
-  --urgente: #ef4444;
+/* ── Estruturas de tela cheia ───────────────────────────────────────────── */
 
-  color-scheme: dark;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
 }
 
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  background: var(--fundo);
-  color: var(--texto);
+.carregando {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-4);
+  height: 100dvh;
+  padding: var(--e-6);
+  color: var(--texto-fraco);
 }
 
-.app { display: flex; flex-direction: column; height: 100vh; }
+.carregando__giro {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--borda-forte);
+  border-top-color: var(--marca);
+  border-radius: 50%;
+  animation: ui-girar 800ms linear infinite;
+}
+
+/* ── Barra superior ─────────────────────────────────────────────────────── */
 
 .barra {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 12px 16px;
-  background: var(--superficie);
+  gap: var(--e-4);
+  padding: var(--e-3) var(--e-4);
+  /* Respeita o entalhe e a barra de status quando instalado como PWA. */
+  padding-top: max(var(--e-3), env(safe-area-inset-top));
+  background: var(--superficie-1);
   border-bottom: 1px solid var(--borda);
 }
 
-.barra h1 { font-size: 18px; margin: 0; }
-.barra__estado { display: flex; align-items: center; gap: 12px; }
-.barra__cursor { color: var(--texto-fraco); font-size: 12px; font-variant-numeric: tabular-nums; }
+.barra__identidade {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  min-width: 0;
+  color: var(--texto-fraco);
+}
 
-.selo { font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--borda); }
-.selo--ao-vivo { color: var(--marca); border-color: var(--marca); }
-.selo--degradado { color: var(--atencao); border-color: var(--atencao); }
-.selo--desconectado { color: var(--perigo); border-color: var(--perigo); }
+.barra__identidade h1 {
+  margin: 0;
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-forte);
+  line-height: var(--linha-apertada);
+  color: var(--texto);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-.faixa { margin: 0; padding: 10px 16px; font-size: 14px; background: var(--superficie-alta); }
-.faixa--atencao { background: #3a2a0d; color: #fcd34d; }
-.faixa--erro { background: #3a1414; color: #fca5a5; }
+.barra__usuario {
+  margin: 0;
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+.barra__estado {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  flex-shrink: 0;
+}
+
+.barra__cursor {
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+/* ── Área de trabalho: quadro + exceções ────────────────────────────────── */
+
+.area {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: var(--e-3);
+  padding: var(--e-3);
+  padding-bottom: max(var(--e-3), env(safe-area-inset-bottom));
+}
+
+/*
+ * Abaixo de 1100 px as exceções vão para cima do quadro, não para o lado.
+ * Espremer a faixa lateral num tablet em retrato produz uma coluna de 120 px
+ * onde nada é legível — e a exceção deixa de ser vista justamente onde ela
+ * mais importa.
+ */
+@media (max-width: 1100px) {
+  .area {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .excecoes {
+    max-height: 220px;
+    order: -1;
+  }
+}
+
+/* ── Quadro ─────────────────────────────────────────────────────────────── */
 
 .quadro {
-  flex: 1;
+  min-height: 0;
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(240px, 1fr);
-  gap: 12px;
-  padding: 12px;
+  grid-auto-columns: minmax(230px, 1fr);
+  gap: var(--e-3);
   overflow-x: auto;
+  /* Cada coluna encaixa ao arrastar: rolagem parcial deixa dois meios-cartões
+     na tela, e nenhum deles é legível. */
+  scroll-snap-type: x proximity;
 }
 
-.coluna { display: flex; flex-direction: column; min-height: 0; background: var(--superficie); border: 1px solid var(--borda); border-radius: 10px; }
-.coluna__cabecalho { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid var(--borda); }
-.coluna__cabecalho h2 { font-size: 13px; margin: 0; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-fraco); }
-.coluna__contador { font-size: 13px; font-variant-numeric: tabular-nums; }
-.coluna__corpo { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
-.coluna__vazia { color: var(--texto-fraco); font-size: 13px; margin: 0; }
-
-.cartao { background: var(--superficie-alta); border: 1px solid var(--borda); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
-.cartao--atrasado { border-color: var(--urgente); box-shadow: 0 0 0 1px var(--urgente) inset; }
-.cartao__cabecalho { display: flex; justify-content: space-between; align-items: baseline; }
-.cartao__relogio { font-variant-numeric: tabular-nums; color: var(--texto-fraco); font-size: 13px; }
-.cartao__linha { display: flex; justify-content: space-between; font-size: 13px; color: var(--texto-fraco); }
-.cartao__aviso { margin: 0; font-size: 12px; color: var(--atencao); }
-.cartao__erro { margin: 0; font-size: 12px; color: #fca5a5; }
-.cartao__vazio { font-size: 12px; color: var(--texto-fraco); }
-.cartao__acoes { display: flex; flex-wrap: wrap; gap: 6px; }
-.cartao__motivo { display: flex; flex-direction: column; gap: 6px; }
-.cartao__motivo select, .cartao__motivo textarea {
-  background: var(--fundo); color: var(--texto); border: 1px solid var(--borda);
-  border-radius: 6px; padding: 8px; font: inherit; min-height: 44px;
+.coluna {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  scroll-snap-align: start;
+  background: var(--superficie-1);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-2);
 }
 
-.botao {
-  min-height: 44px; padding: 0 14px; border-radius: 6px; font: inherit;
-  border: 1px solid var(--borda); background: var(--superficie); color: var(--texto); cursor: pointer;
+.coluna__cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2);
+  padding: var(--e-3);
+  border-bottom: 1px solid var(--borda);
+  position: sticky;
+  top: 0;
+  background: var(--superficie-1);
+  border-radius: var(--raio-2) var(--raio-2) 0 0;
+  z-index: var(--z-fixo);
 }
-.botao:disabled { opacity: .5; cursor: default; }
-.botao--primaria { background: var(--marca); border-color: var(--marca); color: #fff; font-weight: 600; }
-.botao--destrutiva { background: transparent; border-color: var(--perigo); color: #fca5a5; }
 
-.entrada { max-width: 360px; margin: 12vh auto; display: flex; flex-direction: column; gap: 12px; padding: 0 16px; }
-.entrada__nota { color: var(--texto-fraco); font-size: 13px; margin: 0; }
-.entrada label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--texto-fraco); }
-.entrada input {
-  background: var(--superficie); color: var(--texto); border: 1px solid var(--borda);
-  border-radius: 6px; padding: 10px; font: inherit; min-height: 44px;
+.coluna__cabecalho h2 {
+  margin: 0;
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
+}
+
+.coluna__corpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--e-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+/* ── Cartão do pedido ───────────────────────────────────────────────────── */
+
+.cartao {
+  background: var(--superficie-2);
+  border: 1px solid var(--borda);
+  border-left: 3px solid var(--borda);
+  border-radius: var(--raio-1);
+  overflow: hidden;
+  transition: border-color var(--duracao-rapida) var(--curva);
+}
+
+/*
+ * Urgência marcada por borda E ícone, nunca só por cor. Um operador com
+ * daltonismo — ou um tablet com contraluz de janela — não distingue vermelho de
+ * cinza, e o pedido atrasado é exatamente o que não pode passar despercebido.
+ */
+.cartao[data-urgencia='perto'] {
+  border-left-color: var(--atencao);
+}
+
+.cartao[data-urgencia='estourado'] {
+  border-left-color: var(--urgente);
+  border-color: var(--urgente);
+  background: color-mix(in srgb, var(--urgente-suave) 60%, var(--superficie-2));
+}
+
+.cartao__abrir {
+  display: block;
+  width: 100%;
+  padding: var(--e-3);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cartao__cabecalho {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e-2);
+  margin-bottom: var(--e-2);
+}
+
+.cartao__cabecalho strong {
+  font-size: var(--texto-base);
+  font-weight: var(--peso-forte);
+}
+
+.cartao__relogio {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.cartao[data-urgencia='estourado'] .cartao__relogio {
+  color: var(--urgente);
+  font-weight: var(--peso-forte);
+}
+
+.cartao[data-urgencia='perto'] .cartao__relogio {
+  color: var(--atencao);
+}
+
+.cartao__linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2);
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.cartao__tipo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cartao__selos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-1);
+  margin-top: var(--e-2);
+}
+
+.cartao__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+  padding: 0 var(--e-3) var(--e-3);
+}
+
+.cartao__acoes .ui-botao {
+  flex: 1;
+  min-width: 92px;
+}
+
+.cartao__sem-acao {
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+/* ── Exceções ───────────────────────────────────────────────────────────── */
+
+.excecoes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  min-height: 0;
+  padding: var(--e-3);
+  background: var(--superficie-1);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-2);
+}
+
+.excecoes__cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2);
+}
+
+.excecoes__cabecalho h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  margin: 0;
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
+}
+
+.excecoes__lista {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+.excecoes__item {
+  width: 100%;
+  min-height: var(--alvo);
+  padding: var(--e-2) var(--e-3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--borda);
+  border-left: 3px solid var(--borda-forte);
+  border-radius: var(--raio-1);
+  background: var(--superficie-2);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--duracao-rapida) var(--curva);
+}
+
+.excecoes__item:hover {
+  background: var(--superficie-3);
+}
+
+.excecoes__item[data-motivo='sla'] { border-left-color: var(--urgente); }
+.excecoes__item[data-motivo='entrega'] { border-left-color: var(--perigo); }
+.excecoes__item[data-motivo='parcial'] { border-left-color: var(--atencao); }
+
+.excecoes__linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2);
+  font-size: var(--texto-sm);
+}
+
+.excecoes__linha--fraca {
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+.excecoes__abrir {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ── Detalhe do pedido ──────────────────────────────────────────────────── */
+
+.detalhe__topo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+}
+
+.detalhe__secao h3 {
+  margin: 0 0 var(--e-2);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
+}
+
+.detalhe__itens {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+.detalhe__itens li {
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  gap: var(--e-2);
+  align-items: baseline;
+  padding-bottom: var(--e-2);
+  border-bottom: 1px solid var(--borda);
+}
+
+/* Item totalmente cancelado continua na lista, riscado: sumir com a linha
+   esconderia que ele foi pedido — que é o que o cliente vai cobrar. */
+.detalhe__itens li[data-cancelado] {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.detalhe__qtd {
+  font-weight: var(--peso-forte);
+  color: var(--texto-fraco);
+}
+
+.detalhe__cancelado {
+  font-style: normal;
+  color: var(--atencao);
+  font-size: var(--texto-xs);
+}
+
+.detalhe__sem-itens,
+.detalhe__texto {
+  margin: 0;
+  font-size: var(--texto-sm);
+  line-height: var(--linha-normal);
+}
+
+.detalhe__texto--fraco {
+  color: var(--texto-fraco);
+}
+
+.detalhe__observacao {
+  margin: var(--e-2) 0 0;
+  padding: var(--e-2) var(--e-3);
+  background: var(--atencao-suave);
+  border-left: 3px solid var(--atencao);
+  border-radius: var(--raio-1);
+  font-size: var(--texto-sm);
+}
+
+.detalhe__valores {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  font-size: var(--texto-sm);
+}
+
+.detalhe__valores > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--e-2);
+}
+
+.detalhe__valores dt {
+  color: var(--texto-fraco);
+}
+
+.detalhe__valores dd {
+  margin: 0;
+}
+
+.detalhe__total {
+  padding-top: var(--e-2);
+  border-top: 1px solid var(--borda);
+  font-size: var(--texto-base);
+  font-weight: var(--peso-forte);
+}
+
+/* ── Entrada e escolha de unidade ───────────────────────────────────────── */
+
+.entrada {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: var(--e-4);
+}
+
+.entrada__cartao {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-4);
+  padding: var(--e-6);
+  background: var(--superficie-1);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-3);
+}
+
+.entrada__marca {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  color: var(--marca);
+}
+
+.entrada__marca h1 {
+  margin: 0;
+  font-size: var(--texto-xl);
+  line-height: var(--linha-apertada);
+  color: var(--texto);
+}
+
+.entrada__marca p {
+  margin: 0;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.entrada__campo {
+  min-height: var(--alvo);
+  padding: var(--e-3);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-1);
+  background: var(--superficie-base);
+  color: var(--texto);
+  font-family: inherit;
+  /* 16 px evita o zoom automático do iOS ao focar o campo — que num quiosque
+     deixa a tela deslocada até alguém perceber. */
+  font-size: var(--texto-base);
+}
+
+.escolha {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: var(--e-8) var(--e-4);
+  padding-top: max(var(--e-8), env(safe-area-inset-top));
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-5);
+}
+
+.escolha__cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--e-4);
+}
+
+.escolha__cabecalho h1 {
+  margin: 0;
+  font-size: var(--texto-2xl);
+  line-height: var(--linha-apertada);
+}
+
+.escolha__nota {
+  margin: var(--e-1) 0 0;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.escolha__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+.escolha__opcao {
+  width: 100%;
+  /* 60 px: acima do mínimo, porque esta é uma escolha feita uma vez por turno,
+     muitas vezes com a mão ocupada. */
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  padding: 0 var(--e-4);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-2);
+  background: var(--superficie-1);
+  color: var(--texto-fraco);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background-color var(--duracao-rapida) var(--curva),
+    border-color var(--duracao-rapida) var(--curva);
+}
+
+.escolha__opcao:hover {
+  background: var(--superficie-2);
+  border-color: var(--marca);
+}
+
+.escolha__nome {
+  flex: 1;
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-medio);
+  color: var(--texto);
 }

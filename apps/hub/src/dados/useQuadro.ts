@@ -137,12 +137,26 @@ export function useQuadro(unityId: number, token: string | null): EstadoDoQuadro
   }
 }
 
-/** Ordem das colunas do quadro. Segue o caminho físico do pedido na loja. */
-export const COLUNAS: ReadonlyArray<{ status: OrderStatus; titulo: string }> = [
-  { status: 'pending', titulo: 'Novos' },
-  { status: 'confirmed', titulo: 'Aceitos' },
-  { status: 'preparing', titulo: 'Em preparo' },
-  { status: 'ready', titulo: 'Prontos' },
-  { status: 'awaiting_courier', titulo: 'Aguardando entregador' },
-  { status: 'out_for_delivery', titulo: 'Em rota' },
+/**
+ * Colunas do quadro, na ordem do caminho físico do pedido dentro da loja.
+ *
+ * O texto de coluna vazia não é decoração: sem ele, uma coluna em branco é
+ * ambígua — não dá para saber se não há pedido ou se a tela falhou. Numa
+ * cozinha, essa dúvida vira uma ligação para o suporte.
+ */
+export const COLUNAS: ReadonlyArray<{
+  status: OrderStatus
+  titulo: string
+  vazio: string
+}> = [
+  { status: 'pending', titulo: 'Novos', vazio: 'Nada aguardando aceite.' },
+  { status: 'confirmed', titulo: 'Aceitos', vazio: 'Nada aguardando preparo.' },
+  { status: 'preparing', titulo: 'Em preparo', vazio: 'A cozinha está livre.' },
+  { status: 'ready', titulo: 'Prontos', vazio: 'Nada esperando no balcão.' },
+  {
+    status: 'awaiting_courier',
+    titulo: 'Aguardando entregador',
+    vazio: 'Nenhum pedido esperando motoboy.',
+  },
+  { status: 'out_for_delivery', titulo: 'Em rota', vazio: 'Nada na rua.' },
 ]

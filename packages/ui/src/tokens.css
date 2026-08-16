@@ -1,0 +1,227 @@
+/*
+ * Tokens do design system.
+ *
+ * Escuro é o padrão, e não uma variação: o Order Hub fica ligado o turno
+ * inteiro num balcão, com frequência sob luz fraca ou contraluz de janela.
+ * O Console (matriz) nasce claro, por isso os dois temas existem — mas o Hub
+ * fixa `data-theme="dark"` e nunca segue a preferência do sistema, porque um
+ * tablet que muda de tema ao entardecer é uma tela que muda embaixo da mão de
+ * quem está trabalhando.
+ *
+ * Três desvios conscientes da recomendação padrão de "Dark Mode (OLED)":
+ *
+ * 1. **Preto não é #000000.** A superfície base é #0B0F14. Preto puro com
+ *    texto branco produz halação — o texto "vaza" e cansa a vista em turno de
+ *    seis horas. OLED economiza bateria com preto puro, e um tablet de balcão
+ *    vive na tomada.
+ *
+ * 2. **A cor de marca continua o esmeralda #059669**, e não o azul sugerido.
+ *    É a cor do Matclub, já em produção no app; duas identidades no mesmo
+ *    negócio custam mais do que a otimização vale.
+ *
+ * 3. **Sem fonte de rede.** A pilha do sistema (SF Pro no iPad, Roboto no
+ *    Android) substitui a Inter: o Hub precisa abrir com a internet ruim ou
+ *    ausente, e uma fonte que não carrega é texto invisível na primeira
+ *    pintura — exatamente no momento em que o operador precisa ler o pedido.
+ */
+
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Superfícies, em elevação crescente. */
+  --superficie-base: #0b0f14;
+  --superficie-1: #151b23;
+  --superficie-2: #1d252f;
+  --superficie-3: #26303c;
+
+  --borda: #2a3441;
+  --borda-forte: #3a4757;
+
+  /* Texto. Medidos: `--texto` sobre `--superficie-1` dá 14,65:1 e
+     `--texto-fraco` dá 7,79:1 — os dois bem acima do mínimo AA de 4,5:1, com
+     folga para tela suja de balcão e contraluz de janela. */
+  --texto: #e6edf3;
+  --texto-fraco: #9fb0c0;
+  --texto-inverso: #0b0f14;
+
+  /* Marca e semânticos. */
+  /* O botão primário usa texto ESCURO sobre esmeralda claro.
+     Branco sobre #059669 dá 3,77:1 e reprova o mínimo de 4,5:1 — no controle
+     mais usado do aplicativo. Escuro sobre #10b981 dá 7,58:1 e mantém o verde
+     da marca vivo, que é a convenção de tema escuro: recipiente claro, texto
+     "on-color" escuro. */
+  --marca: #10b981;
+  --marca-hover: #34d399;
+  --marca-forte: #059669;
+  --marca-suave: #06301f;
+
+  --info: #60a5fa;
+  --info-suave: #0e2438;
+
+  --atencao: #fbbf24;
+  --atencao-suave: #33270a;
+
+  --perigo: #f87171;
+  --perigo-forte: #dc2626;
+  --perigo-suave: #3a1414;
+
+  --urgente: #fb7185;
+  --urgente-suave: #3d1622;
+
+  --foco: #7dd3fc;
+  --sombra-modal: rgb(0 0 0 / 0.66);
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+
+  --superficie-base: #f6f8fa;
+  --superficie-1: #ffffff;
+  --superficie-2: #f2f5f8;
+  --superficie-3: #e7ecf1;
+
+  --borda: #d7dee6;
+  --borda-forte: #b8c4d0;
+
+  --texto: #10171f;
+  --texto-fraco: #4d5c6b;
+  --texto-inverso: #ffffff;
+
+  /* Mais escuro que no tema escuro, e de propósito: aqui o botão primário é
+     texto BRANCO sobre a marca, e o esmeralda claro não sustenta branco.
+     Medido: branco sobre #036147 dá 7,49:1. */
+  --marca: #036147;
+  --marca-hover: #024e39;
+  --marca-forte: #024e39;
+  --marca-suave: #e6f6ef;
+
+  --info: #1d4ed8;
+  --info-suave: #e6edfd;
+
+  --atencao: #b45309;
+  --atencao-suave: #fdf3e2;
+
+  --perigo: #b91c1c;
+  --perigo-forte: #991b1b;
+  --perigo-suave: #fdeaea;
+
+  --urgente: #be123c;
+  --urgente-suave: #fdeaef;
+
+  --foco: #1d4ed8;
+  --sombra-modal: rgb(15 23 42 / 0.45);
+}
+
+:root {
+  /* Ritmo de 4 px. Nomes por passo, não por uso, para não haver
+     `--espaco-do-cartao` competindo com `--espaco-do-botao`. */
+  --e-1: 4px;
+  --e-2: 8px;
+  --e-3: 12px;
+  --e-4: 16px;
+  --e-5: 20px;
+  --e-6: 24px;
+  --e-8: 32px;
+  --e-10: 40px;
+
+  --raio-1: 6px;
+  --raio-2: 10px;
+  --raio-3: 14px;
+  --raio-total: 999px;
+
+  /* Escala tipográfica. O corpo é 16 px: abaixo disso, um operador de 50 anos
+     lendo um endereço de longe erra a rua. */
+  --texto-xs: 12px;
+  --texto-sm: 14px;
+  --texto-base: 16px;
+  --texto-lg: 18px;
+  --texto-xl: 22px;
+  --texto-2xl: 28px;
+
+  --peso-normal: 400;
+  --peso-medio: 500;
+  --peso-forte: 600;
+
+  --linha-apertada: 1.25;
+  --linha-normal: 1.5;
+
+  /* Alvo mínimo de toque. 44 px é o piso da Apple; o polegar de quem trabalha
+     de luva não acerta menos que isso. */
+  --alvo: 44px;
+
+  --fonte: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Números tabulares para cronômetro e dinheiro: sem isso, o dígito muda de
+     largura a cada segundo e a coluna inteira treme. */
+  --fonte-numero: ui-monospace, 'SF Mono', 'Roboto Mono', monospace;
+
+  --duracao-rapida: 120ms;
+  --duracao: 180ms;
+  --duracao-saida: 120ms;
+  --curva: cubic-bezier(0.2, 0, 0, 1);
+
+  --z-conteudo: 0;
+  --z-fixo: 20;
+  --z-sobreposicao: 40;
+  --z-modal: 60;
+  --z-aviso: 80;
+}
+
+/*
+ * Movimento reduzido é preferência de acessibilidade, e num tablet de balcão
+ * também é preferência de quem enjoa com painel que desliza o dia inteiro.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duracao-rapida: 1ms;
+    --duracao: 1ms;
+    --duracao-saida: 1ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--superficie-base);
+  color: var(--texto);
+  font-family: var(--fonte);
+  font-size: var(--texto-base);
+  line-height: var(--linha-normal);
+  -webkit-font-smoothing: antialiased;
+  /* O Hub é quiosque: seleção acidental de texto durante o toque atrapalha. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * Foco visível sempre. Remover anel de foco é o atalho mais comum para deixar
+ * uma interface inoperável por teclado — e este quadro pode acabar num
+ * computador de escritório, não só no tablet.
+ */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+  border-radius: var(--raio-1);
+}
+
+/* Numerais tabulares onde a largura instável quebra o alinhamento. */
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
