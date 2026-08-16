@@ -8,7 +8,7 @@ import {
   type OrderAction,
 } from '@matsuya/contracts'
 import type { PedidoDoQuadro } from '@matsuya/api-client'
-import { decorrido, moeda, restante } from '../../app/formato'
+import { decorrido, horario, moeda, restante } from '../../app/formato'
 
 /**
  * O cartão de pedido.
@@ -41,6 +41,13 @@ export interface PropsDoCartao {
   variante?: VarianteDoCartao
   /** Marca o cartão cujo drawer está aberto. */
   selecionado?: boolean
+  /**
+   * Nome da unidade, quando o quadro mostra mais de uma loja.
+   *
+   * Com uma loja só ele é ruído: todo cartão diria a mesma coisa. Com várias,
+   * é a informação que impede o operador de agir no pedido da loja errada.
+   */
+  nomeDaUnidade?: string | null
   aoPedirAcao: (pedido: PedidoDoQuadro, acao: OrderAction) => void
   aoAbrirDetalhe: (pedido: PedidoDoQuadro) => void
 }
@@ -129,6 +136,39 @@ function estado(
   }
 }
 
+/**
+ * A linha de contexto, no topo do cartão.
+ *
+ * A referência mostra aqui o ETA do entregador até a loja. Não temos isso — não
+ * há entregador atribuído nem rastreamento —, então o espaço vai para a
+ * informação que existe e que o cliente pergunta ao telefone: quando a comida
+ * chega. Cai para tempo na rua quando não há previsão, em vez de mostrar um
+ * horário que ninguém pode cumprir.
+ */
+function contexto(pedido: PedidoDoQuadro, agora: number): string {
+  if (pedido.deliveryType === 'pickup') return 'Retirada no balcão'
+
+  const emRota =
+    pedido.status === 'out_for_delivery' ||
+    pedido.status === 'awaiting_courier' ||
+    pedido.status === 'delivery_failed' ||
+    pedido.status === 'customer_not_found'
+
+  if (pedido.estimatedDeliveryAt) {
+    const previsao = new Date(pedido.estimatedDeliveryAt)
+    const atrasada = previsao.getTime() < agora
+    return atrasada
+      ? `Previsão vencida às ${horario.format(previsao)}`
+      : `Entrega prevista às ${horario.format(previsao)}`
+  }
+
+  if (emRota && pedido.dispatchedAt) {
+    return `Na rua há ${decorrido(pedido.dispatchedAt, agora)}`
+  }
+
+  return 'Entrega'
+}
+
 export function Cartao({
   pedido,
   permissoes,
@@ -136,6 +176,7 @@ export function Cartao({
   ocupado,
   variante = 'largo',
   selecionado = false,
+  nomeDaUnidade = null,
   aoPedirAcao,
   aoAbrirDetalhe,
 }: PropsDoCartao) {
@@ -174,7 +215,7 @@ export function Cartao({
       >
         <span className="cartao__contexto">
           <Icone nome={pedido.deliveryType === 'pickup' ? 'sacola' : 'moto'} tamanho={13} />
-          {pedido.deliveryType === 'pickup' ? 'Retirada' : 'Entrega'}
+          {contexto(pedido, agora)}
           {pedido.hasPartialCancellation && (
             <span className="cartao__alteracao">
               <Icone nome="alerta" tamanho={12} />
@@ -224,6 +265,13 @@ export function Cartao({
           <span className="cartao__sem-acao">Sem ações no seu acesso</span>
         )}
       </div>
+
+      {nomeDaUnidade && (
+        <footer className="cartao__rodape">
+          <Icone nome="loja" tamanho={13} />
+          {nomeDaUnidade}
+        </footer>
+      )}
     </article>
   )
 }

@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 import { EstadoVazio, PainelDeSecao } from '@matsuya/ui'
 import type { PedidoDoQuadro } from '@matsuya/api-client'
 import { Cartao } from './Cartao'
-import { SECOES } from '../../dados/useQuadro'
-import { agruparPorStatus, type PropsDoQuadro } from './Quadros'
+import { CartaoDeAceite } from './CartaoDeAceite'
+import { agruparPorSecao, contarAtrasados, secoesVisiveis, type PropsDoQuadro } from './Quadros'
 
 /**
  * Modo Expedição — seções empilhadas, cartões em grade densa.
@@ -25,10 +25,14 @@ export function Expedicao({
   agora,
   emCurso,
   selecionado,
+  nomesDasUnidades,
+  prazoDeAceiteEmMinutos,
   aoPedirAcao,
   aoAbrirDetalhe,
 }: PropsDoQuadro) {
-  const porStatus = useMemo(() => agruparPorStatus(pedidos), [pedidos])
+  const porSecao = useMemo(() => agruparPorSecao(pedidos, agora), [pedidos, agora])
+  const visiveis = useMemo(() => secoesVisiveis(porSecao), [porSecao])
+  const multiLoja = nomesDasUnidades.size > 1
 
   /**
    * Escolha explícita do operador, por seção.
@@ -49,36 +53,54 @@ export function Expedicao({
 
   return (
     <div className="expedicao">
-      {SECOES.map((secao) => {
-        const lista = porStatus.get(secao.status) ?? []
-        const recolhida = escolha.get(secao.status) ?? lista.length === 0
+      {visiveis.map((secao) => {
+        const lista = porSecao.get(secao.chave) ?? []
+        const recolhida = escolha.get(secao.chave) ?? lista.length === 0
 
         return (
           <PainelDeSecao
-            key={secao.status}
+            key={secao.chave}
             titulo={secao.titulo}
             contagem={lista.length}
+            alertas={contarAtrasados(lista, agora)}
             recolhivel
             recolhido={recolhida}
-            aoAlternar={() => alternar(secao.status, recolhida)}
+            aoAlternar={() => alternar(secao.chave, recolhida)}
           >
             {lista.length === 0 ? (
               <EstadoVazio titulo="Nenhum pedido" descricao={secao.vazio} />
             ) : (
               <div className="expedicao__grade">
-                {lista.map((pedido) => (
-                  <Cartao
-                    key={pedido.id}
-                    pedido={pedido}
-                    permissoes={permissoes}
-                    agora={agora}
-                    ocupado={emCurso.has(pedido.id)}
-                    selecionado={selecionado === pedido.id}
-                    variante="denso"
-                    aoPedirAcao={aoPedirAcao}
-                    aoAbrirDetalhe={aoAbrirDetalhe}
-                  />
-                ))}
+                {lista.map((pedido) =>
+                  secao.chave === 'aceitar' ? (
+                    <CartaoDeAceite
+                      key={pedido.id}
+                      pedido={pedido}
+                      agora={agora}
+                      prazoTotalEmMinutos={prazoDeAceiteEmMinutos}
+                      nomeDaUnidade={
+                        multiLoja ? (nomesDasUnidades.get(pedido.unityId) ?? null) : null
+                      }
+                      selecionado={selecionado === pedido.id}
+                      aoAbrirDetalhe={aoAbrirDetalhe}
+                    />
+                  ) : (
+                    <Cartao
+                      key={pedido.id}
+                      pedido={pedido}
+                      permissoes={permissoes}
+                      agora={agora}
+                      ocupado={emCurso.has(pedido.id)}
+                      selecionado={selecionado === pedido.id}
+                      nomeDaUnidade={
+                        multiLoja ? (nomesDasUnidades.get(pedido.unityId) ?? null) : null
+                      }
+                      variante="denso"
+                      aoPedirAcao={aoPedirAcao}
+                      aoAbrirDetalhe={aoAbrirDetalhe}
+                    />
+                  )
+                )}
               </div>
             )}
           </PainelDeSecao>

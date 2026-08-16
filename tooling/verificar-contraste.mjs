@@ -83,6 +83,13 @@ const PARES = [
   ['texto fraco sobre superfície 3 (pílula)', 'texto-fraco', 'superficie-3', 4.5],
   ['pílula de atraso (o único preenchimento sólido)', 'atraso-texto', 'atraso-fundo', 4.5],
   ['badge de contagem', 'contagem-texto', 'contagem-fundo', 4.5],
+
+  // Barra de prazo do cartão de aceite. O rótulo fica sobre o preenchimento
+  // quando há tempo e sobre o fundo claro quando a barra esvazia — precisa
+  // passar nos dois, senão vira ilegível justamente no fim do prazo.
+  ['barra de aceite, sobre o preenchimento', 'atraso-texto', 'atraso-fundo', 4.5],
+  ['barra de aceite, sobre o trilho vazio', 'perigo', 'perigo-suave', 4.5],
+  ['pílula de aviso (contagem regressiva)', 'atencao', 'atencao-suave', 4.5],
   ['painel da seção sobre a página', 'superficie-2', 'superficie-base', 1.08],
   ['cartão sobre o painel da seção', 'superficie-1', 'superficie-2', 1.05],
 ]

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Botao, Faixa, Icone, Selo } from '@matsuya/ui'
+import { Botao, Drawer, Faixa, Selo } from '@matsuya/ui'
 import { createApiClient, criarApiDePedidos, type PedidoDoQuadro } from '@matsuya/api-client'
 import { ORDER_ACTION_INFO, type OrderAction } from '@matsuya/contracts'
 import type { useSessao } from '../dados/useSessao'
@@ -10,6 +10,9 @@ import { useFilaOffline } from '../offline/useFilaOffline'
 import { useImpressao } from '../impressao/useImpressao'
 import { Reconciliacao } from '../offline/Reconciliacao'
 import { MenuLateral } from './MenuLateral'
+import { SeletorDeLojas } from './SeletorDeLojas'
+import { BotaoComContador } from './BotaoComContador'
+import { Farol, useFarol, type AlertaDoDispositivo } from './Farol'
 import { telaInicial, type Tela } from './telas'
 import { config } from './config'
 
@@ -51,15 +54,27 @@ const TOM_DA_CONEXAO: Record<string, 'sucesso' | 'atencao' | 'perigo' | 'neutro'
 }
 
 export function Casca({
-  unidadeId,
   sessao,
   agora,
 }: {
-  unidadeId: number
   sessao: ReturnType<typeof useSessao>
   agora: number
 }) {
-  const quadro = useQuadro(unidadeId, sessao.token)
+  const lojas = sessao.unidadesAtuais
+  const quadro = useQuadro(lojas, sessao.token)
+
+  /**
+   * A unidade "de trabalho" das telas que só sabem lidar com uma.
+   *
+   * Início e Cardápio são de uma loja por vez — somar num número só o mês de
+   * lojas com volumes diferentes esconde qual é qual, e a decisão que sai daí
+   * é ruim. A referência faz o mesmo: a home dela tem seletor próprio.
+   */
+  const [unidadeFoco, definirUnidadeFoco] = useState<number>(() => lojas[0] ?? 0)
+
+  useEffect(() => {
+    if (!lojas.includes(unidadeFoco)) definirUnidadeFoco(lojas[0] ?? 0)
+  }, [lojas, unidadeFoco])
 
   const [tela, definirTela] = useState<Tela>(() => telaInicial(sessao.permissoes))
   const [busca, definirBusca] = useState('')
@@ -72,6 +87,8 @@ export function Casca({
     pedido: PedidoDoQuadro
     acao: OrderAction
   } | null>(null)
+  const [farolAberto, definirFarolAberto] = useState(false)
+  const [excecoesAbertas, definirExcecoesAbertas] = useState(false)
 
   useEffect(() => {
     localStorage.setItem(CHAVE_MODO, modo)
@@ -85,16 +102,29 @@ export function Casca({
     return criarApiDePedidos(cliente)
   }, [sessao.token])
 
-  const unidade = sessao.identidade?.units.find((u) => u.id === unidadeId)
-  const nomeDaUnidade = unidade?.name ?? `Unidade ${unidadeId}`
-  const podeTrocar = (sessao.identidade?.units.length ?? 0) > 1
+  const nomesDasUnidades = useMemo(() => {
+    const mapa = new Map<number, string>()
+    for (const u of sessao.identidade?.units ?? []) {
+      if (lojas.includes(u.id)) mapa.set(u.id, u.name)
+    }
+    return mapa
+  }, [sessao.identidade, lojas])
+
+  const unidade = sessao.identidade?.units.find((u) => u.id === unidadeFoco)
+  const nomeDaUnidade = unidade?.name ?? `Unidade ${unidadeFoco}`
+
+  /** Lojas com pedido em aberto, para a linha de apoio do seletor. */
+  const lojasComPedidos = useMemo(
+    () => new Set(quadro.pedidos.map((p) => p.unityId)),
+    [quadro.pedidos]
+  )
 
   const som = useAlertas(quadro.pedidos, true)
   const impressao = useImpressao(nomeDaUnidade)
-  const fila = useFilaOffline(unidadeId, api, quadro.recarregar)
+  const fila = useFilaOffline(unidadeFoco, api, quadro.recarregar)
   const acoes = useAcoesDoPedido({
     api,
-    unidadeId,
+    unidadeId: unidadeFoco,
     fila,
     aoConflitar: quadro.recarregar,
     aoErrar: som.tocarErro,
@@ -172,6 +202,66 @@ export function Casca({
     if (quadro.conexao === 'ao-vivo') void fila.reenviar()
   }, [quadro.conexao, fila])
 
+  const unidadesDoFarol = useMemo(
+    () => [...nomesDasUnidades].map(([id, name]) => ({ id, name })),
+    [nomesDasUnidades]
+  )
+  const farol = useFarol(unidadesDoFarol, sessao.token, quadro.pedidos)
+
+  /**
+   * Alertas do próprio tablet, separados dos da loja.
+   *
+   * São coisas diferentes: "3 atrasados" é problema da operação e segue igual
+   * em qualquer tela; "comanda não saiu" é problema **desta** máquina e some
+   * quando alguém abre o Hub em outra. Misturar faria o responsável procurar
+   * na loja um defeito que está no dispositivo.
+   */
+  const alertasDoDispositivo = useMemo<AlertaDoDispositivo[]>(() => {
+    const lista: AlertaDoDispositivo[] = []
+
+    if (impressao.fila.length > 0) {
+      lista.push({
+        chave: 'impressao',
+        gravidade: 'critico',
+        texto: `${impressao.fila.length} ${impressao.fila.length === 1 ? 'comanda não saiu' : 'comandas não saíram'} da impressora`,
+      })
+    }
+    if (fila.pendentes.length > 0) {
+      lista.push({
+        chave: 'offline',
+        gravidade: 'critico',
+        texto: `${fila.pendentes.length} ${fila.pendentes.length === 1 ? 'ação aguardando' : 'ações aguardando'} a conexão voltar`,
+      })
+    }
+    if (quadro.conexao === 'degradado' || quadro.conexao === 'desconectado') {
+      lista.push({
+        chave: 'conexao',
+        gravidade: 'atencao',
+        texto: 'Sem tempo real — o quadro está atualizando por consulta periódica',
+      })
+    }
+
+    return lista
+  }, [impressao.fila.length, fila.pendentes.length, quadro.conexao])
+
+  // Sem endpoint agregado de não lidas por seleção; somar os pedidos com
+  // conversa aberta é o que dá para saber sem uma requisição por loja.
+  const naoLidasTotal = 0
+
+  /**
+   * A janela cheia do prazo de aceite, para a barra do cartão saber o 100%.
+   *
+   * Vem do servidor, junto do prazo. Fixar 10 aqui faria a barra mentir no dia
+   * em que o prazo mudasse na API — e ninguém notaria, porque ela continuaria
+   * desenhando uma barra bonita.
+   */
+  const prazoDeAceite = useMemo(() => {
+    const comPrazo = quadro.pedidos.find(
+      (p) => p.deadlineKind === 'aceite' && p.deadlineTotalMinutes
+    )
+    return comPrazo?.deadlineTotalMinutes ?? 10
+  }, [quadro.pedidos])
+
   const ehQuadro = tela === 'pedidos'
 
   return (
@@ -185,13 +275,32 @@ export function Casca({
 
       <div className="app__conteudo">
         <header className="barra">
-          <div className="barra__identidade">
-            <Icone nome="loja" tamanho={20} />
-            <div>
-              <h1>{nomeDaUnidade}</h1>
-              <p className="barra__usuario">{sessao.identidade?.user.name}</p>
-            </div>
-          </div>
+          <SeletorDeLojas
+            identidade={sessao.identidade!}
+            selecionadas={new Set(lojas)}
+            comPedidos={lojasComPedidos}
+            aoSelecionar={sessao.escolherUnidades}
+          />
+
+          {/*
+            O farol vai no centro, como na referência. É o único elemento do
+            cabeçalho que muda de cor sozinho, e por isso o olho volta a ele
+            sem procurar.
+          */}
+          <button
+            type="button"
+            className="barra__farol"
+            data-estado={farol.totalDaOperacao + alertasDoDispositivo.length > 0 ? 'alerta' : 'ok'}
+            onClick={() => definirFarolAberto(true)}
+          >
+            <span className="barra__farol-ponto" aria-hidden="true" />
+            Farol da Operação
+            {farol.totalDaOperacao + alertasDoDispositivo.length > 0 && (
+              <span className="barra__farol-contagem num">
+                {farol.totalDaOperacao + alertasDoDispositivo.length}
+              </span>
+            )}
+          </button>
 
           <div className="barra__estado">
             <Selo
@@ -210,11 +319,24 @@ export function Casca({
               </Botao>
             )}
 
-            {podeTrocar && (
-              <Botao enfase="fantasma" onClick={() => sessao.escolherUnidade(null)}>
-                Trocar de loja
-              </Botao>
-            )}
+            {/*
+              "Atendimento" na referência abre o suporte da plataforma. Aqui
+              abre a fila de exceções: é o que, no nosso produto, precisa de
+              gente — pedido atrasado, falha de entrega, pedido alterado.
+            */}
+            <BotaoComContador
+              icone="alerta"
+              rotulo="Exceções"
+              contagem={excecoes.length}
+              aoClicar={() => definirExcecoesAbertas(true)}
+            />
+
+            <BotaoComContador
+              icone="balao"
+              rotulo="Conversas"
+              contagem={naoLidasTotal}
+              aoClicar={() => definirTela('conversas')}
+            />
 
             <Botao enfase="fantasma" icone="sair" onClick={sessao.sair}>
               <span className="ui-visualmente-oculto">Sair</span>
@@ -312,7 +434,7 @@ export function Casca({
           <>
             {tela === 'inicio' && (
               <Inicio
-                unityId={unidadeId}
+                unityId={unidadeFoco}
                 nomeDaUnidade={nomeDaUnidade}
                 nomeDoUsuario={sessao.identidade?.user.name ?? ''}
                 token={sessao.token}
@@ -330,6 +452,8 @@ export function Casca({
                     agora={agora}
                     emCurso={acoes.emCurso}
                     selecionado={detalhe}
+                    nomesDasUnidades={nomesDasUnidades}
+                    prazoDeAceiteEmMinutos={prazoDeAceite}
                     aoPedirAcao={pedirAcao}
                     aoAbrirDetalhe={abrirDetalhe}
                   />
@@ -340,11 +464,12 @@ export function Casca({
                     agora={agora}
                     emCurso={acoes.emCurso}
                     selecionado={detalhe}
+                    nomesDasUnidades={nomesDasUnidades}
+                    prazoDeAceiteEmMinutos={prazoDeAceite}
                     aoPedirAcao={pedirAcao}
                     aoAbrirDetalhe={abrirDetalhe}
                   />
                 )}
-                <Excecoes excecoes={excecoes} agora={agora} aoAbrir={abrirDetalhe} />
               </main>
             )}
 
@@ -359,7 +484,7 @@ export function Casca({
 
             {tela === 'conversas' && (
               <Conversas
-                unityId={unidadeId}
+                unityId={unidadeFoco}
                 pedidos={quadro.pedidos}
                 token={sessao.token}
                 agora={agora}
@@ -370,7 +495,7 @@ export function Casca({
               />
             )}
 
-            {tela === 'cardapio' && <Cardapio unityId={unidadeId} token={sessao.token} />}
+            {tela === 'cardapio' && <Cardapio unityId={unidadeFoco} token={sessao.token} />}
 
             {tela === 'ajustes' && (
               <Ajustes
@@ -382,7 +507,8 @@ export function Casca({
                   tentarDeNovo: impressao.tentarDeNovo,
                 }}
                 conexao={ROTULO_DA_CONEXAO[quadro.conexao] ?? quadro.conexao}
-                cursor={quadro.cursor}
+                cursores={quadro.cursores}
+                nomesDasUnidades={nomesDasUnidades}
               />
             )}
           </>
@@ -419,6 +545,33 @@ export function Casca({
           if (voltarPara !== null && tela === 'pedidos') definirDetalhe(voltarPara)
         }}
       />
+
+      {farolAberto && (
+        <Farol
+          porLoja={farol.porLoja}
+          alertasDoDispositivo={alertasDoDispositivo}
+          aoFechar={() => definirFarolAberto(false)}
+        />
+      )}
+
+      {excecoesAbertas && (
+        <Drawer
+          aberto
+          rotuloAcessivel="Pedidos que precisam de atenção"
+          titulo={<h2>Exceções</h2>}
+          subtitulo="Atrasados, com falha de entrega ou alterados depois do aceite."
+          aoFechar={() => definirExcecoesAbertas(false)}
+        >
+          <Excecoes
+            excecoes={excecoes}
+            agora={agora}
+            aoAbrir={(pedido) => {
+              definirExcecoesAbertas(false)
+              abrirDetalhe(pedido)
+            }}
+          />
+        </Drawer>
+      )}
 
       {fila.reconciliacao && (
         <Reconciliacao linhas={fila.reconciliacao} aoReconhecer={fila.reconhecer} />

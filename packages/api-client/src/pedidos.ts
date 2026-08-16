@@ -40,11 +40,24 @@ export interface PedidoDoQuadro {
   hasPartialCancellation: boolean
   createdAt: string
   addressSnapshot: Record<string, unknown> | null
+  /**
+   * Previsão de entrega ao cliente, do prazo da zona congelado no checkout.
+   *
+   * **Não é o ETA do entregador** — esse não existe na API. Nulo em retirada e
+   * em pedido anterior à coluna, e aí a tela mostra tempo decorrido em vez de
+   * um horário que ninguém pode cumprir.
+   */
+  estimatedDeliveryAt: string | null
+  deliveryEtaMinutes: number | null
   /** Carimbo do aceite. É o fato que diz se a comanda deste pedido já saiu. */
   acceptedAt: string | null
+  dispatchedAt: string | null
+  deliveredAt: string | null
   /** Prazo derivado pela API — ver `modules/orders/prazos.ts` lá. */
   deadlineAt: string | null
   deadlineKind: 'aceite' | 'preparo' | null
+  /** Janela cheia do prazo, para a barra do cartão de aceite saber o 100%. */
+  deadlineTotalMinutes: number | null
   items?: Array<{
     id: number
     productName: string

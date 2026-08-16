@@ -1128,10 +1128,11 @@
 .menu {
   display: flex;
   flex-direction: column;
-  gap: var(--e-1);
+  gap: 2px;
   width: 72px;
   flex-shrink: 0;
-  padding: var(--e-2) var(--e-2) var(--e-4);
+  /* Sem recuo lateral: o item precisa alcançar a borda esquerda. */
+  padding: var(--e-2) 0 var(--e-4);
   padding-top: max(var(--e-2), env(safe-area-inset-top));
   background: var(--superficie-1);
   border-right: 1px solid var(--borda);
@@ -1159,10 +1160,16 @@
 }
 
 .menu[data-expandido] .menu__rotulo {
-  max-width: 140px;
+  max-width: 130px;
   opacity: 1;
 }
 
+/*
+ * O item ocupa o trilho inteiro, sem raio e sem margem lateral: na referência
+ * a faixa do item ativo encosta na borda esquerda da tela. Com raio e recuo, o
+ * indicador vira um retângulo flutuando no meio do trilho, e a barra deixa de
+ * ler como "você está aqui".
+ */
 .menu__alternar,
 .menu__item {
   display: flex;
@@ -1170,10 +1177,11 @@
   gap: var(--e-3);
   width: 100%;
   min-height: 48px;
-  padding: 0 var(--e-3);
+  /* Recuo à direita só. O ícone fica alinhado com o eixo do trilho. */
+  padding: 0 var(--e-3) 0 0;
   border: 0;
-  border-left: 3px solid transparent;
-  border-radius: var(--raio-1);
+  border-left: 4px solid transparent;
+  border-radius: 0;
   background: transparent;
   color: var(--texto-fraco);
   font: inherit;
@@ -1214,9 +1222,22 @@
   gap: var(--e-1);
 }
 
+/*
+ * O ícone é centrado numa coluna de largura fixa igual ao trilho recolhido
+ * menos a barra do indicador. É isso que o mantém no mesmo eixo quando o menu
+ * expande — sem a coluna, ele desliza junto com o rótulo.
+ */
 .menu__icone {
   position: relative;
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(72px - 4px);
+  flex-shrink: 0;
+}
+
+.menu__alternar > svg {
+  width: calc(72px - 4px);
   flex-shrink: 0;
 }
 
@@ -1755,4 +1776,518 @@
 .cartao[data-selecionado] {
   border-color: var(--marca);
   box-shadow: 0 0 0 2px var(--marca);
+}
+
+/* ── Seletor de lojas ───────────────────────────────────────────────────── */
+
+.seletor { position: relative; }
+
+.seletor__gatilho {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  min-height: var(--alvo);
+  padding: var(--e-2) var(--e-3);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-2);
+  background: var(--superficie-1);
+  color: var(--texto-fraco);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.seletor__gatilho:hover { border-color: var(--marca); }
+
+.seletor__avatares { display: inline-flex; }
+
+/* Sobreposição, como a pilha da referência: diz "são várias" sem listar. */
+.seletor__avatares .seletor__avatar + .seletor__avatar { margin-left: -10px; }
+
+.seletor__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: 2px solid var(--superficie-1);
+  border-radius: 50%;
+  color: #fff;
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+}
+
+.seletor__avatar--resto {
+  background: var(--contagem-fundo);
+  color: var(--contagem-texto);
+}
+
+.seletor__texto { display: flex; flex-direction: column; min-width: 0; }
+.seletor__texto strong {
+  font-size: var(--texto-sm);
+  color: var(--texto);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.seletor__apoio { font-size: var(--texto-xs); color: var(--texto-fraco); }
+
+.seletor__painel {
+  position: absolute;
+  top: calc(100% + var(--e-2));
+  left: 0;
+  z-index: var(--z-sobreposicao);
+  width: min(420px, calc(100vw - 32px));
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  padding: var(--e-3);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-2);
+  background: var(--superficie-1);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.16);
+}
+
+.seletor__cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--e-3);
+}
+
+.seletor__cabecalho h2 { margin: 0; font-size: var(--texto-lg); }
+
+.seletor__contagem {
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.seletor__busca {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  height: var(--alvo);
+  padding: 0 var(--e-3);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-1);
+  color: var(--texto-fraco);
+}
+
+.seletor__busca input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--texto);
+  font: inherit;
+  font-size: var(--texto-base);
+  outline: none;
+}
+
+.seletor__acoes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2);
+  padding: var(--e-2) 0;
+}
+
+.seletor__lista {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.seletor__opcao {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  width: 100%;
+  min-height: 56px;
+  padding: 0 var(--e-2);
+  border: 0;
+  border-radius: var(--raio-1);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.seletor__opcao:hover { background: var(--superficie-3); }
+
+.seletor__marca {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border: 2px solid var(--borda-forte);
+  border-radius: var(--raio-1);
+  color: #fff;
+}
+
+.seletor__opcao[aria-pressed='true'] .seletor__marca {
+  background: var(--marca);
+  border-color: var(--marca);
+}
+
+.seletor__nome { flex: 1; min-width: 0; font-size: var(--texto-base); }
+
+.seletor__ponto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--marca);
+  flex-shrink: 0;
+}
+
+.seletor__vazio {
+  padding: var(--e-4);
+  text-align: center;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+/* ── Farol no cabeçalho ─────────────────────────────────────────────────── */
+
+.barra__farol {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-height: var(--alvo);
+  padding: 0 var(--e-4);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-total);
+  background: var(--superficie-3);
+  color: var(--texto);
+  font: inherit;
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.barra__farol-ponto {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--marca);
+}
+
+.barra__farol[data-estado='alerta'] {
+  border-color: var(--atencao);
+  background: var(--atencao-suave);
+}
+
+.barra__farol[data-estado='alerta'] .barra__farol-ponto { background: var(--atencao); }
+
+.barra__farol-contagem {
+  padding: 1px 7px;
+  border-radius: var(--raio-total);
+  background: var(--atencao);
+  color: var(--texto-inverso);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+}
+
+/* ── Botão com contador ─────────────────────────────────────────────────── */
+
+.contador {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--alvo);
+  height: var(--alvo);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-1);
+  background: var(--superficie-1);
+  color: var(--texto-fraco);
+  cursor: pointer;
+  transition: border-color var(--duracao-rapida) var(--curva);
+}
+
+.contador:hover { border-color: var(--marca); color: var(--texto); }
+
+.contador__distintivo {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--raio-total);
+  background: var(--perigo);
+  color: #fff;
+  font-size: 10px;
+  font-weight: var(--peso-forte);
+  animation: ui-pulsar 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contador__distintivo { animation: none; }
+}
+
+/* ── Farol: conteúdo do modal ───────────────────────────────────────────── */
+
+.farol {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: var(--e-4);
+  min-height: 320px;
+}
+
+@media (max-width: 720px) {
+  .farol { grid-template-columns: 1fr; }
+}
+
+.farol__lojas h3,
+.farol__grupo h4 {
+  margin: 0 0 var(--e-2);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
+}
+
+.farol__lojas ul,
+.farol__grupo ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+.farol__lojas li {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  padding: var(--e-2);
+  border-radius: var(--raio-1);
+  background: var(--superficie-2);
+}
+
+.farol__ponto {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--marca);
+}
+
+.farol__ponto[data-estado='alerta'] { background: var(--atencao); }
+.farol__ponto[data-estado='desconhecido'] { background: var(--texto-apagado); }
+
+.farol__nome { display: flex; flex-direction: column; font-size: var(--texto-sm); }
+.farol__nome small { font-size: var(--texto-xs); color: var(--texto-fraco); }
+
+.farol__detalhe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  border-left: 1px solid var(--borda);
+  padding-left: var(--e-4);
+}
+
+@media (max-width: 720px) {
+  .farol__detalhe { border-left: 0; padding-left: 0; }
+}
+
+.farol__grupo li {
+  padding: var(--e-2) var(--e-3);
+  border-left: 3px solid var(--borda-forte);
+  border-radius: var(--raio-1);
+  background: var(--superficie-2);
+  font-size: var(--texto-sm);
+}
+
+.farol__grupo li[data-gravidade='critico'] {
+  border-left-color: var(--perigo);
+  background: var(--perigo-suave);
+}
+
+.farol__grupo li[data-gravidade='atencao'] {
+  border-left-color: var(--atencao);
+  background: var(--atencao-suave);
+}
+
+.farol__nota {
+  margin: 0 0 var(--e-2);
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+.farol__tudo-bem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-2);
+  padding: var(--e-8) var(--e-4);
+  text-align: center;
+  color: var(--marca);
+}
+
+.farol__tudo-bem p {
+  margin: 0;
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-medio);
+  color: var(--texto);
+}
+
+.farol__tudo-bem small { color: var(--texto-fraco); max-width: 34ch; }
+
+/* ── Cartão de aceite ───────────────────────────────────────────────────── */
+
+.aceite {
+  display: flex;
+  flex-direction: column;
+  background: var(--superficie-1);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-2);
+  overflow: hidden;
+}
+
+.aceite[data-estourou] {
+  border-color: var(--atraso-fundo);
+  box-shadow: 0 0 0 1px var(--atraso-fundo);
+}
+
+.aceite[data-selecionado] {
+  border-color: var(--marca);
+  box-shadow: 0 0 0 2px var(--marca);
+}
+
+.aceite__abrir {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  padding: var(--e-4);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/*
+ * O maior número da interface inteira. No momento do aceite existe uma decisão
+ * só, e ela é tomada contra o relógio — nome, valor e endereço competiriam com
+ * o único dado que importa.
+ */
+.aceite__numero {
+  font-size: 44px;
+  font-weight: var(--peso-forte);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--texto);
+}
+
+.aceite__barra {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  border-radius: var(--raio-total);
+  background: var(--perigo-suave);
+  overflow: hidden;
+}
+
+/*
+ * Duas camadas do mesmo rótulo, cada uma recortada pelo próprio fundo.
+ *
+ * A barra esvazia. Com um texto só, ele passaria do vermelho para o rosa claro
+ * conforme o prazo corre, e ficaria ilegível justamente no fim — quando mais
+ * importa. Assim, cada pedaço do texto tem o contraste do fundo em que está,
+ * sem sombra e sem depender de o preenchimento estar cheio.
+ */
+.aceite__trilho,
+.aceite__preenchimento {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.aceite__trilho { right: 0; }
+
+.aceite__preenchimento {
+  background: var(--atraso-fundo);
+  transition: width 1s linear;
+}
+
+/* O rótulo tem sempre a largura da barra inteira, e é o recorte do pai que
+   decide quanto dele aparece — é o que mantém as duas cópias alinhadas. */
+.aceite__rotulo {
+  position: absolute;
+  left: 0;
+  width: var(--largura-da-barra, 100%);
+  text-align: center;
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-forte);
+  white-space: nowrap;
+}
+
+.aceite__rotulo--trilho { color: var(--perigo); }
+.aceite__rotulo--preenchido { color: var(--atraso-texto); }
+
+.aceite__rodape {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-2);
+  padding: var(--e-2);
+  border-top: 1px solid var(--borda);
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+/* Rodapé de loja no cartão comum, quando o quadro mostra mais de uma. */
+.cartao__rodape {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-1);
+  padding: var(--e-2);
+  border-top: 1px solid var(--borda);
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+/* A coluna Aceitar tem prioridade visual: fundo levemente destacado. */
+.quadros__coluna[data-secao='aceitar'] .ui-painel {
+  background: var(--perigo-suave);
+}
+
+.ajustes__cursores {
+  list-style: none;
+  margin: var(--e-2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.ajustes__cursores li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--e-3);
 }

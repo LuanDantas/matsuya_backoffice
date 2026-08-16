@@ -62,25 +62,15 @@ export function App() {
     )
   }
 
-  if (sessao.unidadeAtual === null) {
+  if (sessao.unidadesAtuais.length === 0) {
     return (
       <EscolhaDeUnidade
         identidade={sessao.identidade}
-        aoEscolher={sessao.escolherUnidade}
+        aoEscolher={(id) => sessao.escolherUnidades([id])}
         aoSair={sessao.sair}
       />
     )
   }
 
-  return (
-    <Casca
-      // Trocar de loja derruba socket, cursor e cache de uma vez. Reaproveitar
-      // o estado entre unidades é como um pedido da Mooca aparece no quadro da
-      // Santana.
-      key={sessao.unidadeAtual}
-      unidadeId={sessao.unidadeAtual}
-      sessao={sessao}
-      agora={agora}
-    />
-  )
+  return <Casca sessao={sessao} agora={agora} />
 }

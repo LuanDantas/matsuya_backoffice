@@ -468,3 +468,34 @@
   min-height: 0;
   padding: 0 var(--e-2) var(--e-2);
 }
+
+/* Distintivo de alerta no cabeçalho da seção. */
+.ui-painel__alerta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--raio-total);
+  background: var(--perigo);
+  color: #fff;
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+  animation: ui-pulsar 1.8s ease-in-out infinite;
+}
+
+/*
+ * O pulso é lento de propósito. Piscar rápido no campo periférico de quem
+ * trabalha seis horas vira desconforto, e desconforto vira "eu já vi, ignora".
+ */
+@keyframes ui-pulsar {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(220 38 38 / 0.5); }
+  50% { box-shadow: 0 0 0 6px rgb(220 38 38 / 0); }
+}
+
+/* Movimento reduzido: o distintivo continua visível, só para de pulsar. A
+   informação está no número e na cor, não no movimento. */
+@media (prefers-reduced-motion: reduce) {
+  .ui-painel__alerta { animation: none; }
+}

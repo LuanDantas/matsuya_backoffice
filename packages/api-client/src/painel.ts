@@ -39,3 +39,22 @@ export function criarApiDePainel(cliente: ApiClient) {
 }
 
 export type ApiDePainel = ReturnType<typeof criarApiDePainel>
+
+/**
+ * Alertas de uma loja, para o Farol da Operação.
+ *
+ * Exige `orders:read`, e não `reports:read` como o painel: o farol é
+ * operacional, e o atendente precisa saber que há pedido atrasado na loja dele.
+ */
+export interface AlertasDaUnidade {
+  atrasados: number
+  canceladosDuasHoras: number
+  itensPausados: number
+}
+
+export function criarApiDeAlertas(cliente: ApiClient) {
+  return {
+    daUnidade: (unityId: number, signal?: AbortSignal) =>
+      cliente.requisitar<AlertasDaUnidade>(`/stores/${unityId}/alerts`, { signal }),
+  }
+}

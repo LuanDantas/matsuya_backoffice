@@ -3,7 +3,7 @@ import { Sincronizador, type EstadoDeSincronia } from '@matsuya/realtime'
 import type { Mudanca, RespostaDeMudancas } from '@matsuya/contracts'
 
 /**
- * Liga o socket ao sincronizador de cursor.
+ * Liga o socket aos sincronizadores de cursor.
  *
  * A divisão de trabalho: o socket entrega evento rápido, o sincronizador
  * garante que nenhum se perca. Se o socket cair inteiro, o modo degradado
@@ -12,13 +12,20 @@ import type { Mudanca, RespostaDeMudancas } from '@matsuya/contracts'
  *
  * É por isso que a loja pode continuar trabalhando com a internet ruim: a
  * degradação é de latência, não de correção.
+ *
+ * **Um socket, N lojas.** O servidor entra numa sala por chamada de
+ * `subscribe`, e um socket pode estar em várias — então acompanhar cinco lojas
+ * custa uma conexão, não cinco. O que precisa ser por loja é o **cursor**:
+ * `seq` é monotônico por unidade, e um cursor compartilhado veria buraco em
+ * toda mudança. Daí um `Sincronizador` por loja, e o roteamento do evento pelo
+ * `unityId` que ele carrega.
  */
 
 export type EstadoDaConexao = 'conectando' | 'ao-vivo' | 'degradado' | 'desconectado'
 
 export interface OpcoesDaConexao {
   urlDoSocket: string
-  unityId: number
+  unityIds: number[]
   obterToken: () => string | null
   buscarMudancas: (params: {
     unityId: number
@@ -26,7 +33,8 @@ export interface OpcoesDaConexao {
     limit: number
   }) => Promise<RespostaDeMudancas>
   aplicar: (mudanca: Mudanca) => void
-  aoExigirRecarga: () => void
+  /** Recebe a loja que precisa recarregar — só ela, não o quadro inteiro. */
+  aoExigirRecarga: (unityId: number) => void
   aoMudarEstado: (estado: EstadoDaConexao) => void
   aoMudarSincronia?: (estado: EstadoDeSincronia) => void
 }
@@ -38,7 +46,7 @@ const CARENCIA_ATE_DEGRADAR = 30_000
 
 export class Conexao {
   private socket: Socket | null = null
-  private readonly sincronizador: Sincronizador
+  private readonly sincronizadores = new Map<number, Sincronizador>()
   private temporizadorDeHeartbeat: ReturnType<typeof setInterval> | null = null
   private temporizadorDegradado: ReturnType<typeof setInterval> | null = null
   private temporizadorDeCarencia: ReturnType<typeof setTimeout> | null = null
@@ -55,17 +63,23 @@ export class Conexao {
   private desvioDeRelogio = 0
 
   constructor(private readonly opcoes: OpcoesDaConexao) {
-    this.sincronizador = new Sincronizador({
-      unityId: opcoes.unityId,
-      buscarMudancas: opcoes.buscarMudancas,
-      aplicar: opcoes.aplicar,
-      aoExigirRecarga: opcoes.aoExigirRecarga,
-      aoMudarEstado: (e) => opcoes.aoMudarSincronia?.(e),
-    })
+    for (const unityId of opcoes.unityIds) {
+      this.sincronizadores.set(
+        unityId,
+        new Sincronizador({
+          unityId,
+          buscarMudancas: opcoes.buscarMudancas,
+          aplicar: opcoes.aplicar,
+          aoExigirRecarga: () => opcoes.aoExigirRecarga(unityId),
+          aoMudarEstado: (e) => opcoes.aoMudarSincronia?.(e),
+        })
+      )
+    }
   }
 
-  get cursor(): number {
-    return this.sincronizador.cursorAtual
+  /** Cursor de uma loja. Cada uma tem o seu, porque `seq` é por unidade. */
+  cursorDe(unityId: number): number {
+    return this.sincronizadores.get(unityId)?.cursorAtual ?? 0
   }
 
   /** Agora segundo o servidor. Base de todo cronômetro exibido no quadro. */
@@ -73,8 +87,8 @@ export class Conexao {
     return Date.now() + this.desvioDeRelogio
   }
 
-  iniciarEm(cursor: number) {
-    this.sincronizador.iniciarEm(cursor)
+  iniciarEm(unityId: number, cursor: number) {
+    this.sincronizadores.get(unityId)?.iniciarEm(cursor)
   }
 
   conectar() {
@@ -98,7 +112,11 @@ export class Conexao {
     })
 
     this.socket.on('order.status_changed', (evento: unknown) => {
-      this.sincronizador.aoReceberEvento(evento)
+      // Roteia pelo `unityId` do envelope. Entregar a todos os sincronizadores
+      // funcionaria — cada um descarta o que não é dele —, mas esconderia um
+      // evento de loja não assinada, que é sintoma de sala errada no servidor.
+      const unityId = Number((evento as { unityId?: number } | null)?.unityId)
+      this.sincronizadores.get(unityId)?.aoReceberEvento(evento)
     })
 
     this.socket.on('disconnect', () => {
@@ -117,52 +135,59 @@ export class Conexao {
   }
 
   private assinar() {
-    this.socket?.emit(
-      'subscribe',
-      { storeId: this.opcoes.unityId, channels: ['orders'] },
-      (resposta: { ok?: boolean; cursor?: number; error?: string }) => {
-        if (!resposta?.ok) {
-          // Escopo ou permissão negados: reconectar não resolve, e insistir só
-          // gera ruído. O modo degradado também não vai funcionar, porque o
-          // HTTP responderia o mesmo 403.
-          this.mudarEstado('desconectado')
-          return
+    let concedidas = 0
+
+    for (const unityId of this.opcoes.unityIds) {
+      this.socket?.emit(
+        'subscribe',
+        { storeId: unityId, channels: ['orders'] },
+        (resposta: { ok?: boolean; cursor?: number; error?: string }) => {
+          if (!resposta?.ok) {
+            // Escopo ou permissão negados nesta loja. Não derruba as outras:
+            // insistir não resolve, e o HTTP responderia o mesmo 403.
+            return
+          }
+
+          concedidas += 1
+          this.mudarEstado('ao-vivo')
+
+          // Cursor do servidor no momento da assinatura. Se estiver à frente
+          // do nosso, perdemos eventos enquanto estávamos fora — e é aqui que
+          // a reconexão recupera o que passou.
+          if (typeof resposta.cursor === 'number') {
+            this.sincronizadores.get(unityId)?.aoReceberHeartbeat(resposta.cursor)
+          }
+
+          if (concedidas === 1) this.iniciarHeartbeat()
         }
-
-        this.mudarEstado('ao-vivo')
-
-        // Cursor do servidor no momento da assinatura. Se estiver à frente do
-        // nosso, perdemos eventos enquanto estávamos fora — e é exatamente
-        // aqui que a reconexão recupera o que passou.
-        if (typeof resposta.cursor === 'number') {
-          this.sincronizador.aoReceberHeartbeat(resposta.cursor)
-        }
-
-        this.iniciarHeartbeat()
-      }
-    )
+      )
+    }
   }
 
   private iniciarHeartbeat() {
     this.pararHeartbeat()
     this.temporizadorDeHeartbeat = setInterval(() => {
-      const enviadoEm = Date.now()
-      this.socket?.emit(
-        'ops:heartbeat',
-        { storeId: this.opcoes.unityId, cursor: this.sincronizador.cursorAtual },
-        (resposta: { serverCursor: number | null; serverTime: string }) => {
-          if (!resposta) return
+      // Uma batida por loja: o cursor é por unidade, e uma batida só não teria
+      // como perguntar por todas.
+      for (const [unityId, sincronizador] of this.sincronizadores) {
+        const enviadoEm = Date.now()
+        this.socket?.emit(
+          'ops:heartbeat',
+          { storeId: unityId, cursor: sincronizador.cursorAtual },
+          (resposta: { serverCursor: number | null; serverTime: string }) => {
+            if (!resposta) return
 
-          // Metade da ida e volta é uma aproximação boa o bastante do atraso
-          // de rede; o erro residual é de dezenas de milissegundos, contra
-          // minutos de desvio do relógio do tablet.
-          const meiaViagem = (Date.now() - enviadoEm) / 2
-          this.desvioDeRelogio =
-            new Date(resposta.serverTime).getTime() + meiaViagem - Date.now()
+            // Metade da ida e volta é uma aproximação boa o bastante do atraso
+            // de rede; o erro residual é de dezenas de milissegundos, contra
+            // minutos de desvio do relógio do tablet.
+            const meiaViagem = (Date.now() - enviadoEm) / 2
+            this.desvioDeRelogio =
+              new Date(resposta.serverTime).getTime() + meiaViagem - Date.now()
 
-          this.sincronizador.aoReceberHeartbeat(resposta.serverCursor)
-        }
-      )
+            sincronizador.aoReceberHeartbeat(resposta.serverCursor)
+          }
+        )
+      }
     }, INTERVALO_DO_HEARTBEAT)
   }
 
@@ -183,10 +208,13 @@ export class Conexao {
   private iniciarModoDegradado() {
     if (this.temporizadorDegradado) return
     this.mudarEstado('degradado')
-    void this.sincronizador.recuperar()
-    this.temporizadorDegradado = setInterval(() => {
-      void this.sincronizador.recuperar()
-    }, INTERVALO_DEGRADADO)
+    const recuperarTodas = () => {
+      for (const sincronizador of this.sincronizadores.values()) {
+        void sincronizador.recuperar()
+      }
+    }
+    recuperarTodas()
+    this.temporizadorDegradado = setInterval(recuperarTodas, INTERVALO_DEGRADADO)
   }
 
   private pararModoDegradado() {

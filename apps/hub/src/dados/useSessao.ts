@@ -20,7 +20,7 @@ import { config } from '../app/config'
  */
 
 const CHAVE_TOKEN = 'matsuya.hub.token'
-const CHAVE_UNIDADE = 'matsuya.hub.unidade'
+const CHAVE_UNIDADES = 'matsuya.hub.unidades'
 
 export type EstadoDaSessao = 'verificando' | 'anonima' | 'ativa' | 'falha'
 
@@ -28,12 +28,19 @@ export interface Sessao {
   estado: EstadoDaSessao
   identidade: Identidade | null
   permissoes: ReadonlySet<string>
-  unidadeAtual: number | null
+  /**
+   * Lojas que o quadro está acompanhando.
+   *
+   * Vazio significa "ainda não escolheu" — a tela de escolha aparece. Depois de
+   * escolher, nunca volta a ficar vazio: um quadro sem loja não é um estado
+   * útil, é uma tela em branco que o operador não sabe desfazer.
+   */
+  unidadesAtuais: number[]
   erro: string | null
   token: string | null
   entrar: (token: string) => void
   sair: () => void
-  escolherUnidade: (unityId: number | null) => void
+  escolherUnidades: (unityIds: number[]) => void
   pode: (permissao: string) => boolean
 }
 
@@ -45,9 +52,13 @@ export function useSessao(): Sessao {
     () => (localStorage.getItem(CHAVE_TOKEN) ? 'verificando' : 'anonima')
   )
   const [identidade, definirIdentidade] = useState<Identidade | null>(null)
-  const [unidadeAtual, definirUnidadeAtual] = useState<number | null>(() => {
-    const guardada = Number(localStorage.getItem(CHAVE_UNIDADE))
-    return Number.isInteger(guardada) && guardada > 0 ? guardada : null
+  const [unidadesAtuais, definirUnidadesAtuais] = useState<number[]>(() => {
+    try {
+      const guardadas = JSON.parse(localStorage.getItem(CHAVE_UNIDADES) ?? '[]')
+      return Array.isArray(guardadas) ? guardadas.filter((n) => Number.isInteger(n)) : []
+    } catch {
+      return []
+    }
   })
   const [erro, definirErro] = useState<string | null>(null)
 
@@ -83,9 +94,12 @@ export function useSessao(): Sessao {
         // ou porque o tablet trocou de dono — não pode continuar selecionada.
         // Sem esta checagem, o quadro abriria vazio e sem explicação.
         const permitidas = eu.units.map((u) => u.id)
-        definirUnidadeAtual((atual) => {
-          if (atual !== null && permitidas.includes(atual)) return atual
-          return permitidas.length === 1 ? permitidas[0]! : null
+        definirUnidadesAtuais((atuais) => {
+          const validas = atuais.filter((id) => permitidas.includes(id))
+          if (validas.length > 0) return validas
+          // Com uma loja só não há escolha a fazer: abrir um seletor de um item
+          // é pedir um toque que não decide nada.
+          return permitidas.length === 1 ? [permitidas[0]!] : []
         })
       })
       .catch((falha) => {
@@ -113,9 +127,9 @@ export function useSessao(): Sessao {
   }, [api, token])
 
   useEffect(() => {
-    if (unidadeAtual === null) localStorage.removeItem(CHAVE_UNIDADE)
-    else localStorage.setItem(CHAVE_UNIDADE, String(unidadeAtual))
-  }, [unidadeAtual])
+    if (unidadesAtuais.length === 0) localStorage.removeItem(CHAVE_UNIDADES)
+    else localStorage.setItem(CHAVE_UNIDADES, JSON.stringify(unidadesAtuais))
+  }, [unidadesAtuais])
 
   const permissoes = useMemo(
     () => new Set(identidade?.permissions ?? []),
@@ -129,9 +143,9 @@ export function useSessao(): Sessao {
 
   const sair = useCallback(() => {
     localStorage.removeItem(CHAVE_TOKEN)
-    localStorage.removeItem(CHAVE_UNIDADE)
+    localStorage.removeItem(CHAVE_UNIDADES)
     definirToken(null)
-    definirUnidadeAtual(null)
+    definirUnidadesAtuais([])
     definirIdentidade(null)
     definirErro(null)
   }, [])
@@ -142,12 +156,12 @@ export function useSessao(): Sessao {
     estado,
     identidade,
     permissoes,
-    unidadeAtual,
+    unidadesAtuais,
     erro,
     token,
     entrar,
     sair,
-    escolherUnidade: definirUnidadeAtual,
+    escolherUnidades: definirUnidadesAtuais,
     pode,
   }
 }

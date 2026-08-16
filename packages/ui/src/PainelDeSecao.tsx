@@ -16,6 +16,14 @@ import { Icone } from './Icone'
 export interface PropsDoPainel {
   titulo: string
   contagem?: number
+  /**
+   * Quantidade de itens fora do prazo nesta seção.
+   *
+   * Vira um distintivo pulsante ao lado da contagem. Pulsa **só** enquanto for
+   * maior que zero, e para com `prefers-reduced-motion`: animação infinita na
+   * visão periférica de quem trabalha seis horas é cansaço, não alerta.
+   */
+  alertas?: number
   /** Chips à direita do título — usados pelo modo denso. */
   acessorio?: ReactNode
   /** Habilita o recolher. Só o modo Expedição usa. */
@@ -30,6 +38,7 @@ export interface PropsDoPainel {
 export function PainelDeSecao({
   titulo,
   contagem,
+  alertas = 0,
   acessorio,
   recolhivel = false,
   recolhido = false,
@@ -46,6 +55,15 @@ export function PainelDeSecao({
           {titulo}
           {typeof contagem === 'number' && (
             <span className="ui-painel__contagem num">{contagem}</span>
+          )}
+
+          {alertas > 0 && (
+            <span className="ui-painel__alerta num" role="status">
+              <span className="ui-visualmente-oculto">
+                {alertas === 1 ? '1 pedido fora do prazo' : `${alertas} pedidos fora do prazo`}
+              </span>
+              <span aria-hidden="true">{alertas}</span>
+            </span>
           )}
         </h2>
 

@@ -1,18 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { Mudanca, OrderStatus } from '@matsuya/contracts'
+import type { Mudanca } from '@matsuya/contracts'
 import { createApiClient, criarApiDePedidos, type PedidoDoQuadro } from '@matsuya/api-client'
 import type { EstadoDeSincronia } from '@matsuya/realtime'
 import { Conexao, type EstadoDaConexao } from './conexao'
 import { config } from '../app/config'
 
 /**
- * O estado do quadro da loja.
+ * O estado do quadro, de uma ou de várias lojas.
  *
- * O ponto que importa: **evento de socket escreve direto no cache**, sem
- * invalidar nada. Invalidar traria a lista inteira de volta a cada mudança de
- * status — numa loja com movimento, isso é uma rajada de requisições no exato
- * momento em que ela menos pode esperar por uma. O `summary` que viaja no
- * evento existe justamente para tornar essa escrita possível.
+ * Dois pontos que decidem o comportamento:
+ *
+ * **Evento de socket escreve direto no cache.** Invalidar traria a lista
+ * inteira de volta a cada mudança de status — numa loja com movimento, uma
+ * rajada de requisições no momento em que ela menos pode esperar por uma. O
+ * `summary` que viaja no evento existe justamente para tornar essa escrita
+ * possível.
+ *
+ * **Um cursor por loja.** `seq` é monotônico por unidade; um cursor
+ * compartilhado veria buraco em toda mudança e pediria o intervalo a cada
+ * evento. A `Conexao` mantém um sincronizador por loja sobre um socket só.
  */
 
 export interface EstadoDoQuadro {
@@ -21,23 +27,34 @@ export interface EstadoDoQuadro {
   erro: string | null
   conexao: EstadoDaConexao
   sincronia: EstadoDeSincronia
-  cursor: number
-  /** Agora segundo o servidor, para os cronômetros de SLA. */
+  /** Cursor por loja, para o diagnóstico em Ajustes. */
+  cursores: ReadonlyMap<number, number>
   agoraDoServidor: () => number
   recarregar: () => void
 }
 
-export function useQuadro(unityId: number, token: string | null): EstadoDoQuadro {
+export function useQuadro(unityIds: number[], token: string | null): EstadoDoQuadro {
   const [pedidos, definirPedidos] = useState<PedidoDoQuadro[]>([])
   const [carregando, definirCarregando] = useState(true)
   const [erro, definirErro] = useState<string | null>(null)
   const [conexao, definirConexao] = useState<EstadoDaConexao>('conectando')
   const [sincronia, definirSincronia] = useState<EstadoDeSincronia>('inicial')
-  const [cursor, definirCursor] = useState(0)
+  const [cursores, definirCursores] = useState<ReadonlyMap<number, number>>(new Map())
 
   const conexaoRef = useRef<Conexao | null>(null)
   const tokenRef = useRef(token)
   tokenRef.current = token
+
+  // A lista de ids muda de identidade a cada render; a chave estável evita
+  // derrubar socket e cursores sem que a seleção tenha mudado de verdade.
+  const chaveDasLojas = useMemo(
+    () => [...unityIds].sort((a, b) => a - b).join(','),
+    [unityIds]
+  )
+  const lojas = useMemo(
+    () => chaveDasLojas.split(',').filter(Boolean).map(Number),
+    [chaveDasLojas]
+  )
 
   const api = useMemo(() => {
     const cliente = createApiClient({
@@ -50,30 +67,23 @@ export function useQuadro(unityId: number, token: string | null): EstadoDoQuadro
   /**
    * Aplica uma mudança do diário no cache local.
    *
-   * `summary` traz o suficiente para redesenhar a linha. Pedido que ainda não
-   * está na lista é inserido — é assim que um pedido novo aparece no quadro —,
-   * e pedido que saiu dos estados ativos é removido, porque o quadro mostra
-   * fila de trabalho, não histórico.
+   * Pedido desconhecido é inserido — é assim que um pedido novo aparece no
+   * quadro. Versão mais velha chegando depois é descartada: o socket não
+   * garante ordem entre reconexões, e sobrescrever com o passado faria a tela
+   * andar para trás.
    */
   const aplicar = useCallback((mudanca: Mudanca) => {
     const resumo = mudanca.summary as Partial<PedidoDoQuadro> | undefined
     if (!resumo || typeof resumo.status !== 'string') return
 
-    definirCursor(mudanca.seq)
-
     definirPedidos((atuais) => {
       const indice = atuais.findIndex((p) => p.id === mudanca.entityId)
 
       if (indice === -1) {
-        // Pedido desconhecido. Sem os campos completos, entra com o que o
-        // resumo traz; o próximo carregamento completa o resto.
         return [{ ...(resumo as PedidoDoQuadro), id: mudanca.entityId }, ...atuais]
       }
 
       const atualizado = { ...atuais[indice]!, ...resumo }
-
-      // Versão mais velha chegando depois: o socket não garante ordem entre
-      // reconexões, e sobrescrever com o passado faria a tela andar para trás.
       if (atualizado.version < atuais[indice]!.version) return atuais
 
       const proximos = [...atuais]
@@ -82,48 +92,67 @@ export function useQuadro(unityId: number, token: string | null): EstadoDoQuadro
     })
   }, [])
 
-  const carregarSnapshot = useCallback(async () => {
+  const carregarLoja = useCallback(
+    async (unityId: number) => {
+      const quadro = await api.quadroDaLoja({ unityId })
+
+      definirPedidos((atuais) => [
+        // Troca só os pedidos desta loja; os das outras ficam onde estavam. Sem
+        // isso, recarregar uma unidade limparia o quadro inteiro por um
+        // instante, e o operador veria a fila sumir.
+        ...atuais.filter((p) => p.unityId !== unityId),
+        ...quadro.orders,
+      ])
+
+      definirCursores((atuais) => new Map(atuais).set(unityId, quadro.cursor))
+      conexaoRef.current?.iniciarEm(unityId, quadro.cursor)
+    },
+    [api]
+  )
+
+  const carregarTudo = useCallback(async () => {
     definirCarregando(true)
     definirErro(null)
+
     try {
-      const quadro = await api.quadroDaLoja({ unityId })
-      definirPedidos(quadro.orders)
-      definirCursor(quadro.cursor)
-      conexaoRef.current?.iniciarEm(quadro.cursor)
+      await Promise.all(lojas.map(carregarLoja))
     } catch (falha) {
       definirErro(falha instanceof Error ? falha.message : 'Falha ao carregar o quadro.')
     } finally {
       definirCarregando(false)
     }
-  }, [api, unityId])
+  }, [carregarLoja, lojas])
 
   useEffect(() => {
-    if (!token) return
+    if (!token || lojas.length === 0) return
 
     const conexao = new Conexao({
       urlDoSocket: config.socketUrl,
-      unityId,
+      unityIds: lojas,
       obterToken: () => tokenRef.current,
       buscarMudancas: (params) => api.mudancas(params),
       aplicar,
-      aoExigirRecarga: () => void carregarSnapshot(),
+      // Só a loja que pediu recarrega. Recarregar tudo por causa de uma
+      // unidade jogaria fora o cursor das outras sem motivo.
+      aoExigirRecarga: (unityId) => void carregarLoja(unityId),
       aoMudarEstado: definirConexao,
       aoMudarSincronia: definirSincronia,
     })
 
     conexaoRef.current = conexao
-    void carregarSnapshot().then(() => conexao.conectar())
+    void carregarTudo().then(() => conexao.conectar())
 
     return () => {
       conexao.desconectar()
       conexaoRef.current = null
+      // Limpa ao trocar a seleção: manter os pedidos da loja que saiu faria o
+      // quadro mostrar uma unidade que ninguém está mais acompanhando.
+      definirPedidos([])
+      definirCursores(new Map())
     }
-  }, [api, aplicar, carregarSnapshot, token, unityId])
+  }, [api, aplicar, carregarLoja, carregarTudo, token, lojas])
 
-  const agoraDoServidor = useCallback(
-    () => conexaoRef.current?.agora() ?? Date.now(),
-    []
-  )
+  const agoraDoServidor = useCallback(() => conexaoRef.current?.agora() ?? Date.now(), [])
 
   return {
     pedidos,
@@ -131,65 +160,8 @@ export function useQuadro(unityId: number, token: string | null): EstadoDoQuadro
     erro,
     conexao,
     sincronia,
-    cursor,
+    cursores,
     agoraDoServidor,
-    recarregar: () => void carregarSnapshot(),
+    recarregar: () => void carregarTudo(),
   }
 }
-
-/**
- * Seções do quadro, na ordem do caminho físico do pedido dentro da loja.
- *
- * Um rótulo por densidade: o modo Quadros tem largura para "Aguardando
- * entregador", o modo Expedição não — e um título que quebra em duas linhas
- * empurra o cartão para fora da dobra.
- *
- * O texto de vazio não é decoração: sem ele, uma coluna em branco é ambígua —
- * não dá para saber se não há pedido ou se a tela falhou. Numa cozinha, essa
- * dúvida vira uma ligação para o suporte.
- */
-export interface SecaoDoQuadro {
-  status: OrderStatus
-  titulo: string
-  tituloCurto: string
-  vazio: string
-}
-
-export const SECOES: ReadonlyArray<SecaoDoQuadro> = [
-  {
-    status: 'pending',
-    titulo: 'Novos',
-    tituloCurto: 'Novos',
-    vazio: 'Nada aguardando aceite.',
-  },
-  {
-    status: 'confirmed',
-    titulo: 'Aceitos',
-    tituloCurto: 'Aceitos',
-    vazio: 'Nada aguardando preparo.',
-  },
-  {
-    status: 'preparing',
-    titulo: 'Em preparo',
-    tituloCurto: 'Preparo',
-    vazio: 'A cozinha está livre.',
-  },
-  {
-    status: 'ready',
-    titulo: 'Prontos',
-    tituloCurto: 'Prontos',
-    vazio: 'Nada esperando no balcão.',
-  },
-  {
-    status: 'awaiting_courier',
-    titulo: 'Aguardando entregador',
-    tituloCurto: 'Aguard. entregador',
-    vazio: 'Nenhum pedido esperando motoboy.',
-  },
-  {
-    status: 'out_for_delivery',
-    titulo: 'Em rota',
-    tituloCurto: 'Em rota',
-    vazio: 'Nada na rua.',
-  },
-]

@@ -17,7 +17,8 @@ export function Ajustes({
   som,
   impressao,
   conexao,
-  cursor,
+  cursores,
+  nomesDasUnidades,
 }: {
   som: { estado: EstadoDoSom; destravar: () => void; silenciar: () => void; religar: () => void }
   impressao: {
@@ -27,7 +28,9 @@ export function Ajustes({
     tentarDeNovo: () => void
   }
   conexao: string
-  cursor: number
+  /** Cursor por loja: cada uma tem o seu, porque `seq` é por unidade. */
+  cursores: ReadonlyMap<number, number>
+  nomesDasUnidades: ReadonlyMap<number, string>
 }) {
   return (
     <main className="ajustes">
@@ -113,9 +116,17 @@ export function Ajustes({
           <div>
             <strong>Estado</strong>
             <p>
-              Cursor do diário da loja: <span className="num">#{cursor}</span>. É por ele
-              que o Hub sabe se perdeu algum evento.
+              Cursor do diário de cada loja. É por ele que o Hub sabe se perdeu
+              algum evento — e há um por unidade, porque a sequência é por loja.
             </p>
+            <ul className="ajustes__cursores">
+              {[...cursores].map(([unityId, cursor]) => (
+                <li key={unityId}>
+                  {nomesDasUnidades.get(unityId) ?? `Unidade ${unityId}`}
+                  <span className="num">#{cursor}</span>
+                </li>
+              ))}
+            </ul>
           </div>
           <Selo>{conexao}</Selo>
         </div>
