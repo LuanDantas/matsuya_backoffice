@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Botao, Modal, Selo } from '@matsuya/ui'
 import {
   ORDER_ACTION_INFO,
@@ -9,6 +9,7 @@ import {
 } from '@matsuya/contracts'
 import type { PedidoDoQuadro } from '@matsuya/api-client'
 import { moeda, decorrido } from '../../app/formato'
+import { Chat } from '../chat/Chat'
 
 /**
  * Detalhe do pedido.
@@ -28,6 +29,8 @@ export function DetalheDoPedido({
   ocupado,
   aoPedirAcao,
   aoFechar,
+  token,
+  aoReimprimir,
 }: {
   pedido: PedidoDoQuadro | null
   permissoes: ReadonlySet<string>
@@ -35,7 +38,10 @@ export function DetalheDoPedido({
   ocupado: boolean
   aoPedirAcao: (acao: OrderAction) => void
   aoFechar: () => void
+  token: string | null
+  aoReimprimir: () => void
 }) {
+  const [aba, definirAba] = useState<'pedido' | 'conversa'>('pedido')
   const acoes = useMemo(() => {
     if (!pedido) return []
     return acoesDisponiveis(
@@ -62,6 +68,9 @@ export function DetalheDoPedido({
           <Botao enfase="fantasma" onClick={aoFechar}>
             Fechar
           </Botao>
+          <Botao enfase="secundaria" onClick={aoReimprimir}>
+            Reimprimir
+          </Botao>
           {acoes.map((acao) => {
             const info = ORDER_ACTION_INFO[acao]
             return (
@@ -78,6 +87,36 @@ export function DetalheDoPedido({
         </>
       }
     >
+      <div className="detalhe__abas" role="tablist" aria-label="Seções do pedido">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={aba === 'pedido'}
+          className="detalhe__aba"
+          onClick={() => definirAba('pedido')}
+        >
+          Pedido
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={aba === 'conversa'}
+          className="detalhe__aba"
+          onClick={() => definirAba('conversa')}
+        >
+          Conversa
+        </button>
+      </div>
+
+      {aba === 'conversa' ? (
+        <Chat
+          orderId={pedido.id}
+          codigoDoPedido={pedido.code}
+          token={token}
+          podeEscrever={permissoes.has('chat:write')}
+        />
+      ) : (
+        <>
       <div className="detalhe__topo">
         <Selo tom={ORDER_STATUS_TONE[pedido.status]}>{ORDER_STATUS_LABEL[pedido.status]}</Selo>
         {pedido.hasPartialCancellation && <Selo tom="atencao" icone="alerta">Item cancelado</Selo>}
@@ -156,6 +195,8 @@ export function DetalheDoPedido({
           </div>
         </dl>
       </section>
+        </>
+      )}
     </Modal>
   )
 }

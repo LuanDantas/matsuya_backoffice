@@ -9,11 +9,19 @@
 export interface ConfigDoHub {
   apiBaseUrl: string
   socketUrl: string
+  /**
+   * Agente local de impressão, ex.: `http://localhost:9100`. Ausente ⇒ o Hub
+   * cai para a impressão pelo navegador, que exige alguém confirmar o diálogo.
+   */
+  urlDoAgenteDeImpressao?: string
+  /** Largura da bobina da impressora térmica da loja. */
+  larguraDoPapel?: 58 | 80
 }
 
 export const config: ConfigDoHub = {
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3001/api/v1',
   socketUrl: import.meta.env.VITE_SOCKET_URL ?? 'http://localhost:3001',
+  larguraDoPapel: 80,
 }
 
 /** Sobrescreve com o que estiver em `public/config.json`, se existir. */

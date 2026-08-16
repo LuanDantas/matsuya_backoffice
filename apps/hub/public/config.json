@@ -1,4 +1,6 @@
 {
   "apiBaseUrl": "http://localhost:3001/api/v1",
-  "socketUrl": "http://localhost:3001"
+  "socketUrl": "http://localhost:3001",
+  "larguraDoPapel": 80,
+  "_comentario": "urlDoAgenteDeImpressao: preencher quando o agente local existir na loja"
 }

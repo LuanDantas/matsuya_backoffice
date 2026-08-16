@@ -26,6 +26,9 @@ importers:
       '@matsuya/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@matsuya/printing':
+        specifier: workspace:*
+        version: link:../../packages/printing
       '@matsuya/realtime':
         specifier: workspace:*
         version: link:../../packages/realtime
@@ -63,6 +66,9 @@ importers:
       vite:
         specifier: ^7.1.9
         version: 7.3.6
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7
 
   packages/api-client:
     dependencies:
@@ -87,6 +93,22 @@ importers:
       zod:
         specifier: ^3.25.76
         version: 3.25.76
+    devDependencies:
+      '@matsuya/config':
+        specifier: workspace:*
+        version: link:../config
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7
+
+  packages/printing:
+    dependencies:
+      '@matsuya/contracts':
+        specifier: workspace:*
+        version: link:../contracts
     devDependencies:
       '@matsuya/config':
         specifier: workspace:*

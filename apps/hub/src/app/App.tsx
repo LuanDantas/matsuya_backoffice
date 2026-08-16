@@ -7,12 +7,17 @@ import {
   type PedidoDoQuadro,
 } from '@matsuya/api-client'
 import { ORDER_ACTION_INFO, type OrderAction } from '@matsuya/contracts'
+import { FalhaDeRede } from '@matsuya/api-client'
 import { useSessao } from '../dados/useSessao'
 import { useQuadro } from '../dados/useQuadro'
 import { Quadro } from '../modules/quadro/Quadro'
 import { ConfirmacaoDeAcao } from '../modules/quadro/ConfirmacaoDeAcao'
 import { DetalheDoPedido } from '../modules/quadro/DetalheDoPedido'
 import { Excecoes, apurarExcecoes } from '../modules/excecoes/Excecoes'
+import { useAlertas } from '../som/useAlertas'
+import { useFilaOffline } from '../offline/useFilaOffline'
+import { Reconciliacao } from '../offline/Reconciliacao'
+import { useImpressao } from '../impressao/useImpressao'
 import { Entrada } from '../modules/sessao/Entrada'
 import { EscolhaDeUnidade } from '../modules/sessao/EscolhaDeUnidade'
 import { config } from './config'
@@ -128,10 +133,14 @@ function QuadroDaLoja({
     return criarApiDePedidos(cliente)
   }, [sessao.token])
 
-  const agora = quadro.agoraDoServidor()
-
   const unidade = sessao.identidade?.units.find((u) => u.id === unidadeId)
   const podeTrocar = (sessao.identidade?.units.length ?? 0) > 1
+
+  const agora = quadro.agoraDoServidor()
+
+  const som = useAlertas(quadro.pedidos, true)
+  const impressao = useImpressao(unidade?.name ?? `Unidade ${unidadeId}`)
+  const fila = useFilaOffline(unidadeId, api, quadro.recarregar)
 
   const excecoes = useMemo(
     () => apurarExcecoes(quadro.pedidos, agora),
@@ -183,9 +192,29 @@ function QuadroDaLoja({
             texto: 'Seu acesso não permite esta ação. Chame o responsável da loja.',
             tom: 'perigo',
           })
+        } else if (falha instanceof FalhaDeRede && fila.disponivel) {
+          // Sem rede: a ação vai para a fila e sai quando a conexão voltar.
+          // Perder o aceite porque o Wi-Fi caiu seria o pior desfecho — o
+          // operador fez o trabalho e o cliente continua esperando.
+          await fila.enfileirar({
+            unityId: unidadeId,
+            orderId: pedido.id,
+            codigoDoPedido: pedido.code,
+            acao,
+            statusAlvo: ORDER_ACTION_INFO[acao].para,
+            reasonCode,
+            reasonNote,
+            versaoEsperada: pedido.version,
+          })
+          definirAviso({
+            texto: 'Sem conexão. A ação foi guardada e será enviada quando a rede voltar.',
+            tom: 'atencao',
+          })
         } else if (falha instanceof FalhaDaApi) {
+          som.tocarErro()
           definirAviso({ texto: falha.message, tom: 'perigo' })
         } else {
+          som.tocarErro()
           definirAviso({
             texto: 'Não foi possível concluir. Verifique a conexão e tente de novo.',
             tom: 'perigo',
@@ -199,7 +228,7 @@ function QuadroDaLoja({
         })
       }
     },
-    [api, quadro]
+    [api, quadro, fila, som, unidadeId]
   )
 
   /**
@@ -224,6 +253,24 @@ function QuadroDaLoja({
 
   const abrirDetalhe = useCallback((pedido: PedidoDoQuadro) => definirDetalhe(pedido.id), [])
 
+  /**
+   * Comanda sai no aceite.
+   *
+   * Antes disso o pedido ainda pode ser recusado — e comanda de pedido recusado
+   * é papel jogado fora com a cozinha começando o que não devia. Depois disso é
+   * atraso puro. O próprio hook garante uma via por pedido.
+   */
+  useEffect(() => {
+    for (const pedido of quadro.pedidos) {
+      if (pedido.status === 'confirmed') impressao.imprimirNoAceite(pedido)
+    }
+  }, [quadro.pedidos, impressao])
+
+  // Socket de volta ⇒ tenta esvaziar o que ficou preso na fila offline.
+  useEffect(() => {
+    if (quadro.conexao === 'ao-vivo') void fila.reenviar()
+  }, [quadro.conexao, fila])
+
   return (
     <div className="app">
       <header className="barra">
@@ -247,6 +294,22 @@ function QuadroDaLoja({
             #{quadro.cursor}
           </span>
 
+          {som.estado !== 'pronto' && (
+            <Botao
+              enfase={som.estado === 'mudo' ? 'fantasma' : 'secundaria'}
+              onClick={() => void (som.estado === 'mudo' ? som.religar() : som.destravar())}
+            >
+              {som.estado === 'mudo' ? 'Som desligado' : 'Ligar o som'}
+            </Botao>
+          )}
+
+          {som.estado === 'pronto' && (
+            <Botao enfase="fantasma" onClick={som.silenciar}>
+              <span className="ui-visualmente-oculto">Desligar o som</span>
+              Som
+            </Botao>
+          )}
+
           <Botao enfase="fantasma" icone="atualizar" onClick={quadro.recarregar}>
             <span className="ui-visualmente-oculto">Atualizar o quadro</span>
           </Botao>
@@ -267,6 +330,42 @@ function QuadroDaLoja({
         <Faixa tom="atencao" icone="wifi-cortado">
           Sem tempo real. O quadro está sendo atualizado a cada 10 segundos — as
           ações continuam funcionando.
+        </Faixa>
+      )}
+
+      {fila.pendentes.length > 0 && (
+        <Faixa
+          tom="atencao"
+          icone="wifi-cortado"
+          acao={
+            <Botao
+              enfase="secundaria"
+              carregando={fila.reenviando}
+              onClick={() => void fila.reenviar()}
+            >
+              Enviar agora
+            </Botao>
+          }
+        >
+          {fila.pendentes.length}{' '}
+          {fila.pendentes.length === 1 ? 'ação aguardando' : 'ações aguardando'} a conexão
+          voltar.
+        </Faixa>
+      )}
+
+      {impressao.fila.length > 0 && (
+        <Faixa
+          tom="atencao"
+          icone="alerta"
+          acao={
+            <Botao enfase="secundaria" onClick={impressao.tentarDeNovo}>
+              Imprimir de novo
+            </Botao>
+          }
+        >
+          {impressao.fila.length}{' '}
+          {impressao.fila.length === 1 ? 'comanda não saiu' : 'comandas não saíram'}.
+          {!impressao.temAgente && ' Sem agente de impressão configurado nesta loja.'}
         </Faixa>
       )}
 
@@ -332,7 +431,15 @@ function QuadroDaLoja({
           if (pedidoAberto) pedirAcao(pedidoAberto, acao)
         }}
         aoFechar={() => definirDetalhe(null)}
+        token={sessao.token}
+        aoReimprimir={() => {
+          if (pedidoAberto) void impressao.reimprimir(pedidoAberto)
+        }}
       />
+
+      {fila.reconciliacao && (
+        <Reconciliacao linhas={fila.reconciliacao} aoReconhecer={fila.reconhecer} />
+      )}
 
       {confirmacao && (
         <ConfirmacaoDeAcao

@@ -597,3 +597,199 @@
   font-weight: var(--peso-medio);
   color: var(--texto);
 }
+
+/* ── Reconciliação da fila offline ──────────────────────────────────────── */
+
+.reconciliacao {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+.reconciliacao li {
+  padding: var(--e-3);
+  border: 1px solid var(--borda);
+  border-left: 3px solid var(--borda-forte);
+  border-radius: var(--raio-1);
+  background: var(--superficie-2);
+}
+
+.reconciliacao li[data-resultado='aplicada'] { border-left-color: var(--marca); }
+.reconciliacao li[data-resultado='ja-estava'] { border-left-color: var(--info); }
+.reconciliacao li[data-resultado='recusada'] { border-left-color: var(--perigo); }
+.reconciliacao li[data-resultado='vencida'] { border-left-color: var(--atencao); }
+
+.reconciliacao__linha {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  flex-wrap: wrap;
+}
+
+.reconciliacao__acao {
+  flex: 1;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.reconciliacao__detalhe {
+  margin: var(--e-1) 0 0;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.reconciliacao__nota {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-2);
+  margin: 0;
+  padding: var(--e-3);
+  background: var(--atencao-suave);
+  border-left: 3px solid var(--atencao);
+  border-radius: var(--raio-1);
+  font-size: var(--texto-sm);
+}
+
+/* ── Abas do detalhe ────────────────────────────────────────────────────── */
+
+.detalhe__abas {
+  display: flex;
+  gap: var(--e-1);
+  border-bottom: 1px solid var(--borda);
+}
+
+.detalhe__aba {
+  min-height: var(--alvo);
+  padding: 0 var(--e-4);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--texto-fraco);
+  font: inherit;
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+  transition: color var(--duracao-rapida) var(--curva);
+}
+
+/* Aba ativa marcada por cor E sublinhado: só cor não sobrevive a daltonismo
+   nem a tela com contraluz. */
+.detalhe__aba[aria-selected='true'] {
+  color: var(--texto);
+  border-bottom-color: var(--marca);
+}
+
+/* ── Chat ───────────────────────────────────────────────────────────────── */
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  min-height: 320px;
+}
+
+.chat__lista {
+  flex: 1;
+  min-height: 240px;
+  max-height: 44vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  padding-right: var(--e-1);
+}
+
+.chat__mensagem {
+  max-width: 82%;
+  padding: var(--e-2) var(--e-3);
+  border-radius: var(--raio-2);
+  background: var(--superficie-2);
+  border: 1px solid var(--borda);
+}
+
+/* A loja fala à direita; o cliente, à esquerda. Convenção de aplicativo de
+   mensagem — quebrar isso obriga a ler o rótulo em toda linha. */
+.chat__mensagem[data-autor='staff'] {
+  align-self: flex-end;
+  background: var(--marca-suave);
+  border-color: var(--marca);
+}
+
+.chat__mensagem[data-autor='system'] {
+  align-self: center;
+  max-width: 100%;
+  background: transparent;
+  border-style: dashed;
+  color: var(--texto-fraco);
+  font-size: var(--texto-sm);
+}
+
+.chat__mensagem[data-falhou] {
+  border-color: var(--perigo);
+  background: var(--perigo-suave);
+}
+
+.chat__corpo {
+  margin: 0;
+  font-size: var(--texto-sm);
+  line-height: var(--linha-normal);
+  /* Preserva as quebras de linha que o operador digitou com Shift+Enter. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.chat__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  margin-top: var(--e-1);
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+.chat__reenviar {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--perigo);
+  font: inherit;
+  font-size: var(--texto-xs);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.chat__envio {
+  display: flex;
+  gap: var(--e-2);
+  align-items: flex-end;
+}
+
+.chat__envio textarea {
+  flex: 1;
+  min-height: var(--alvo);
+  padding: var(--e-3);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-1);
+  background: var(--superficie-base);
+  color: var(--texto);
+  font-family: inherit;
+  font-size: var(--texto-base);
+  line-height: var(--linha-normal);
+  resize: vertical;
+}
+
+.chat__aviso {
+  margin: 0;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+  text-align: center;
+}
+
+.chat__aviso--erro {
+  color: var(--perigo);
+}
