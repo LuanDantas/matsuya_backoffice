@@ -156,11 +156,16 @@ export function Casca({
     definirDetalhe(pedido.id)
   }, [])
 
-  /** Comanda sai no aceite. Uma via por pedido, garantida pelo hook. */
+  /**
+   * Entrega o quadro à impressão e sai do caminho.
+   *
+   * A regra de o que imprimir é do hook: o primeiro lote é o estado do mundo e
+   * não gera papel, e a impressão automática só vale com agente local. Deixar
+   * essa decisão aqui foi o que fez o diálogo do navegador aparecer a cada
+   * carregamento.
+   */
   useEffect(() => {
-    for (const pedido of quadro.pedidos) {
-      if (pedido.status === 'confirmed') impressao.imprimirNoAceite(pedido)
-    }
+    impressao.sincronizar(quadro.pedidos)
   }, [quadro.pedidos, impressao])
 
   useEffect(() => {
@@ -372,6 +377,7 @@ export function Casca({
                 som={som}
                 impressao={{
                   temAgente: impressao.temAgente,
+                  automatica: impressao.automatica,
                   pendentes: impressao.fila.length,
                   tentarDeNovo: impressao.tentarDeNovo,
                 }}

@@ -16,6 +16,16 @@ export interface ConfigDoHub {
   urlDoAgenteDeImpressao?: string
   /** Largura da bobina da impressora térmica da loja. */
   larguraDoPapel?: 58 | 80
+  /**
+   * Quando a comanda sai sozinha no aceite.
+   *
+   * `agente`  — só quando há agente local (padrão). Sem agente, a impressão
+   *             cairia no diálogo do navegador, que é modal e trava a tela até
+   *             alguém clicar — o oposto de automático.
+   * `sempre`  — mesmo sem agente. Só faz sentido onde há alguém no computador.
+   * `nunca`   — sempre manual, pelo botão do detalhe do pedido.
+   */
+  impressaoAutomatica?: 'agente' | 'sempre' | 'nunca'
 }
 
 export const config: ConfigDoHub = {

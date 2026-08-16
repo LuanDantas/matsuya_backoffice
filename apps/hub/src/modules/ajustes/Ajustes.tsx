@@ -20,7 +20,12 @@ export function Ajustes({
   cursor,
 }: {
   som: { estado: EstadoDoSom; destravar: () => void; silenciar: () => void; religar: () => void }
-  impressao: { temAgente: boolean; pendentes: number; tentarDeNovo: () => void }
+  impressao: {
+    temAgente: boolean
+    automatica: boolean
+    pendentes: number
+    tentarDeNovo: () => void
+  }
   conexao: string
   cursor: number
 }) {
@@ -65,6 +70,20 @@ export function Ajustes({
           </div>
           <Selo tom={impressao.temAgente ? 'sucesso' : 'atencao'}>
             {impressao.temAgente ? 'Ativo' : 'Ausente'}
+          </Selo>
+        </div>
+
+        <div className="ajustes__linha">
+          <div>
+            <strong>Comanda automática no aceite</strong>
+            <p>
+              {impressao.automatica
+                ? 'A comanda sai sozinha quando o pedido é aceito.'
+                : 'Desligada. Sem agente local, a impressão abriria o diálogo do navegador a cada aceite e travaria a tela. Use o botão Imprimir no detalhe do pedido.'}
+            </p>
+          </div>
+          <Selo tom={impressao.automatica ? 'sucesso' : 'neutro'}>
+            {impressao.automatica ? 'Ligada' : 'Desligada'}
           </Selo>
         </div>
 

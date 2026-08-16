@@ -40,6 +40,8 @@ export interface PedidoDoQuadro {
   hasPartialCancellation: boolean
   createdAt: string
   addressSnapshot: Record<string, unknown> | null
+  /** Carimbo do aceite. É o fato que diz se a comanda deste pedido já saiu. */
+  acceptedAt: string | null
   /** Prazo derivado pela API — ver `modules/orders/prazos.ts` lá. */
   deadlineAt: string | null
   deadlineKind: 'aceite' | 'preparo' | null
