@@ -71,6 +71,34 @@ export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
 }
 
 /**
+ * Rótulos curtos, para o modo Expedição.
+ *
+ * A referência encurta a mesma informação quando a densidade sobe: o que no
+ * modo Quadros é `Pedido em atraso há 1246min` vira `Atraso 1246min` na grade.
+ * Não é economia de espaço por si — é que num cartão de 160 px o texto longo
+ * quebra em três linhas e deixa de ser lido de relance, que é a única razão de
+ * a grade densa existir.
+ *
+ * `Record<OrderStatus, string>` obriga o mapa a cobrir os treze estados: um
+ * estado novo sem rótulo curto não compila.
+ */
+export const ORDER_STATUS_LABEL_CURTO: Record<OrderStatus, string> = {
+  awaiting_payment: 'Aguardando pgto.',
+  pending: 'Novo',
+  payment_failed: 'Pgto. falhou',
+  confirmed: 'Aceito',
+  preparing: 'Preparo',
+  ready: 'Pronto',
+  awaiting_courier: 'Aguard. entregador',
+  out_for_delivery: 'Em rota',
+  delivered: 'Entregue',
+  delivery_failed: 'Falha',
+  customer_not_found: 'Não localizado',
+  cancelled: 'Cancelado',
+  rejected: 'Recusado',
+}
+
+/**
  * Tom visual de cada estado. Nomes semânticos, não cores: o `ui` decide o que
  * "atencao" significa em claro e em escuro, e o Hub roda escuro por padrão.
  */

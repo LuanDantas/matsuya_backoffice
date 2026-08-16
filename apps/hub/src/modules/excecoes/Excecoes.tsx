@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { Botao, EstadoVazio, Icone, Selo } from '@matsuya/ui'
-import { ORDER_STATUS_LABEL, ORDER_STATUS_TONE } from '@matsuya/contracts'
+import { Botao, EstadoVazio, Icone, PainelDeSecao, Selo } from '@matsuya/ui'
+import { ORDER_STATUS_LABEL } from '@matsuya/contracts'
 import type { PedidoDoQuadro } from '@matsuya/api-client'
 import { decorrido, moeda } from '../../app/formato'
 
@@ -93,56 +93,54 @@ export function Excecoes({
   const contagem = useMemo(() => excecoes.length, [excecoes])
 
   return (
-    <section className="excecoes" aria-labelledby="excecoes-titulo">
-      <header className="excecoes__cabecalho">
-        <h2 id="excecoes-titulo">
-          <Icone nome="alerta" tamanho={16} />
-          Exceções
-        </h2>
-        {contagem > 0 && (
-          <Selo tom="urgente">
-            {contagem} {contagem === 1 ? 'pedido' : 'pedidos'}
-          </Selo>
-        )}
-      </header>
+    <section className="excecoes">
+      <PainelDeSecao
+        titulo="Exceções"
+        contagem={contagem}
+        acento={contagem > 0 ? 'urgente' : 'nenhum'}
+      >
+        {contagem === 0 ? (
+          <EstadoVazio
+            icone="check"
+            titulo="Nada fora do trilho"
+            descricao="Nenhum pedido atrasado, com falha de entrega ou alterado."
+          />
+        ) : (
+          <>
+            <ul className="excecoes__lista">
+              {excecoes.map(({ pedido, motivo }) => (
+                <li key={pedido.id}>
+                  <button
+                    type="button"
+                    className="excecoes__item"
+                    data-motivo={motivo}
+                    onClick={() => aoAbrir(pedido)}
+                  >
+                    <div className="excecoes__linha">
+                      <strong>{pedido.code ?? `#${pedido.id}`}</strong>
+                      <Selo tom={TOM_DO_MOTIVO[motivo]}>{ROTULO_DO_MOTIVO[motivo]}</Selo>
+                    </div>
+                    <div className="excecoes__linha excecoes__linha--fraca">
+                      <span>{pedido.customerLabel ?? ORDER_STATUS_LABEL[pedido.status]}</span>
+                      <span className="num">{moeda.format(pedido.total)}</span>
+                    </div>
+                    <div className="excecoes__linha excecoes__linha--fraca">
+                      <span className="num">há {decorrido(pedido.createdAt, agora)}</span>
+                      <span className="excecoes__abrir">
+                        Abrir <Icone nome="seta-direita" tamanho={14} />
+                      </span>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
 
-      {contagem === 0 ? (
-        <EstadoVazio
-          icone="check"
-          titulo="Nada fora do trilho"
-          descricao="Nenhum pedido atrasado, com falha de entrega ou alterado."
-        />
-      ) : (
-        <ul className="excecoes__lista">
-          {excecoes.map(({ pedido, motivo, minutos }) => (
-            <li key={pedido.id}>
-              <button
-                type="button"
-                className="excecoes__item"
-                data-motivo={motivo}
-                onClick={() => aoAbrir(pedido)}
-              >
-                <div className="excecoes__linha">
-                  <strong>{pedido.code ?? `#${pedido.id}`}</strong>
-                  <Selo tom={TOM_DO_MOTIVO[motivo]}>{ROTULO_DO_MOTIVO[motivo]}</Selo>
-                </div>
-                <div className="excecoes__linha excecoes__linha--fraca">
-                  <span>{ORDER_STATUS_LABEL[pedido.status]}</span>
-                  <span className="num">{moeda.format(pedido.total)}</span>
-                </div>
-                <div className="excecoes__linha excecoes__linha--fraca">
-                  <span className="num">
-                    há {decorrido(pedido.createdAt, agora)}
-                  </span>
-                  <span className="excecoes__abrir">
-                    Abrir <Icone nome="seta-direita" tamanho={14} />
-                  </span>
-                </div>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+            <Botao enfase="fantasma" largo onClick={() => aoAbrir(excecoes[0]!.pedido)}>
+              Tratar o mais antigo
+            </Botao>
+          </>
+        )}
+      </PainelDeSecao>
 
       {/*
         Anúncio para leitor de tela, separado do visual: a lista muda sozinha, e
@@ -153,16 +151,6 @@ export function Excecoes({
           ? 'Nenhuma exceção.'
           : `${contagem} ${contagem === 1 ? 'pedido precisa' : 'pedidos precisam'} de atenção.`}
       </p>
-
-      {contagem > 0 && (
-        <Botao
-          enfase="fantasma"
-          largo
-          onClick={() => aoAbrir(excecoes[0]!.pedido)}
-        >
-          Tratar o mais antigo
-        </Botao>
-      )}
     </section>
   )
 }

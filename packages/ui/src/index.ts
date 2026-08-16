@@ -1,4 +1,6 @@
 export * from './Icone'
 export * from './Botao'
 export * from './Modal'
+export * from './PainelDeSecao'
+export * from './PilulaDeEstado'
 export * from './primitivos'

@@ -10,7 +10,9 @@ import { ORDER_ACTION_INFO, type OrderAction } from '@matsuya/contracts'
 import { FalhaDeRede } from '@matsuya/api-client'
 import { useSessao } from '../dados/useSessao'
 import { useQuadro } from '../dados/useQuadro'
-import { Quadro } from '../modules/quadro/Quadro'
+import { Quadros } from '../modules/quadro/Quadros'
+import { Expedicao } from '../modules/quadro/Expedicao'
+import { Ferramentas, normalizar, type ModoDoQuadro } from '../modules/quadro/Ferramentas'
 import { ConfirmacaoDeAcao } from '../modules/quadro/ConfirmacaoDeAcao'
 import { DetalheDoPedido } from '../modules/quadro/DetalheDoPedido'
 import { Excecoes, apurarExcecoes } from '../modules/excecoes/Excecoes'
@@ -29,6 +31,8 @@ import { config } from './config'
  * quadro. Cada um resolve uma pergunta só, o que mantém a entrada rápida num
  * tablet que é ligado uma vez por turno.
  */
+
+const CHAVE_MODO = 'matsuya.hub.modo'
 
 const ROTULO_DA_CONEXAO: Record<string, string> = {
   conectando: 'Conectando',
@@ -124,6 +128,14 @@ function QuadroDaLoja({
     pedido: PedidoDoQuadro
     acao: OrderAction
   } | null>(null)
+  const [busca, definirBusca] = useState('')
+  const [modo, definirModo] = useState<ModoDoQuadro>(
+    () => (localStorage.getItem(CHAVE_MODO) as ModoDoQuadro | null) ?? 'quadros'
+  )
+
+  useEffect(() => {
+    localStorage.setItem(CHAVE_MODO, modo)
+  }, [modo])
 
   const api = useMemo(() => {
     const cliente = createApiClient({
@@ -141,6 +153,23 @@ function QuadroDaLoja({
   const som = useAlertas(quadro.pedidos, true)
   const impressao = useImpressao(unidade?.name ?? `Unidade ${unidadeId}`)
   const fila = useFilaOffline(unidadeId, api, quadro.recarregar)
+
+  /**
+   * A busca filtra o que o quadro mostra, e nada mais.
+   *
+   * As exceções continuam calculadas sobre a lista **inteira**: esconder um
+   * pedido atrasado porque ele não casa com o texto digitado seria esconder
+   * exatamente o que a faixa existe para não deixar passar.
+   */
+  const visiveis = useMemo(() => {
+    const termo = normalizar(busca.trim())
+    if (!termo) return quadro.pedidos
+    return quadro.pedidos.filter(
+      (p) =>
+        normalizar(p.code ?? String(p.id)).includes(termo) ||
+        normalizar(p.customerLabel ?? '').includes(termo)
+    )
+  }, [busca, quadro.pedidos])
 
   const excecoes = useMemo(
     () => apurarExcecoes(quadro.pedidos, agora),
@@ -310,10 +339,6 @@ function QuadroDaLoja({
             </Botao>
           )}
 
-          <Botao enfase="fantasma" icone="atualizar" onClick={quadro.recarregar}>
-            <span className="ui-visualmente-oculto">Atualizar o quadro</span>
-          </Botao>
-
           {podeTrocar && (
             <Botao enfase="fantasma" onClick={() => sessao.escolherUnidade(null)}>
               Trocar de loja
@@ -332,6 +357,15 @@ function QuadroDaLoja({
           ações continuam funcionando.
         </Faixa>
       )}
+
+      <Ferramentas
+        modo={modo}
+        aoTrocarModo={definirModo}
+        busca={busca}
+        aoBuscar={definirBusca}
+        ocultados={quadro.pedidos.length - visiveis.length}
+        aoAtualizar={quadro.recarregar}
+      />
 
       {fila.pendentes.length > 0 && (
         <Faixa
@@ -410,14 +444,25 @@ function QuadroDaLoja({
         </main>
       ) : (
         <main className="area">
-          <Quadro
-            pedidos={quadro.pedidos}
-            permissoes={sessao.permissoes}
-            agora={agora}
-            emCurso={emCurso}
-            aoPedirAcao={pedirAcao}
-            aoAbrirDetalhe={abrirDetalhe}
-          />
+          {modo === 'quadros' ? (
+            <Quadros
+              pedidos={visiveis}
+              permissoes={sessao.permissoes}
+              agora={agora}
+              emCurso={emCurso}
+              aoPedirAcao={pedirAcao}
+              aoAbrirDetalhe={abrirDetalhe}
+            />
+          ) : (
+            <Expedicao
+              pedidos={visiveis}
+              permissoes={sessao.permissoes}
+              agora={agora}
+              emCurso={emCurso}
+              aoPedirAcao={pedirAcao}
+              aoAbrirDetalhe={abrirDetalhe}
+            />
+          )}
           <Excecoes excecoes={excecoes} agora={agora} aoAbrir={abrirDetalhe} />
         </main>
       )}

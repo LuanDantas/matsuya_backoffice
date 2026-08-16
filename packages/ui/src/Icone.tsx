@@ -31,6 +31,8 @@ export type NomeDoIcone =
   | 'loja'
   | 'sair'
   | 'pessoa'
+  | 'lupa'
+  | 'tela-cheia'
 
 const CAMINHOS: Record<NomeDoIcone, string> = {
   check: 'M20 6 9 17l-5-5',
@@ -47,6 +49,8 @@ const CAMINHOS: Record<NomeDoIcone, string> = {
   loja: 'M3 9V7l2-4h14l2 4v2a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0ZM5 11v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9',
   sair: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
   pessoa: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
+  lupa: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM21 21l-4.3-4.3',
+  'tela-cheia': 'M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M16 21h3a2 2 0 0 0 2-2v-3M8 21H5a2 2 0 0 1-2-2v-3',
 }
 
 export interface PropsDoIcone extends Omit<SVGProps<SVGSVGElement>, 'children'> {

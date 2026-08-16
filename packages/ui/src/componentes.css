@@ -343,3 +343,120 @@
     width: 100%;
   }
 }
+
+/* ── Pílula de estado ───────────────────────────────────────────────────── */
+
+.ui-pilula {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-2);
+  margin: 0;
+  min-height: 32px;
+  padding: var(--e-2) var(--e-3);
+  border-radius: var(--raio-1);
+  background: var(--superficie-3);
+  color: var(--texto-corpo);
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  text-align: center;
+}
+
+.ui-pilula[data-tom='sucesso'] { color: var(--marca); }
+.ui-pilula[data-tom='perigo'] { color: var(--perigo); }
+
+/*
+ * O único preenchimento sólido da interface. Ver PilulaDeEstado.tsx: o valor
+ * dele vem de ser o único — promover um segundo tom a preenchido faz o atraso
+ * deixar de saltar.
+ */
+.ui-pilula[data-tom='critico'] {
+  background: var(--atraso-fundo);
+  color: var(--atraso-texto);
+  font-weight: var(--peso-forte);
+}
+
+/* ── Painel de seção ────────────────────────────────────────────────────── */
+
+.ui-painel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--superficie-2);
+  border-radius: var(--raio-2);
+}
+
+.ui-painel[data-acento='urgente'] {
+  box-shadow: inset 3px 0 0 var(--urgente);
+}
+
+.ui-painel__cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2);
+  padding: var(--e-3);
+  flex-shrink: 0;
+}
+
+.ui-painel__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  margin: 0;
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  color: var(--texto-corpo);
+}
+
+/* Badge escuro: o número é quantidade, não estado. Colorir gastaria cor sem
+   informar nada. */
+.ui-painel__contagem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--raio-total);
+  background: var(--contagem-fundo);
+  color: var(--contagem-texto);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+}
+
+.ui-painel__acessorio {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+}
+
+.ui-painel__recolher {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--alvo);
+  height: var(--alvo);
+  margin: calc(var(--e-3) * -1) calc(var(--e-2) * -1) calc(var(--e-3) * -1) 0;
+  border: 0;
+  background: transparent;
+  color: var(--texto-fraco);
+  cursor: pointer;
+}
+
+/* Seta apontando para baixo quando aberto, para a direita quando recolhido —
+   o giro mostra a direção em que o conteúdo vai. */
+.ui-painel__recolher svg {
+  transform: rotate(90deg);
+  transition: transform var(--duracao) var(--curva);
+}
+
+.ui-painel[data-recolhido] .ui-painel__recolher svg {
+  transform: rotate(0deg);
+}
+
+.ui-painel__corpo {
+  flex: 1;
+  min-height: 0;
+  padding: 0 var(--e-2) var(--e-2);
+}

@@ -17,6 +17,13 @@ import type { ApiClient } from './cliente'
 export interface PedidoDoQuadro {
   id: number
   code: string | null
+  /**
+   * Primeiro nome e inicial do sobrenome, montados pela API.
+   *
+   * `null` quando o pedido não tem cliente carregado — o cartão simplesmente
+   * omite a linha em vez de mostrar um espaço reservado.
+   */
+  customerLabel: string | null
   status: OrderStatus
   version: number
   unityId: number

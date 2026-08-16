@@ -138,25 +138,58 @@ export function useQuadro(unityId: number, token: string | null): EstadoDoQuadro
 }
 
 /**
- * Colunas do quadro, na ordem do caminho físico do pedido dentro da loja.
+ * Seções do quadro, na ordem do caminho físico do pedido dentro da loja.
  *
- * O texto de coluna vazia não é decoração: sem ele, uma coluna em branco é
- * ambígua — não dá para saber se não há pedido ou se a tela falhou. Numa
- * cozinha, essa dúvida vira uma ligação para o suporte.
+ * Um rótulo por densidade: o modo Quadros tem largura para "Aguardando
+ * entregador", o modo Expedição não — e um título que quebra em duas linhas
+ * empurra o cartão para fora da dobra.
+ *
+ * O texto de vazio não é decoração: sem ele, uma coluna em branco é ambígua —
+ * não dá para saber se não há pedido ou se a tela falhou. Numa cozinha, essa
+ * dúvida vira uma ligação para o suporte.
  */
-export const COLUNAS: ReadonlyArray<{
+export interface SecaoDoQuadro {
   status: OrderStatus
   titulo: string
+  tituloCurto: string
   vazio: string
-}> = [
-  { status: 'pending', titulo: 'Novos', vazio: 'Nada aguardando aceite.' },
-  { status: 'confirmed', titulo: 'Aceitos', vazio: 'Nada aguardando preparo.' },
-  { status: 'preparing', titulo: 'Em preparo', vazio: 'A cozinha está livre.' },
-  { status: 'ready', titulo: 'Prontos', vazio: 'Nada esperando no balcão.' },
+}
+
+export const SECOES: ReadonlyArray<SecaoDoQuadro> = [
+  {
+    status: 'pending',
+    titulo: 'Novos',
+    tituloCurto: 'Novos',
+    vazio: 'Nada aguardando aceite.',
+  },
+  {
+    status: 'confirmed',
+    titulo: 'Aceitos',
+    tituloCurto: 'Aceitos',
+    vazio: 'Nada aguardando preparo.',
+  },
+  {
+    status: 'preparing',
+    titulo: 'Em preparo',
+    tituloCurto: 'Preparo',
+    vazio: 'A cozinha está livre.',
+  },
+  {
+    status: 'ready',
+    titulo: 'Prontos',
+    tituloCurto: 'Prontos',
+    vazio: 'Nada esperando no balcão.',
+  },
   {
     status: 'awaiting_courier',
     titulo: 'Aguardando entregador',
+    tituloCurto: 'Aguard. entregador',
     vazio: 'Nenhum pedido esperando motoboy.',
   },
-  { status: 'out_for_delivery', titulo: 'Em rota', vazio: 'Nada na rua.' },
+  {
+    status: 'out_for_delivery',
+    titulo: 'Em rota',
+    tituloCurto: 'Em rota',
+    vazio: 'Nada na rua.',
+  },
 ]

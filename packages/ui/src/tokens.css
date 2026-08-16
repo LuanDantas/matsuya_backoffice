@@ -1,35 +1,117 @@
 /*
  * Tokens do design system.
  *
- * Escuro é o padrão, e não uma variação: o Order Hub fica ligado o turno
- * inteiro num balcão, com frequência sob luz fraca ou contraluz de janela.
- * O Console (matriz) nasce claro, por isso os dois temas existem — mas o Hub
- * fixa `data-theme="dark"` e nunca segue a preferência do sistema, porque um
- * tablet que muda de tema ao entardecer é uma tela que muda embaixo da mão de
- * quem está trabalhando.
+ * **Claro é o padrão.** A decisão mudou depois de ver as referências: a equipe
+ * opera o Gestor de Pedidos do iFood — tema claro — em 35 lojas, todo dia. As
+ * duas ferramentas vão dividir a mesma bancada, e duas telas parecidas com
+ * linguagens visuais opostas custam um reajuste de olho a cada troca.
+ * Familiaridade com o que já se usa venceu o argumento de conforto em luz
+ * fraca.
  *
- * Três desvios conscientes da recomendação padrão de "Dark Mode (OLED)":
+ * O tema escuro continua definido aqui, e verificado pela ferramenta de
+ * contraste, porque o Console da matriz pode querê-lo. O Hub não o oferece.
  *
- * 1. **Preto não é #000000.** A superfície base é #0B0F14. Preto puro com
- *    texto branco produz halação — o texto "vaza" e cansa a vista em turno de
- *    seis horas. OLED economiza bateria com preto puro, e um tablet de balcão
- *    vive na tomada.
+ * O que **não** muda com a mudança de tema:
  *
- * 2. **A cor de marca continua o esmeralda #059669**, e não o azul sugerido.
- *    É a cor do Matclub, já em produção no app; duas identidades no mesmo
- *    negócio custam mais do que a otimização vale.
+ * 1. **O Hub nunca segue a preferência do sistema.** Um tablet que troca de
+ *    tema ao entardecer é uma tela que muda embaixo da mão de quem trabalha.
+ *
+ * 2. **A cor de marca é o esmeralda do Matclub**, e não o vermelho do iFood.
+ *    Copiamos a estrutura que faz a ferramenta funcionar, não a identidade de
+ *    outra empresa — e dois sistemas visualmente intercambiáveis na bancada
+ *    são um convite a agir no lugar errado.
  *
  * 3. **Sem fonte de rede.** A pilha do sistema (SF Pro no iPad, Roboto no
- *    Android) substitui a Inter: o Hub precisa abrir com a internet ruim ou
- *    ausente, e uma fonte que não carrega é texto invisível na primeira
- *    pintura — exatamente no momento em que o operador precisa ler o pedido.
+ *    Android) substitui qualquer webfont: o Hub precisa abrir com a internet
+ *    ruim ou ausente, e uma fonte que não carrega é texto invisível na
+ *    primeira pintura — exatamente quando o operador precisa ler o pedido.
+ *
+ * A escala neutra abaixo é lida das capturas de referência. Cinza puro, sem
+ * viés de matiz: qualquer tom no cinza faz a cor semântica — que é o que
+ * carrega significado aqui — parecer menos deliberada.
  */
-
 :root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  /*
+   * Superfícies. Cinza puro, lido das capturas — com um ajuste.
+   *
+   * A referência usa página #f2f2f2 e painel #ededed, uma diferença de 1,05:1
+   * que na prática some: a coluna não se distingue do fundo. Abri para
+   * #f4f4f4 / #eaeaea (1,09:1) — ainda discreto, mas o suficiente para o olho
+   * separar as colunas sem procurar a borda.
+   */
+  --superficie-base: #f4f4f4;  /* fundo da página */
+  --superficie-1: #ffffff;     /* cartão, modal, barra do app */
+  --superficie-2: #eaeaea;     /* painel da coluna e da seção */
+  --superficie-3: #f0f0f0;     /* pílula neutra, linha ativa */
+
+  --borda: #e2e2e2;            /* divisória interna do cartão */
+  --borda-forte: #d4d4d4;      /* campo, botão com borda */
+
+  /*
+   * Escala de texto.
+   *
+   * A referência usa #717171 para texto secundário e #9e9e9e para texto
+   * apagado. Medidos, dão 4,17:1 e 2,68:1 — os dois **reprovam** o mínimo AA
+   * de 4,5:1. Copiar a estrutura de uma boa ferramenta não inclui copiar o
+   * ponto em que ela falha, ainda mais num tablet de balcão com tela suja e
+   * contraluz de janela.
+   *
+   * Os três tons de texto foram escurecidos até passarem sobre TODAS as
+   * superfícies em que aparecem. `--texto-apagado` deixou de ser texto: virou
+   * cor de ícone e de placeholder, onde o mínimo é 3:1. Onde havia texto
+   * apagado, agora há `--texto-fraco`.
+   */
+  --texto: #1f1f1f;
+  --texto-corpo: #3f3e3e;      /* texto de pílula, rótulo de campo */
+  --texto-fraco: #5f5f5f;      /* descrição, nome de unidade, estado vazio */
+  --texto-apagado: #8a8a8a;    /* ÍCONE e placeholder — nunca texto corrido */
+  --texto-inverso: #ffffff;
+
+  /* Marca. Escuro o bastante para sustentar texto branco no botão primário. */
+  --marca: #036147;
+  --marca-hover: #024e39;
+  --marca-forte: #024e39;
+  --marca-suave: #e6f6ef;
+
+  --info: #1d4ed8;
+  --info-suave: #e6edfd;
+
+  --atencao: #a35208;
+  --atencao-suave: #fdf3e2;
+
+  --perigo: #b91c1c;
+  --perigo-forte: #991b1b;
+  --perigo-suave: #fdeaea;
+
+  --urgente: #a8102f;
+  --urgente-suave: #fdeaef;
+
+  /*
+   * O preenchimento sólido do atraso.
+   *
+   * É o único elemento saturado da interface inteira, e é assim de propósito:
+   * numa tela em que tudo é cinza e branco, uma faixa vermelha escura preenchida
+   * não precisa competir com nada para ser vista. Espalhar esse peso por outros
+   * estados destruiria justamente o que faz este funcionar.
+   */
+  --atraso-fundo: #7a1114;
+  --atraso-texto: #ffffff;
+
+  /* Badge de contagem no cabeçalho de coluna e de seção. */
+  --contagem-fundo: #3f3e3e;
+  --contagem-texto: #ffffff;
+
+  --foco: #1d4ed8;
+  --sombra-modal: rgb(15 23 42 / 0.45);
+  --sombra-cartao: none;
+}
+
 [data-theme='dark'] {
   color-scheme: dark;
 
-  /* Superfícies, em elevação crescente. */
   --superficie-base: #0b0f14;
   --superficie-1: #151b23;
   --superficie-2: #1d252f;
@@ -38,19 +120,14 @@
   --borda: #2a3441;
   --borda-forte: #3a4757;
 
-  /* Texto. Medidos: `--texto` sobre `--superficie-1` dá 14,65:1 e
-     `--texto-fraco` dá 7,79:1 — os dois bem acima do mínimo AA de 4,5:1, com
-     folga para tela suja de balcão e contraluz de janela. */
   --texto: #e6edf3;
+  --texto-corpo: #cbd6e2;
   --texto-fraco: #9fb0c0;
+  --texto-apagado: #7c8ea1;
   --texto-inverso: #0b0f14;
 
-  /* Marca e semânticos. */
-  /* O botão primário usa texto ESCURO sobre esmeralda claro.
-     Branco sobre #059669 dá 3,77:1 e reprova o mínimo de 4,5:1 — no controle
-     mais usado do aplicativo. Escuro sobre #10b981 dá 7,58:1 e mantém o verde
-     da marca vivo, que é a convenção de tema escuro: recipiente claro, texto
-     "on-color" escuro. */
+  /* No escuro o botão primário inverte: texto ESCURO sobre esmeralda claro.
+     Branco sobre esmeralda escuro dá 3,77:1 e reprova o mínimo de 4,5:1. */
   --marca: #10b981;
   --marca-hover: #34d399;
   --marca-forte: #059669;
@@ -69,48 +146,15 @@
   --urgente: #fb7185;
   --urgente-suave: #3d1622;
 
+  --atraso-fundo: #7f1d1d;
+  --atraso-texto: #ffffff;
+
+  --contagem-fundo: #3a4757;
+  --contagem-texto: #e6edf3;
+
   --foco: #7dd3fc;
   --sombra-modal: rgb(0 0 0 / 0.66);
-}
-
-[data-theme='light'] {
-  color-scheme: light;
-
-  --superficie-base: #f6f8fa;
-  --superficie-1: #ffffff;
-  --superficie-2: #f2f5f8;
-  --superficie-3: #e7ecf1;
-
-  --borda: #d7dee6;
-  --borda-forte: #b8c4d0;
-
-  --texto: #10171f;
-  --texto-fraco: #4d5c6b;
-  --texto-inverso: #ffffff;
-
-  /* Mais escuro que no tema escuro, e de propósito: aqui o botão primário é
-     texto BRANCO sobre a marca, e o esmeralda claro não sustenta branco.
-     Medido: branco sobre #036147 dá 7,49:1. */
-  --marca: #036147;
-  --marca-hover: #024e39;
-  --marca-forte: #024e39;
-  --marca-suave: #e6f6ef;
-
-  --info: #1d4ed8;
-  --info-suave: #e6edfd;
-
-  --atencao: #b45309;
-  --atencao-suave: #fdf3e2;
-
-  --perigo: #b91c1c;
-  --perigo-forte: #991b1b;
-  --perigo-suave: #fdeaea;
-
-  --urgente: #be123c;
-  --urgente-suave: #fdeaef;
-
-  --foco: #1d4ed8;
-  --sombra-modal: rgb(15 23 42 / 0.45);
+  --sombra-cartao: none;
 }
 
 :root {

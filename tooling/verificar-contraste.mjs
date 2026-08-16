@@ -22,8 +22,8 @@ function lerTokens(tema) {
   const css = readFileSync(TOKENS, 'utf8')
   const bloco =
     tema === 'dark'
-      ? css.match(/:root,\s*\[data-theme='dark'\]\s*\{([\s\S]*?)\n\}/)
-      : css.match(/\[data-theme='light'\]\s*\{([\s\S]*?)\n\}/)
+      ? css.match(/\n\[data-theme='dark'\]\s*\{([\s\S]*?)\n\}/)
+      : css.match(/:root,\s*\[data-theme='light'\]\s*\{([\s\S]*?)\n\}/)
 
   if (!bloco) throw new Error(`Não encontrei o bloco de tokens do tema ${tema}.`)
 
@@ -72,6 +72,19 @@ const PARES = [
   ['anel de foco sobre a superfície base', 'foco', 'superficie-base', 3],
   ['anel de foco sobre superfície 1', 'foco', 'superficie-1', 3],
   ['borda forte sobre superfície 1', 'borda-forte', 'superficie-1', 1.3],
+
+  // Acrescentados no redesenho sobre as referências.
+  ['texto de corpo sobre superfície 1', 'texto-corpo', 'superficie-1', 4.5],
+  ['texto de corpo sobre superfície 3 (pílula)', 'texto-corpo', 'superficie-3', 4.5],
+  // `--texto-apagado` é cor de ÍCONE e placeholder, não de texto corrido:
+  // mínimo de elemento gráfico, 3:1. Onde havia texto apagado, agora há
+  // `--texto-fraco`, que é medido como texto abaixo.
+  ['ícone apagado sobre superfície 1', 'texto-apagado', 'superficie-1', 3],
+  ['texto fraco sobre superfície 3 (pílula)', 'texto-fraco', 'superficie-3', 4.5],
+  ['pílula de atraso (o único preenchimento sólido)', 'atraso-texto', 'atraso-fundo', 4.5],
+  ['badge de contagem', 'contagem-texto', 'contagem-fundo', 4.5],
+  ['painel da seção sobre a página', 'superficie-2', 'superficie-base', 1.08],
+  ['cartão sobre o painel da seção', 'superficie-1', 'superficie-2', 1.05],
 ]
 
 let falhas = 0
