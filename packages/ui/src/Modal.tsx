@@ -1,5 +1,6 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useRef, type ReactNode } from 'react'
 import { Botao } from './Botao'
+import { useCamadaModal } from './useCamadaModal'
 
 /**
  * Diálogo modal.
@@ -30,9 +31,6 @@ export interface PropsDoModal {
   children: ReactNode
 }
 
-const SELETOR_FOCAVEL =
-  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-
 export function Modal({
   aberto,
   titulo,
@@ -43,55 +41,7 @@ export function Modal({
   children,
 }: PropsDoModal) {
   const painel = useRef<HTMLDivElement>(null)
-  const focoAnterior = useRef<HTMLElement | null>(null)
-
-  useEffect(() => {
-    if (!aberto) return
-
-    focoAnterior.current = document.activeElement as HTMLElement | null
-
-    // O primeiro foco vai para o painel, não para o primeiro botão: em
-    // confirmação de ação destrutiva, começar com o foco em "Confirmar" é
-    // convite para um Enter distraído.
-    painel.current?.focus()
-
-    const aoTeclar = (evento: KeyboardEvent) => {
-      if (evento.key === 'Escape') {
-        evento.stopPropagation()
-        aoFechar()
-        return
-      }
-
-      if (evento.key !== 'Tab') return
-
-      const focaveis = painel.current?.querySelectorAll<HTMLElement>(SELETOR_FOCAVEL)
-      if (!focaveis || focaveis.length === 0) return
-
-      const primeiro = focaveis[0]!
-      const ultimo = focaveis[focaveis.length - 1]!
-
-      // Circula o foco dentro do painel, nas duas direções.
-      if (evento.shiftKey && document.activeElement === primeiro) {
-        evento.preventDefault()
-        ultimo.focus()
-      } else if (!evento.shiftKey && document.activeElement === ultimo) {
-        evento.preventDefault()
-        primeiro.focus()
-      }
-    }
-
-    document.addEventListener('keydown', aoTeclar, true)
-    // Trava a rolagem do fundo: rolar o quadro por baixo de um modal aberto
-    // faz o operador perder a referência do pedido que estava olhando.
-    const overflowAnterior = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-
-    return () => {
-      document.removeEventListener('keydown', aoTeclar, true)
-      document.body.style.overflow = overflowAnterior
-      focoAnterior.current?.focus()
-    }
-  }, [aberto, aoFechar])
+  useCamadaModal(aberto, painel, aoFechar)
 
   if (!aberto) return null
 

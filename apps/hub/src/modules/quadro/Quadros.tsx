@@ -20,6 +20,8 @@ export interface PropsDoQuadro {
   permissoes: ReadonlySet<string>
   agora: number
   emCurso: ReadonlySet<number>
+  /** Id do pedido cujo drawer está aberto. */
+  selecionado: number | null
   aoPedirAcao: (pedido: PedidoDoQuadro, acao: OrderAction) => void
   aoAbrirDetalhe: (pedido: PedidoDoQuadro) => void
 }
@@ -41,6 +43,7 @@ export function Quadros({
   permissoes,
   agora,
   emCurso,
+  selecionado,
   aoPedirAcao,
   aoAbrirDetalhe,
 }: PropsDoQuadro) {
@@ -61,6 +64,7 @@ export function Quadros({
                     permissoes={permissoes}
                     agora={agora}
                     ocupado={emCurso.has(pedido.id)}
+                    selecionado={selecionado === pedido.id}
                     aoPedirAcao={aoPedirAcao}
                     aoAbrirDetalhe={aoAbrirDetalhe}
                   />

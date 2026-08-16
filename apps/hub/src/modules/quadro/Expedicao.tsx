@@ -24,6 +24,7 @@ export function Expedicao({
   permissoes,
   agora,
   emCurso,
+  selecionado,
   aoPedirAcao,
   aoAbrirDetalhe,
 }: PropsDoQuadro) {
@@ -72,6 +73,7 @@ export function Expedicao({
                     permissoes={permissoes}
                     agora={agora}
                     ocupado={emCurso.has(pedido.id)}
+                    selecionado={selecionado === pedido.id}
                     variante="denso"
                     aoPedirAcao={aoPedirAcao}
                     aoAbrirDetalhe={aoAbrirDetalhe}

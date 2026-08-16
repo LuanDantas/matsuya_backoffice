@@ -8,6 +8,10 @@ import { Icone, type NomeDoIcone } from './Icone'
  * número do pedido pela atenção e perde; uma faixa não compete, ela ocupa uma
  * fatia própria do cartão.
  *
+ * `aviso` é o âmbar da contagem regressiva: prazo correndo, ainda dentro. Vira
+ * `critico` quando estoura — e é a **mudança** de cor, não a cor em si, que o
+ * operador percebe pelo canto do olho.
+ *
  * O tom `critico` é o único elemento saturado da interface inteira, e é o que
  * faz o atraso ser visto de dois metros. **Se um segundo estado ganhar
  * preenchimento sólido, o atraso deixa de se destacar** — o valor dele vem
@@ -15,7 +19,7 @@ import { Icone, type NomeDoIcone } from './Icone'
  * fácil de quebrar e a mais cara de recuperar.
  */
 
-export type TomDaPilula = 'neutro' | 'sucesso' | 'perigo' | 'critico'
+export type TomDaPilula = 'neutro' | 'aviso' | 'sucesso' | 'perigo' | 'critico'
 
 export interface PropsDaPilula {
   tom?: TomDaPilula

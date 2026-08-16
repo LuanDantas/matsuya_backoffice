@@ -13,7 +13,7 @@ export interface Identidade {
   permissions: string[]
   dangerousPermissions: string[]
   scope: { network: boolean; unitIds: number[] }
-  units: Array<{ id: number; name: string }>
+  units: Array<{ id: number; name: string; lat: number | null; lng: number | null }>
   roles: Array<{
     key: string
     name: string

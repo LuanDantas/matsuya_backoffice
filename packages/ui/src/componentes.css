@@ -362,6 +362,14 @@
   text-align: center;
 }
 
+/* Âmbar da contagem regressiva. Fundo suave e texto escuro: precisa ser
+   visível sem competir com o vermelho sólido do atraso, que é o alarme. */
+.ui-pilula[data-tom='aviso'] {
+  background: var(--atencao-suave);
+  color: var(--atencao);
+  font-weight: var(--peso-forte);
+}
+
 .ui-pilula[data-tom='sucesso'] { color: var(--marca); }
 .ui-pilula[data-tom='perigo'] { color: var(--perigo); }
 

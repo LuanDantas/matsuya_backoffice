@@ -8,7 +8,7 @@ import {
   type OrderAction,
 } from '@matsuya/contracts'
 import type { PedidoDoQuadro } from '@matsuya/api-client'
-import { decorrido, minutosAteSla, moeda } from '../../app/formato'
+import { decorrido, moeda, restante } from '../../app/formato'
 
 /**
  * O cartão de pedido.
@@ -39,27 +39,42 @@ export interface PropsDoCartao {
   agora: number
   ocupado: boolean
   variante?: VarianteDoCartao
+  /** Marca o cartão cujo drawer está aberto. */
+  selecionado?: boolean
   aoPedirAcao: (pedido: PedidoDoQuadro, acao: OrderAction) => void
   aoAbrirDetalhe: (pedido: PedidoDoQuadro) => void
 }
 
 type Urgencia = 'normal' | 'perto' | 'estourado'
 
+/**
+ * Urgência a partir do prazo que a API deriva.
+ *
+ * `deadlineAt` só existe nos estados em que a loja é responsável pela próxima
+ * ação — aguardando aceite e em preparo. Fora deles não há relógio, e é
+ * deliberado: cobrar do operador um tempo que depende do entregador é o jeito
+ * mais rápido de ensinar alguém a ignorar um alarme.
+ */
 function urgencia(pedido: PedidoDoQuadro, agora: number): Urgencia {
-  if (pedido.slaExpiredAt) return 'estourado'
-  const faltam = minutosAteSla(pedido.slaExpiresAt, agora)
-  if (faltam === null) return 'normal'
-  if (faltam < 0) return 'estourado'
-  if (faltam <= 3) return 'perto'
+  if (!pedido.deadlineAt) return 'normal'
+
+  const faltamMs = new Date(pedido.deadlineAt).getTime() - agora
+  if (faltamMs < 0) return 'estourado'
+  if (faltamMs <= 3 * 60_000) return 'perto'
   return 'normal'
+}
+
+const VERBO_DO_PRAZO: Record<'aceite' | 'preparo', string> = {
+  aceite: 'Aceite',
+  preparo: 'Prepare',
 }
 
 /**
  * O que a pílula diz, e com que peso.
  *
- * O atraso é o único estado que ganha preenchimento sólido. Os outros usam o
- * fundo neutro e se distinguem por ícone e cor de texto — o que mantém o
- * atraso como a única coisa gritante da tela.
+ * A contagem regressiva usa o âmbar enquanto há tempo e vira vermelho sólido
+ * quando estoura. É a **mudança** que o operador percebe pelo canto do olho —
+ * por isso o atraso é o único preenchimento sólido da interface inteira.
  */
 function estado(
   pedido: PedidoDoQuadro,
@@ -67,12 +82,23 @@ function estado(
   nivel: Urgencia,
   denso: boolean
 ): { tom: TomDaPilula; icone?: 'relogio' | 'check' | 'x' | 'moto'; texto: string } {
-  if (nivel === 'estourado') {
-    const atraso = decorrido(pedido.slaExpiresAt ?? pedido.createdAt, agora)
+  if (pedido.deadlineAt && pedido.deadlineKind) {
+    const verbo = VERBO_DO_PRAZO[pedido.deadlineKind]
+
+    if (nivel === 'estourado') {
+      const atraso = decorrido(pedido.deadlineAt, agora)
+      return {
+        tom: 'critico',
+        icone: 'relogio',
+        texto: denso ? `Atraso ${atraso}` : `Pedido em atraso há ${atraso}`,
+      }
+    }
+
+    const falta = restante(pedido.deadlineAt, agora)
     return {
-      tom: 'critico',
-      icone: 'relogio',
-      texto: denso ? `Atraso ${atraso}` : `Pedido em atraso há ${atraso}`,
+      tom: 'aviso',
+      icone: nivel === 'perto' ? 'relogio' : undefined,
+      texto: denso ? `${verbo} em ${falta}` : `${verbo} em até ${falta}`,
     }
   }
 
@@ -109,6 +135,7 @@ export function Cartao({
   agora,
   ocupado,
   variante = 'largo',
+  selecionado = false,
   aoPedirAcao,
   aoAbrirDetalhe,
 }: PropsDoCartao) {
@@ -133,7 +160,12 @@ export function Cartao({
   const sobraram = acoes.length - noCartao.length
 
   return (
-    <article className="cartao" data-variante={variante} data-urgencia={nivel}>
+    <article
+      className="cartao"
+      data-variante={variante}
+      data-urgencia={nivel}
+      data-selecionado={selecionado || undefined}
+    >
       <button
         type="button"
         className="cartao__abrir"

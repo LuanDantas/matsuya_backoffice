@@ -34,8 +34,16 @@ export function decorrido(desde: string, agora: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-/** Quanto falta para o SLA, em minutos. Negativo = já estourou. */
-export function minutosAteSla(slaExpiresAt: string | null, agora: number): number | null {
-  if (!slaExpiresAt) return null
-  return Math.floor((new Date(slaExpiresAt).getTime() - agora) / 60000)
+/**
+ * Quanto falta até um instante futuro, em m:ss.
+ *
+ * Par do `decorrido`: um conta para frente, o outro para trás. Ter os dois
+ * evita a conta invertida no meio de um JSX, que é onde ela sai errada e
+ * ninguém nota — porque um cronômetro errado ainda parece um cronômetro.
+ */
+export function restante(ate: string, agora: number): string {
+  const segundos = Math.max(0, Math.floor((new Date(ate).getTime() - agora) / 1000))
+  const m = Math.floor(segundos / 60)
+  const s = segundos % 60
+  return `${m}:${String(s).padStart(2, '0')}`
 }

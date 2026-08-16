@@ -40,12 +40,24 @@ export interface PedidoDoQuadro {
   hasPartialCancellation: boolean
   createdAt: string
   addressSnapshot: Record<string, unknown> | null
+  /** Prazo derivado pela API — ver `modules/orders/prazos.ts` lá. */
+  deadlineAt: string | null
+  deadlineKind: 'aceite' | 'preparo' | null
   items?: Array<{
     id: number
     productName: string
     qty: number
     cancelledQty?: number
     unitPrice: number
+    lineTotal?: number
+    /** Opções escolhidas, congeladas no momento do pedido. */
+    optionsSnapshot?: Array<{
+      groupId: number
+      groupName: string
+      optionId: number
+      optionName: string
+      priceDelta: number
+    }>
   }>
 }
 

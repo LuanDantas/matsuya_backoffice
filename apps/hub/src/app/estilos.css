@@ -13,8 +13,15 @@
 
 .app {
   display: flex;
-  flex-direction: column;
   height: 100dvh;
+  overflow: hidden;
+}
+
+.app__conteudo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .carregando {
@@ -1114,4 +1121,638 @@
   margin-top: var(--e-1);
   font-size: var(--texto-xs);
   color: var(--texto-fraco);
+}
+
+/* ── Menu lateral ───────────────────────────────────────────────────────── */
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-1);
+  width: 72px;
+  flex-shrink: 0;
+  padding: var(--e-2) var(--e-2) var(--e-4);
+  padding-top: max(var(--e-2), env(safe-area-inset-top));
+  background: var(--superficie-1);
+  border-right: 1px solid var(--borda);
+  transition: width var(--duracao) var(--curva);
+  overflow: hidden;
+}
+
+.menu[data-expandido] {
+  width: 220px;
+}
+
+/* O rótulo some com largura zero, não com `display: none`: assim ele continua
+   no fluxo durante a transição e o ícone não pula de posição. */
+.menu__rotulo {
+  flex: 1;
+  min-width: 0;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: left;
+  transition:
+    max-width var(--duracao) var(--curva),
+    opacity var(--duracao-rapida) var(--curva);
+}
+
+.menu[data-expandido] .menu__rotulo {
+  max-width: 140px;
+  opacity: 1;
+}
+
+.menu__alternar,
+.menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--e-3);
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: var(--raio-1);
+  background: transparent;
+  color: var(--texto-fraco);
+  font: inherit;
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+  transition:
+    background-color var(--duracao-rapida) var(--curva),
+    color var(--duracao-rapida) var(--curva);
+}
+
+.menu__alternar {
+  margin-bottom: var(--e-2);
+}
+
+.menu__alternar:hover,
+.menu__item:hover {
+  background: var(--superficie-3);
+  color: var(--texto);
+}
+
+/* Item corrente: fundo suave da marca + barra vertical na borda esquerda, como
+   a referência. Cor sozinha não sobrevive a contraluz nem a daltonismo — a
+   barra é o que garante a leitura. */
+.menu__item[aria-current='page'] {
+  background: var(--marca-suave);
+  border-left-color: var(--marca);
+  color: var(--marca);
+  font-weight: var(--peso-forte);
+}
+
+.menu__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-1);
+}
+
+.menu__icone {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.menu__distintivo {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--raio-total);
+  background: var(--perigo);
+  color: #fff;
+  font-size: 10px;
+  font-weight: var(--peso-forte);
+}
+
+/* Num tablet em retrato o menu vira uma faixa de ícones e não expande: 220 px
+   ali seriam metade da largura útil. */
+@media (max-width: 900px) {
+  .menu,
+  .menu[data-expandido] {
+    width: 60px;
+  }
+  .menu__rotulo,
+  .menu[data-expandido] .menu__rotulo {
+    max-width: 0;
+    opacity: 0;
+  }
+}
+
+/* ── Drawer ─────────────────────────────────────────────────────────────── */
+
+.ui-drawer__veu {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  justify-content: flex-end;
+  /* Mais leve que o véu do modal: o quadro atrás precisa continuar legível.
+     É a diferença entre "o resto está inativo" e "o resto sumiu". */
+  background: rgb(15 23 42 / 0.32);
+  animation: ui-surgir var(--duracao) var(--curva);
+}
+
+.ui-drawer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100dvh;
+  background: var(--superficie-1);
+  border-left: 1px solid var(--borda);
+  box-shadow: -12px 0 32px rgb(0 0 0 / 0.12);
+  animation: ui-entrar-da-direita var(--duracao) var(--curva);
+}
+
+.ui-drawer[data-largura='medio'] { max-width: 600px; }
+.ui-drawer[data-largura='largo'] { max-width: 780px; }
+
+@keyframes ui-entrar-da-direita {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+.ui-drawer__cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--e-3);
+  padding: var(--e-4);
+  padding-top: max(var(--e-4), env(safe-area-inset-top));
+  border-bottom: 1px solid var(--borda);
+  flex-shrink: 0;
+}
+
+.ui-drawer__titulo h2 {
+  margin: 0;
+  font-size: var(--texto-xl);
+  font-weight: var(--peso-forte);
+  line-height: var(--linha-apertada);
+}
+
+.ui-drawer__subtitulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-2);
+  margin-top: var(--e-2);
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.ui-drawer__subtitulo span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ui-drawer__corpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--e-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-4);
+}
+
+.ui-drawer__rodape {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--e-2);
+  padding: var(--e-3) var(--e-4);
+  padding-bottom: max(var(--e-3), env(safe-area-inset-bottom));
+  border-top: 1px solid var(--borda);
+  background: var(--superficie-2);
+  flex-shrink: 0;
+}
+
+/* ── Drawer do pedido ───────────────────────────────────────────────────── */
+
+.drawer-pedido__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  flex-wrap: wrap;
+}
+
+/* Código em caixa, como a referência: separa o identificador do nome sem
+   precisar de rótulo. */
+.drawer-pedido__codigo {
+  padding: 4px var(--e-2);
+  border: 2px solid var(--texto);
+  border-radius: var(--raio-1);
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-forte);
+}
+
+.drawer-pedido__selos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+}
+
+.drawer-pedido__secao h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  margin: 0 0 var(--e-3);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
+}
+
+.drawer-pedido__contagem {
+  padding: 1px 6px;
+  border-radius: var(--raio-total);
+  background: var(--contagem-fundo);
+  color: var(--contagem-texto);
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
+.drawer-pedido__itens {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+}
+
+.drawer-pedido__itens li {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  gap: var(--e-2);
+  align-items: baseline;
+  padding-bottom: var(--e-3);
+  border-bottom: 1px solid var(--borda);
+}
+
+.drawer-pedido__qtd {
+  font-weight: var(--peso-forte);
+  font-size: var(--texto-base);
+}
+
+.drawer-pedido__item {
+  font-size: var(--texto-base);
+}
+
+.drawer-pedido__opcoes {
+  list-style: none;
+  margin: var(--e-1) 0 0;
+  padding: 0 0 0 var(--e-3);
+  border-left: 2px solid var(--borda);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.drawer-pedido__preco {
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.drawer-pedido__sem-itens,
+.drawer-pedido__texto {
+  margin: 0;
+  font-size: var(--texto-sm);
+  line-height: var(--linha-normal);
+}
+
+.drawer-pedido__texto--fraco {
+  color: var(--texto-fraco);
+}
+
+.drawer-pedido__valores {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Linha de valor: ícone + rótulo à esquerda, valor à direita. O olho desce
+   pela coluna esquerda e cruza só quando achou o rótulo. */
+.drawer-pedido__linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
+  padding: var(--e-3) 0;
+  border-bottom: 1px solid var(--borda);
+}
+
+.drawer-pedido__linha dt {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  color: var(--texto-corpo);
+  font-size: var(--texto-base);
+}
+
+.drawer-pedido__linha dt small {
+  display: block;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.drawer-pedido__linha dd {
+  margin: 0;
+  font-size: var(--texto-base);
+}
+
+.drawer-pedido__linha[data-destaque] {
+  font-weight: var(--peso-forte);
+}
+
+.drawer-pedido__linha[data-destaque] dd {
+  font-size: var(--texto-lg);
+}
+
+/* ── Drawer de conversa ─────────────────────────────────────────────────── */
+
+.drawer-chat__titulo {
+  display: flex;
+  align-items: baseline;
+  gap: var(--e-2);
+  margin: 0;
+  font-size: var(--texto-xl);
+  font-weight: var(--peso-forte);
+}
+
+/* ── Em rota ────────────────────────────────────────────────────────────── */
+
+.rota {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: var(--e-3);
+  padding: var(--e-3);
+}
+
+@media (max-width: 1100px) {
+  .rota {
+    grid-template-columns: 1fr;
+    grid-template-rows: 260px 1fr;
+  }
+  .rota__mapa { order: -1; }
+}
+
+.rota__lista {
+  display: flex;
+  min-height: 0;
+}
+
+.rota__lista .ui-painel {
+  flex: 1;
+  min-width: 0;
+}
+
+.rota__lista .ui-painel__corpo {
+  overflow-y: auto;
+}
+
+.rota__itens {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+.rota__item {
+  width: 100%;
+  min-height: var(--alvo);
+  padding: var(--e-3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-1);
+  background: var(--superficie-1);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--duracao-rapida) var(--curva);
+}
+
+.rota__item:hover,
+.rota__item[data-selecionado] {
+  border-color: var(--marca);
+}
+
+.rota__linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2);
+  font-size: var(--texto-sm);
+}
+
+.rota__linha--fraca {
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+.rota__mapa {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  min-height: 0;
+}
+
+.rota__nota {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  margin: 0;
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+.mapa {
+  flex: 1;
+  min-height: 240px;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-2);
+  overflow: hidden;
+  background: var(--superficie-2);
+}
+
+.mapa--sem-dados,
+.mapa--carregando {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-3);
+  padding: var(--e-6);
+  text-align: center;
+  color: var(--texto-fraco);
+  font-size: var(--texto-sm);
+}
+
+/* Pino desenhado em HTML, não em imagem: o PNG padrão do Leaflet quebra em
+   build com hash, e é a causa mais comum de "marcador não aparece". */
+.mapa__pino span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--pino);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.35);
+}
+
+/* ── Conversas, cardápio e ajustes ──────────────────────────────────────── */
+
+.conversas,
+.cardapio,
+.ajustes {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  padding: var(--e-3);
+  max-width: 900px;
+  width: 100%;
+}
+
+.conversas__lista,
+.cardapio__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+.conversas__item {
+  width: 100%;
+  min-height: var(--alvo);
+  padding: var(--e-3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-1);
+  background: var(--superficie-1);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.conversas__item:hover { border-color: var(--marca); }
+
+.conversas__linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2);
+  font-size: var(--texto-sm);
+}
+
+.conversas__linha--fraca {
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+.conversas__abrir {
+  font-size: var(--texto-xs);
+  color: var(--marca);
+}
+
+.cardapio__item {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  padding: var(--e-3);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-1);
+  background: var(--superficie-1);
+  font-size: var(--texto-sm);
+}
+
+.cardapio__item[data-pausado] {
+  border-left: 3px solid var(--atencao);
+}
+
+.cardapio__nome {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardapio__nome small {
+  display: block;
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+.ajustes__linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-4);
+  padding: var(--e-3) var(--e-2);
+  border-bottom: 1px solid var(--borda);
+}
+
+.ajustes__linha:last-child { border-bottom: 0; }
+
+.ajustes__linha strong {
+  font-size: var(--texto-base);
+}
+
+.ajustes__linha p {
+  margin: 2px 0 0;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.ajustes__nota {
+  margin: 0;
+  padding: 0 var(--e-2) var(--e-2);
+  font-size: var(--texto-sm);
+  color: var(--atencao);
+}
+
+/* ── Cartão selecionado ─────────────────────────────────────────────────── */
+
+/* Anel da marca enquanto o drawer daquele pedido está aberto — a referência
+   marca o cartão de origem, e sem isso o operador perde de vista qual pedido
+   ele abriu quando o quadro se reordena. */
+.cartao[data-selecionado] {
+  border-color: var(--marca);
+  box-shadow: 0 0 0 2px var(--marca);
 }
