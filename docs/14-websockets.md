@@ -163,3 +163,54 @@ Acima de ~10 mil sockets concorrentes — número que este negócio não vai ati
 | Store Manager só assina `orders` **enquanto uma tela ao vivo está montada** | O resto do tempo assina só `unit:{id}:ops`, de baixa frequência |
 | O Hub **nunca** desconecta por aba oculta | O Console desconecta após 30 min oculto |
 | `/customer` fica para a Fase 4 | O app hoje faz polling de 15 s e isso é suficiente; migrar o app é trabalho que não bloqueia o Order Hub |
+
+
+---
+
+## 9. Estado da implementação — Fase 1
+
+| Item | Situação |
+|---|---|
+| Socket.IO `/ops` no mesmo processo | ✅ |
+| Handshake com token no `auth`, nunca em query string | ✅ |
+| Cliente pede room, servidor concede | ✅ verificado: `FORBIDDEN_SCOPE` em loja alheia |
+| Cursor entregue no `subscribe` | ✅ |
+| Heartbeat de aplicação com `serverTime` e `serverCursor` | ✅ |
+| `store_change_log` + `GET /changes?since=` | ✅ |
+| Sincronizador de cursor no cliente (§5.1) | ✅ `packages/realtime`, 12 testes |
+| Modo degradado (polling de 10 s) | ✅ |
+| Rooms de chat, catálogo, impressão, `network:alerts` | ⬜ |
+| Adapter Redis (§7) | ⬜ quando entrar a segunda instância |
+
+### 9.1 Correção do `seq`: por unidade, não global
+
+Este capítulo dizia "`seq` monotônico por unidade" e a primeira implementação usou uma `BIGSERIAL` global filtrada por unidade. **Monotônico não basta — precisa ser contíguo.**
+
+O defeito só apareceu ao ligar o Hub na API rodando: o primeiro evento de uma loja chegou com `seq` 5, porque os números 1 a 4 tinham ido para outra unidade. O cliente, que detecta perda comparando com `cursor + 1`, tratou um evento perfeitamente normal como lacuna.
+
+Em produção o efeito seria pior do que um teste vermelho. Com uma dúzia de lojas ativas no almoço, o diário de cada uma receberia 41, 47, 52 — e **toda** mudança dispararia uma ida a `/changes`. O socket deixaria de ser otimização e viraria uma campainha para um fetch, vinda de cada tablet da rede, no pior horário. Nada quebraria; ficaria só lento e caro, que é o tipo de problema que ninguém investiga até virar incidente.
+
+A correção é `store_cursors`, um contador por unidade alocado com `UPDATE … RETURNING` na mesma transação da mudança:
+
+```sql
+CREATE TABLE store_cursors (
+  unity_id int PRIMARY KEY REFERENCES unity(id) ON DELETE CASCADE,
+  last_seq  bigint NOT NULL DEFAULT 0
+);
+```
+
+```sql
+INSERT INTO store_cursors (unity_id, last_seq) VALUES (:unityId, 1)
+ON CONFLICT (unity_id) DO UPDATE SET last_seq = store_cursors.last_seq + 1
+RETURNING last_seq;
+```
+
+Três propriedades que a `BIGSERIAL` não tinha:
+
+- **`cursor + 1` significa o que promete** — o próximo evento *desta* loja.
+- **Rollback devolve o número.** Uma sequence o queimaria, deixando um buraco permanente que faria todo cliente daquela unidade travar no cursor para sempre.
+- **A linha da unidade fica travada da alocação até o commit**, então duas mudanças da mesma loja não conseguem commitar fora de ordem.
+
+O custo é uma linha quente por unidade. Para uma rede de doze lojas com centenas de pedidos por dia cada, é irrelevante — e o que se compra com ela é a única coisa que faz o resync funcionar.
+
+`GET /changes` passou a devolver apenas o **trecho contíguo** a partir de `since`, parando no primeiro buraco. Pela serialização acima isso não deve ocorrer nunca; a guarda fica porque a alternativa a uma rede de segurança inútil é descobrir em produção que ela era necessária.
