@@ -2732,7 +2732,9 @@
   cursor: pointer;
 }
 
-.seletor__gatilho:hover { border-color: var(--marca); }
+/* Cinza mais escuro, pelo mesmo motivo dos botões do cabeçalho: vermelho ali
+   diria "algo aconteceu" quando só diz "o ponteiro está em cima". */
+.seletor__gatilho:hover { border-color: var(--texto-apagado); }
 
 .seletor__avatares { display: inline-flex; }
 
@@ -2836,26 +2838,58 @@
   overflow-y: auto;
   list-style: none;
   margin: 0;
-  padding: 0;
+  /* 2px à direita para a barra de rolagem não encostar na borda dos cartões. */
+  padding: 0 2px 0 0;
+  /* Flex para o `gap` valer: como `ul` comum, os cartões ficariam colados e a
+     borda de um encostaria na do seguinte. */
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
 }
 
+/*
+ * Cada loja é um cartão, e não uma linha de lista.
+ *
+ * A lista corrida empilhava avatar, nome, estado e movimento sem nada que
+ * dissesse onde uma unidade termina e a outra começa — com seis lojas, a
+ * varredura vertical virava um bloco só. A borda e o degrau de superfície
+ * fazem o trabalho que o espaçamento sozinho não fazia.
+ */
 .seletor__opcao {
   display: flex;
   align-items: center;
   gap: var(--e-3);
   width: 100%;
-  min-height: 56px;
-  padding: 0 var(--e-2);
-  border: 0;
-  border-radius: var(--raio-1);
-  background: transparent;
+  min-height: 60px;
+  padding: var(--e-2) var(--e-3);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-2);
+  background: var(--superficie-1);
   color: inherit;
   font: inherit;
   text-align: left;
   cursor: pointer;
+  transition:
+    background-color var(--duracao-rapida) var(--curva),
+    border-color var(--duracao-rapida) var(--curva);
 }
 
-.seletor__opcao:hover { background: var(--superficie-3); }
+.seletor__opcao:hover {
+  background: var(--superficie-2);
+  border-color: var(--texto-apagado);
+}
+
+/*
+ * Selecionada: fundo tingido e borda de marca.
+ *
+ * Antes só o quadradinho de check mudava — um alvo de 22px carregando sozinho
+ * a resposta de "quais lojas estou vendo?", que é a pergunta que o painel
+ * inteiro existe para responder.
+ */
+.seletor__opcao[aria-pressed='true'] {
+  background: var(--marca-suave);
+  border-color: var(--marca);
+}
 
 .seletor__marca {
   display: inline-flex;
@@ -2882,14 +2916,21 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 5px;
   font-size: var(--texto-base);
+  font-weight: var(--peso-medio);
   text-align: left;
 }
 
-.seletor__nome small {
+/* A segunda linha carrega estado e movimento lado a lado, e quebra em vez de
+   cortar: nome de loja longo não pode empurrar o estado para fora. */
+.seletor__estado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-2);
   font-size: var(--texto-xs);
-  color: var(--texto-fraco);
+  font-weight: var(--peso-normal);
 }
 
 /*
@@ -2899,33 +2940,51 @@
  * decisões diferentes com consequências diferentes — uma volta às 14:30, a
  * outra volta amanhã —, e um ponto âmbar não sabe dizer qual das duas é.
  */
+/*
+ * O estado vira pílula tingida, e não texto colorido solto.
+ *
+ * O fundo é o que a torna visível de relance numa lista de seis: texto em cor
+ * some entre nomes pretos, uma pílula não. Ponto e palavra continuam juntos —
+ * "pausada" e "fechada" são decisões diferentes com consequências diferentes,
+ * uma volta às 14:30 e a outra amanhã, e um ponto colorido não sabe dizer qual.
+ */
 .seletor__operacao {
   display: inline-flex;
   align-items: center;
-  gap: var(--e-1);
+  gap: 5px;
   flex-shrink: 0;
+  padding: 2px var(--e-2);
+  border-radius: var(--raio-total);
   font-size: var(--texto-xs);
   font-weight: var(--peso-medio);
-  color: var(--texto-fraco);
   white-space: nowrap;
+  /* Aberta é o padrão — verde, o mesmo do "Ao vivo" do cabeçalho. */
+  color: var(--sucesso);
+  background: var(--sucesso-suave);
 }
 
 .seletor__ponto {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: var(--marca);
+  background: currentColor;
   flex-shrink: 0;
 }
 
-.seletor__operacao[data-estado='pausada'] { color: var(--atencao); }
-.seletor__operacao[data-estado='pausada'] .seletor__ponto { background: var(--atencao); }
+.seletor__operacao[data-estado='pausada'] {
+  color: var(--atencao);
+  background: var(--atencao-suave);
+}
 
-/* Fechada usa contorno vazado: a ausência de preenchimento diz "não está
-   funcionando" sem depender de o operador distinguir cinza de âmbar. */
-.seletor__operacao[data-estado='fechada'] .seletor__ponto {
-  background: transparent;
-  box-shadow: inset 0 0 0 2px var(--texto-fraco);
+.seletor__operacao[data-estado='fechada'] {
+  color: var(--perigo);
+  background: var(--perigo-suave);
+}
+
+/* Movimento é rotina, e fica em tom neutro: loja fechada com fila é o que
+   ninguém percebe, e ela não pode competir com o estado. */
+.seletor__movimento {
+  color: var(--texto-fraco);
 }
 
 .seletor__vazio {

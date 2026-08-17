@@ -45,15 +45,25 @@ const relogio = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-d
  * dado — loja que ainda não respondeu — não escreve nada, porque um "aberta"
  * chutado é pior do que rótulo nenhum.
  */
+/*
+ * "Loja aberta" e não "Aberta".
+ *
+ * O sujeito por extenso porque a etiqueta aparece ao lado do nome da unidade,
+ * e "Aberta" sozinha, colada em "Matsuya Moema", lê como parte do nome. A
+ * palavra a mais custa alguns pixels e resolve a ambiguidade.
+ *
+ * A pausa mantém o horário quando ele existe: saber que reabre às 14:30 é
+ * outra decisão que saber apenas que está pausada.
+ */
 function rotuloDaOperacao(op: OperacaoDaLoja | undefined): string | null {
   if (!op) return null
-  if (op.estado === 'fechada') return 'Fechada'
+  if (op.estado === 'fechada') return 'Loja fechada'
   if (op.estado === 'pausada') {
     return op.pausadaAte
       ? `Pausada até ${relogio.format(new Date(op.pausadaAte))}`
-      : 'Pausada'
+      : 'Loja pausada'
   }
-  return 'Aberta'
+  return 'Loja aberta'
 }
 
 export function SeletorDeLojas({
@@ -217,21 +227,23 @@ export function SeletorDeLojas({
                     <span className="seletor__nome">
                       {unidade.name}
                       {/*
-                        A contagem de pedidos desce para a linha de apoio e o
-                        ponto passa a marcar o estado da loja. O ponto é o
-                        elemento mais forte da linha, e estava contando a coisa
-                        menos importante das duas: pedido em aberto é rotina,
-                        loja fechada com fila é o que ninguém percebe.
+                        A etiqueta de estado desceu para a segunda linha, junto
+                        com a de movimento. Na mesma linha do nome, ela disputava
+                        espaço com nomes longos e era a primeira a ser cortada —
+                        justamente a informação que ninguém tem de outro jeito.
                       */}
-                      {pedidos && <small>com pedido em aberto</small>}
+                      <small className="seletor__estado">
+                        {rotulo && (
+                          <span className="seletor__operacao" data-estado={op!.estado}>
+                            <span className="seletor__ponto" aria-hidden="true" />
+                            {rotulo}
+                          </span>
+                        )}
+                        {pedidos && (
+                          <span className="seletor__movimento">com pedido em aberto</span>
+                        )}
+                      </small>
                     </span>
-
-                    {rotulo && (
-                      <span className="seletor__operacao" data-estado={op!.estado}>
-                        <span className="seletor__ponto" aria-hidden="true" />
-                        {rotulo}
-                      </span>
-                    )}
                   </button>
                 </li>
               )
