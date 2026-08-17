@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { FilaDeImpressao } from './fila'
 import { criarServidor, PORTA_PADRAO } from './servidor'
+import { ServidorRemoto } from './servidorRemoto'
 import type { Impressora } from './transporte'
 
 /**
@@ -20,6 +21,11 @@ import type { Impressora } from './transporte'
  *
  *     {
  *       "porta": 9110,
+ *       "servidor": {
+ *         "url": "https://mastsuya-api.onrender.com",
+ *         "token": "<token do dispositivo, exibido uma vez no registro>",
+ *         "unityId": 8
+ *       },
  *       "impressoras": [
  *         { "nome": "Cozinha", "papel": "cozinha", "largura": 80,
  *           "destino": { "tipo": "rede", "host": "192.168.0.50" } },
@@ -32,6 +38,12 @@ import type { Impressora } from './transporte'
 interface Configuracao {
   porta?: number
   impressoras: Impressora[]
+  /**
+   * A ligação com o backend. Ausente ⇒ o agente funciona só pela LAN, que é o
+   * modo de piloto: dá para instalar numa loja e imprimir antes de existir
+   * dispositivo registrado.
+   */
+  servidor?: { url: string; token: string; unityId: number }
 }
 
 const CAMINHO_PADRAO = 'agente.config.json'
@@ -77,7 +89,27 @@ async function principal(): Promise<void> {
 
   const porta = await escutar()
 
+  /*
+   * Dois caminhos de entrada, e é de propósito: o Hub alcança o agente pela
+   * LAN mesmo com a internet da loja fora, e o servidor alcança mesmo com o
+   * Hub fechado. A fila deduplica quando os dois chegam.
+   */
+  const remoto = config.servidor
+    ? new ServidorRemoto({
+        ...config.servidor,
+        fila,
+        impressoras: config.impressoras,
+      })
+    : null
+
+  remoto?.conectar()
+
   console.log(`[agente] escutando em http://0.0.0.0:${porta}`)
+  console.log(
+    remoto
+      ? `[agente] ligado ao servidor ${config.servidor!.url} (unidade ${config.servidor!.unityId})`
+      : '[agente] sem ligação com o servidor — só o caminho pela LAN'
+  )
   console.log(
     config.impressoras.length > 0
       ? `[agente] impressoras: ${config.impressoras.map((i) => `${i.nome} (${i.papel})`).join(', ')}`
@@ -88,6 +120,7 @@ async function principal(): Promise<void> {
     console.log('[agente] encerrando; aguardando a fila esvaziar')
     // Sair no meio de uma comanda deixaria meia comanda no papel, e a outra
     // metade em lugar nenhum.
+    remoto?.desconectar()
     await fila.aguardar()
     await parar()
     process.exit(0)

@@ -10,7 +10,8 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@matsuya/printing": "workspace:*"
+    "@matsuya/printing": "workspace:*",
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@matsuya/config": "workspace:*",
