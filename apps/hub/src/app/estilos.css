@@ -1143,7 +1143,16 @@
  */
 .entrada__link {
   align-self: center;
+  /*
+   * O alvo de 44px continua, mas o espaço visual encolhe.
+   *
+   * A altura mínima é toque, não respiro — e somada ao gap de 16px do
+   * formulário criava um vão grande entre a senha e o botão. As margens
+   * negativas devolvem esse vão sem tirar um pixel da área clicável.
+   */
   min-height: var(--alvo);
+  margin-top: calc(var(--e-3) * -1);
+  margin-bottom: calc(var(--e-3) * -1);
   padding: 0;
   border: 0;
   background: none;
@@ -1349,10 +1358,19 @@
 }
 
 .entrada__pilha .turno {
-  /* Encostado à direita: é o que dá a diagonal com o pedido, que fica à
-     esquerda. */
   align-self: flex-end;
-  margin-right: var(--e-4);
+  /*
+   * Margem **negativa**: o turno precisa ultrapassar a borda direita do pedido.
+   *
+   * Encostado para dentro, ele ficava inteiramente contido na largura do outro
+   * cartão — e um retângulo que some atrás de uma aresta reta não lê como
+   * pilha, lê como defeito de renderização. Ultrapassando, ele aparece como um
+   * segundo cartão espiando por trás, que é o que a composição quer dizer.
+   *
+   * Negativo e não largura fixa no contêiner porque o painel muda de largura
+   * com a janela: a sobra tem de ser a mesma em 1024 e em 1600.
+   */
+  margin-right: -40px;
   transform: rotate(2.5deg);
 }
 
