@@ -23,6 +23,22 @@ export interface PropsDoDrawer {
   aoFechar: () => void
   /** Ações fixas no rodapé; rolam nunca, ficam sempre alcançáveis. */
   rodape?: ReactNode
+  /**
+   * Ações no cabeçalho, ao lado do fechar.
+   *
+   * Para o que se faz **com** o painel aberto e não decide nada — conversar,
+   * imprimir. O rodapé é onde mora a decisão, e misturar as duas coisas lá
+   * fazia "Conversa" competir por atenção com "Despachar".
+   */
+  acoes?: ReactNode
+  /**
+   * Marca o painel para estilo próprio (`data-variante`).
+   *
+   * Existe porque o corpo do drawer é branco e chapado por padrão, e o detalhe
+   * do pedido precisa do oposto: fundo cinza com seções em cartões brancos. É
+   * uma diferença de conteúdo, não um segundo componente.
+   */
+  variante?: string
   largura?: 'medio' | 'largo'
   /** Rótulo do diálogo para leitor de tela, quando o título não é texto. */
   rotuloAcessivel: string
@@ -35,6 +51,8 @@ export function Drawer({
   subtitulo,
   aoFechar,
   rodape,
+  acoes,
+  variante,
   largura = 'medio',
   rotuloAcessivel,
   children,
@@ -53,6 +71,7 @@ export function Drawer({
         ref={painel}
         className="ui-drawer"
         data-largura={largura}
+        data-variante={variante}
         role="dialog"
         aria-modal="true"
         aria-label={rotuloAcessivel}
@@ -64,9 +83,12 @@ export function Drawer({
             {subtitulo && <div className="ui-drawer__subtitulo">{subtitulo}</div>}
           </div>
 
-          <Botao enfase="fantasma" icone="x" onClick={aoFechar}>
-            <span className="ui-visualmente-oculto">Fechar</span>
-          </Botao>
+          <div className="ui-drawer__acoes">
+            {acoes}
+            <Botao enfase="fantasma" icone="x" onClick={aoFechar}>
+              <span className="ui-visualmente-oculto">Fechar</span>
+            </Botao>
+          </div>
         </header>
 
         <div className="ui-drawer__corpo">{children}</div>

@@ -2323,6 +2323,29 @@
 
 /* ── Drawer do pedido ───────────────────────────────────────────────────── */
 
+/*
+ * O corpo vira uma tela cinza, e cada seção um cartão branco.
+ *
+ * O painel responde perguntas de naturezas diferentes — o que a cozinha monta,
+ * para onde vai, quem leva, quanto é. Numa folha branca contínua elas viram um
+ * texto só, e achar o endereço exige atravessar a lista de itens. O cinza entre
+ * os cartões é o que permite pular de uma pergunta para outra sem ler o meio.
+ *
+ * Escopado em `[data-variante='pedido']` porque os outros drawers — conversa,
+ * ferramentas, exceções — são de um assunto só, e ali a folha branca é o certo.
+ */
+.ui-drawer[data-variante='pedido'] .ui-drawer__corpo {
+  background: var(--superficie-base);
+  gap: var(--e-3);
+}
+
+.ui-drawer__acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--e-1);
+  flex-shrink: 0;
+}
+
 .drawer-pedido__titulo {
   display: flex;
   align-items: center;
@@ -2340,32 +2363,298 @@
   font-weight: var(--peso-forte);
 }
 
-.drawer-pedido__selos {
-  display: flex;
-  flex-wrap: wrap;
+/*
+ * Botão redondo do cabeçalho.
+ *
+ * Redondo e não retangular para se ler como "ferramenta do painel" e não como
+ * mais uma ação de fluxo — as do rodapé são retangulares. 40 px de diâmetro
+ * com o alvo estendido por `padding` do cabeçalho.
+ */
+.drawer-pedido__redondo {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--borda-forte);
+  border-radius: 50%;
+  background: var(--superficie-1);
+  color: var(--texto-corpo);
+  cursor: pointer;
+  transition:
+    background-color var(--duracao) var(--curva),
+    border-color var(--duracao) var(--curva),
+    color var(--duracao) var(--curva);
+}
+
+.drawer-pedido__redondo:hover {
+  background: var(--superficie-3);
+  border-color: var(--texto-fraco);
+  color: var(--texto);
+}
+
+.drawer-pedido__redondo:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+}
+
+/* O distintivo sai da borda do botão de propósito: dentro do círculo ele
+   competiria com o ícone, e o número é o que precisa ser visto primeiro. */
+.drawer-pedido__nao-lidas {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--raio-total);
+  background: var(--alarme-fundo);
+  color: var(--alarme-texto);
+  font-size: 10px;
+  font-weight: var(--peso-forte);
+}
+
+/* ── Faixa de fatos ─────────────────────────────────────────────────────── */
+
+/*
+ * Os números que decidem alguma coisa, juntos no topo.
+ *
+ * Substituem três selos que traziam só a categoria — "Entrega", "Retirada" —
+ * e obrigavam a procurar o valor correspondente lá embaixo. Cada bloco aqui é
+ * um par rótulo/valor: o rótulo em cinza pequeno, o valor no peso do texto.
+ *
+ * `auto-fit` com mínimo de 150 px: em painel médio dão dois por linha, e num
+ * monitor largo os quatro cabem numa faixa só. Ninguém precisa decidir a
+ * quebra à mão.
+ */
+.drawer-pedido__fatos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: var(--e-2);
 }
 
-.drawer-pedido__secao h3 {
+.drawer-pedido__fato {
   display: flex;
-  align-items: center;
-  gap: var(--e-2);
-  margin: 0 0 var(--e-3);
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--e-2) var(--e-3);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-2);
+  background: var(--superficie-1);
+  min-width: 0;
+}
+
+.drawer-pedido__fato-rotulo {
   font-size: var(--texto-xs);
-  font-weight: var(--peso-forte);
-  letter-spacing: 0.06em;
+  font-weight: var(--peso-medio);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--texto-fraco);
 }
 
+.drawer-pedido__fato-valor {
+  font-size: var(--texto-base);
+  font-weight: var(--peso-forte);
+  /* Sobra em vez de cortar: "atrasado há 1h12" é curto, mas um endereço de
+     previsão em outra locale pode não ser. */
+  overflow-wrap: anywhere;
+}
+
+/*
+ * Prazo vencido é o único fato que se pinta.
+ *
+ * Suave e não sólido, pela mesma regra do cartão: o preenchimento cheio de
+ * alarme é do quadro, onde ele compete com dezenas de cartões. Aqui há um
+ * pedido só na tela, e o contorno já basta para o olho parar.
+ */
+.drawer-pedido__fato[data-alarme] {
+  background: var(--alarme-suave);
+  border-color: color-mix(in srgb, var(--alarme-suave-texto) 30%, transparent);
+}
+
+.drawer-pedido__fato[data-alarme] .drawer-pedido__fato-rotulo,
+.drawer-pedido__fato[data-alarme] .drawer-pedido__fato-valor {
+  color: var(--alarme-suave-texto);
+}
+
+/* ── Avisos ─────────────────────────────────────────────────────────────── */
+
+/*
+ * Observação do cliente e alteração do pedido.
+ *
+ * Fora dos cartões e antes deles: são as duas coisas que mudam o que a cozinha
+ * faz, e dentro de um cartão de seção elas herdariam o peso de "mais um
+ * assunto". O rótulo pequeno em cima diz o que é sem gastar uma linha inteira.
+ */
+.drawer-pedido__observacao {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-3);
+  margin: 0;
+  padding: var(--e-3);
+  border: 1px solid color-mix(in srgb, var(--atencao) 32%, transparent);
+  border-radius: var(--raio-2);
+  background: var(--atencao-suave);
+  color: var(--atencao);
+  font-size: var(--texto-sm);
+  line-height: var(--linha-normal);
+}
+
+.drawer-pedido__observacao svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.drawer-pedido__observacao span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.drawer-pedido__observacao small {
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+/* ── Cartão de seção ────────────────────────────────────────────────────── */
+
+.drawer-pedido__cartao {
+  padding: var(--e-3);
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  background: var(--superficie-1);
+}
+
+.drawer-pedido__cabecalho {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  margin: 0 0 var(--e-3);
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-forte);
+  color: var(--texto);
+}
+
+/* O disco dá ao título uma âncora fixa na margem esquerda: com quatro cartões
+   empilhados, o olho desce por essa coluna de ícones e para no que procura sem
+   ler nenhum título inteiro. */
+.drawer-pedido__disco {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--superficie-3);
+  color: var(--texto-corpo);
+}
+
 .drawer-pedido__contagem {
-  padding: 1px 6px;
+  padding: 1px 7px;
   border-radius: var(--raio-total);
   background: var(--contagem-fundo);
   color: var(--contagem-texto);
-  font-size: 10px;
-  letter-spacing: 0;
+  font-size: var(--texto-xs);
 }
+
+/* ── Corrida ────────────────────────────────────────────────────────────── */
+
+/*
+ * O cartão do entregador.
+ *
+ * Tem tom próprio porque é o único assunto do painel que **muda sozinho**
+ * enquanto ele está aberto: o entregador chega, sai, some. Os outros cartões
+ * só mudam se alguém agir. A cor à esquerda é onde essa mudança aparece.
+ */
+.drawer-pedido__corrida {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  border-left: 3px solid var(--borda-forte);
+}
+
+.drawer-pedido__corrida h3 {
+  margin: 0;
+  font-size: var(--texto-base);
+  font-weight: var(--peso-forte);
+}
+
+.drawer-pedido__corrida-quem {
+  margin: 2px 0 0;
+  font-size: var(--texto-sm);
+  color: var(--texto-corpo);
+}
+
+.drawer-pedido__corrida-tempo {
+  margin: 2px 0 0;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.drawer-pedido__corrida[data-tom='sucesso'] { border-left-color: var(--sucesso); }
+.drawer-pedido__corrida[data-tom='atencao'] { border-left-color: var(--atencao); }
+.drawer-pedido__corrida[data-tom='critico'] { border-left-color: var(--alarme-fundo); }
+
+.drawer-pedido__marca-agua {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--superficie-3);
+  color: var(--texto-corpo);
+}
+
+.drawer-pedido__corrida[data-tom='sucesso'] .drawer-pedido__marca-agua {
+  background: var(--sucesso-suave);
+  color: var(--sucesso);
+}
+
+.drawer-pedido__corrida[data-tom='atencao'] .drawer-pedido__marca-agua {
+  background: var(--atencao-suave);
+  color: var(--atencao);
+}
+
+.drawer-pedido__corrida[data-tom='critico'] .drawer-pedido__marca-agua {
+  background: var(--alarme-suave);
+  color: var(--alarme-suave-texto);
+}
+
+/* ── Endereço ───────────────────────────────────────────────────────────── */
+
+.drawer-pedido__endereco {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  font-size: var(--texto-sm);
+  line-height: var(--linha-normal);
+  color: var(--texto-corpo);
+}
+
+/* A rua e o número no peso do texto: é a linha que se lê em voz alta ao
+   telefone, e as outras duas são contexto dela. */
+.drawer-pedido__endereco strong {
+  font-size: var(--texto-base);
+  color: var(--texto);
+}
+
+.drawer-pedido__endereco span {
+  color: var(--texto-fraco);
+}
+
+/* ── Itens ──────────────────────────────────────────────────────────────── */
 
 .drawer-pedido__itens {
   list-style: none;
@@ -2373,25 +2662,44 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--e-3);
 }
 
 .drawer-pedido__itens li {
   display: grid;
-  grid-template-columns: 40px 1fr auto;
+  grid-template-columns: 36px 1fr auto;
   gap: var(--e-2);
   align-items: baseline;
-  padding-bottom: var(--e-3);
-  border-bottom: 1px solid var(--borda);
+  padding: var(--e-2) 0;
+  border-top: 1px solid var(--borda);
 }
 
+/* A primeira linha encosta no cabeçalho da seção, então não leva divisória —
+   senão o cartão ganha duas réguas seguidas com nada entre elas. */
+.drawer-pedido__itens li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.drawer-pedido__itens li:last-child {
+  padding-bottom: 0;
+}
+
+/* Quantidade em disco: numa lista de dez itens a coluna de números é o que a
+   cozinha confere, e o fundo a mantém alinhada mesmo com "1×" e "12×". */
 .drawer-pedido__qtd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 0;
+  border-radius: var(--raio-1);
+  background: var(--superficie-3);
   font-weight: var(--peso-forte);
-  font-size: var(--texto-base);
+  font-size: var(--texto-sm);
 }
 
 .drawer-pedido__item {
   font-size: var(--texto-base);
+  line-height: var(--linha-normal);
 }
 
 .drawer-pedido__opcoes {
@@ -2422,48 +2730,63 @@
   color: var(--texto-fraco);
 }
 
+/* ── Valores ────────────────────────────────────────────────────────────── */
+
 .drawer-pedido__valores {
   margin: 0;
   display: flex;
   flex-direction: column;
 }
 
-/* Linha de valor: ícone + rótulo à esquerda, valor à direita. O olho desce
-   pela coluna esquerda e cruza só quando achou o rótulo. */
 .drawer-pedido__linha {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: var(--e-3);
-  padding: var(--e-3) 0;
-  border-bottom: 1px solid var(--borda);
+  padding: var(--e-2) 0;
+  border-top: 1px solid var(--borda);
+}
+
+.drawer-pedido__linha:first-child {
+  border-top: 0;
+  padding-top: 0;
 }
 
 .drawer-pedido__linha dt {
   display: flex;
-  align-items: center;
-  gap: var(--e-3);
+  flex-direction: column;
   color: var(--texto-corpo);
-  font-size: var(--texto-base);
+  font-size: var(--texto-sm);
 }
 
 .drawer-pedido__linha dt small {
-  display: block;
-  font-size: var(--texto-sm);
+  font-size: var(--texto-xs);
   color: var(--texto-fraco);
 }
 
 .drawer-pedido__linha dd {
   margin: 0;
-  font-size: var(--texto-base);
+  font-size: var(--texto-sm);
+  color: var(--texto-corpo);
 }
 
-.drawer-pedido__linha[data-destaque] {
+/* O total sobe de peso e de corpo: é o número que a pessoa procura quando abre
+   a seção, e os outros três existem para explicá-lo. */
+.drawer-pedido__linha[data-destaque] dt,
+.drawer-pedido__linha[data-destaque] dd {
+  color: var(--texto);
   font-weight: var(--peso-forte);
 }
 
 .drawer-pedido__linha[data-destaque] dd {
   font-size: var(--texto-lg);
+}
+
+/* Empurra as ações de fluxo para a direita, deixando "Imprimir" sozinho na
+   esquerda. Um vão elástico, e não `justify-content`, porque o rodapé é
+   compartilhado com os outros drawers. */
+.drawer-pedido__vao {
+  flex: 1;
 }
 
 /* ── Drawer de conversa ─────────────────────────────────────────────────── */
