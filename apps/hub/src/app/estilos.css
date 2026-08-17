@@ -2877,19 +2877,29 @@
     border-color var(--duracao-rapida) var(--curva);
 }
 
+/*
+ * Hover mais claro que a seleção, e não igual.
+ *
+ * Os dois usavam o mesmo cinza, então passar o ponteiro sobre uma loja não
+ * selecionada a fazia parecer selecionada. O degrau de superfície resolve sem
+ * pedir mais uma cor: `superficie-3` é mais clara que `superficie-2`, então
+ * hover é um toque e seleção é um assentamento.
+ */
 .seletor__opcao:hover {
-  background: var(--superficie-2);
-  border-color: var(--texto-apagado);
+  background: var(--superficie-3);
+  border-color: var(--borda-forte);
 }
 
 /*
- * Selecionada: cinza claro, e a marca fica só no check.
+ * Selecionada: cinza, com o check em verde.
  *
- * O fundo tingido de marca deixou a lista inteira vermelha — e vermelho neste
+ * O fundo tingido de marca deixava a lista inteira vermelha — e vermelho neste
  * sistema é alarme, então seis lojas selecionadas pareciam seis problemas.
- * Cinza carrega o "está ligada" sem alarmar; a cor concentrada no check de
- * 22px basta para dizer qual é a diferença, porque ela é a única coisa
- * colorida da linha.
+ * Cinza carrega o "está ligada" sem alarmar.
+ *
+ * O check é verde e não vermelho pela mesma razão: ele diz "esta está no seu
+ * quadro", que é confirmação e não aviso. Verde já é o que marca loja aberta e
+ * conexão viva no resto da tela — a leitura fica consistente.
  */
 .seletor__opcao[aria-pressed='true'] {
   background: var(--superficie-2);
@@ -2912,8 +2922,8 @@
 }
 
 .seletor__opcao[aria-pressed='true'] .seletor__marca {
-  background: var(--marca);
-  border-color: var(--marca);
+  background: var(--sucesso);
+  border-color: var(--sucesso);
 }
 
 .seletor__nome {

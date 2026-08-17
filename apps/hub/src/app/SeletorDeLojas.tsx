@@ -197,23 +197,30 @@ export function SeletorDeLojas({
 
           <div className="seletor__acoes">
             {/*
-              O mesmo botão alterna. Dois botões lado a lado obrigariam a ler
-              qual é qual toda vez; um só, que diz o que vai fazer agora, é uma
-              decisão a menos no meio do turno.
+              O mesmo botão alterna. Dois lado a lado obrigariam a ler qual é
+              qual toda vez; um só, que diz o que vai fazer agora, é uma decisão
+              a menos no meio do turno.
 
-              Sem seleção nenhuma o quadro fica vazio, então "remover todas" só
-              aparece quando há o que remover — e, com uma loja só, nem faz
-              sentido oferecer "selecionar todas".
+              **Guarda uma loja.** Zerar a seleção devolve o operador à tela de
+              escolha de unidade, que é um passo atrás no meio do trabalho — e a
+              regra já existia em `alternar`, que se recusa a chegar em zero
+              pelo mesmo motivo. O botão passava por fora dela.
+
+              Por isso o rótulo diz "manter só a primeira" e não "remover
+              todas": ele descreve o que acontece. Um botão que promete zerar e
+              deixa uma é uma mentira pequena que ensina a não confiar no resto.
             */}
             <Botao
               enfase="fantasma"
               onClick={() =>
                 aoSelecionar(
-                  todasMarcadas ? [] : identidade.units.map((u) => u.id)
+                  todasMarcadas
+                    ? [marcadas[0]!.id]
+                    : identidade.units.map((u) => u.id)
                 )
               }
             >
-              {todasMarcadas ? 'Remover seleção de todas' : 'Selecionar todas'}
+              {todasMarcadas ? 'Manter só a primeira' : 'Selecionar todas'}
             </Botao>
             <span className="seletor__apoio">{marcadas.length} selecionadas</span>
           </div>
