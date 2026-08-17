@@ -2777,7 +2777,10 @@
   top: calc(100% + var(--e-2));
   left: 0;
   z-index: var(--z-sobreposicao);
-  width: min(420px, calc(100vw - 32px));
+  /* 520px: cabe "MATSUYA VILA MARIANA" na mesma linha do check, do avatar e da
+     pílula de estado. Em 420 o nome quebrava, e nome de loja quebrado em duas
+     linhas desalinha a coluna de estados que se varre de cima a baixo. */
+  width: min(520px, calc(100vw - 32px));
   max-height: 70vh;
   display: flex;
   flex-direction: column;
@@ -2918,10 +2921,15 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 2px;
   font-size: var(--texto-base);
   font-weight: var(--peso-medio);
   text-align: left;
+  /* Sem quebra: com a largura certa o nome cabe, e se algum dia não couber é
+     melhor reticências que uma segunda linha desalinhando a coluna. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .seletor__nome small {

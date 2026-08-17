@@ -48,6 +48,8 @@ export type ApiDePainel = ReturnType<typeof criarApiDePainel>
  */
 export interface AlertasDaUnidade {
   atrasados: number
+  /** Pedidos ainda ocupando a fila de trabalho — os mesmos estados do quadro. */
+  emAberto: number
   canceladosDuasHoras: number
   itensPausados: number
   /**

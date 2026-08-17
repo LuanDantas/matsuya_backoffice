@@ -78,7 +78,12 @@ export function SeletorDeLojas({
   /** Lojas com pelo menos um pedido em aberto — alimenta a linha de apoio. */
   comPedidos: ReadonlySet<number>
   /** Estado de operação por loja, do mesmo `/alerts` que alimenta o farol. */
-  operacao: ReadonlyMap<number, OperacaoDaLoja>
+  /*
+   * `OperacaoDaLoja` mais o movimento. O tipo do contrato descreve o que a
+   * rota de operação devolve; aqui o que chega é o recorte do farol, que junta
+   * estado e pedidos em aberto na mesma leitura.
+   */
+  operacao: ReadonlyMap<number, OperacaoDaLoja & { emAberto?: number }>
   aoSelecionar: (ids: number[]) => void
 }) {
   const [aberto, definirAberto] = useState(false)
@@ -218,7 +223,14 @@ export function SeletorDeLojas({
               const marcada = selecionadas.has(unidade.id)
               const op = operacao.get(unidade.id)
               const rotulo = rotuloDaOperacao(op)
-              const pedidos = comPedidos.has(unidade.id)
+              /*
+               * `op.emAberto` e não `comPedidos`: o segundo vem do quadro, que
+               * só tem pedido de loja selecionada — a linha nunca aparecia
+               * justamente nas unidades sobre as quais ela informa algo novo.
+               * `comPedidos` continua servindo à linha de apoio do gatilho, que
+               * fala só do que está sendo acompanhado.
+               */
+              const emAberto = op?.emAberto ?? (comPedidos.has(unidade.id) ? 1 : 0)
 
               return (
                 <li key={unidade.id}>
@@ -241,7 +253,13 @@ export function SeletorDeLojas({
 
                     <span className="seletor__nome">
                       {unidade.name}
-                      {pedidos && <small>com pedido em aberto</small>}
+                      {emAberto > 0 && (
+                        <small>
+                          {emAberto === 1
+                            ? '1 pedido em aberto'
+                            : `${emAberto} pedidos em aberto`}
+                        </small>
+                      )}
                     </span>
 
                     {/*

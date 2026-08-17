@@ -300,10 +300,22 @@ export function useFarol(
    * lojas fora do quadro.
    */
   const estados = useMemo(() => {
-    const mapa = new Map<number, { estado: EstadoDaLoja; pausadaAte: string | null }>()
+    const mapa = new Map<
+      number,
+      { estado: EstadoDaLoja; pausadaAte: string | null; emAberto: number }
+    >()
     for (const l of porLoja) {
       if (l.alertas) {
-        mapa.set(l.unityId, { estado: l.alertas.estado, pausadaAte: l.alertas.pausadaAte })
+        mapa.set(l.unityId, {
+          estado: l.alertas.estado,
+          pausadaAte: l.alertas.pausadaAte,
+          /*
+           * O movimento vem daqui e não do quadro: o quadro só carrega os
+           * pedidos das lojas selecionadas, então uma loja fora dele nunca
+           * apareceria com fila — que é o caso em que a informação mais serve.
+           */
+          emAberto: l.alertas.emAberto,
+        })
       }
     }
     return mapa
