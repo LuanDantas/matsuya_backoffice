@@ -41,6 +41,8 @@ export type NomeDoIcone =
   | 'mapa'
   | 'cima-baixo'
   | 'capacete'
+  | 'som'
+  | 'som-cortado'
 
 const CAMINHOS: Record<NomeDoIcone, string> = {
   check: 'M20 6 9 17l-5-5',
@@ -79,6 +81,11 @@ const CAMINHOS: Record<NomeDoIcone, string> = {
    */
   capacete:
     'M12 3a9 9 0 0 0-9 9v1a5 5 0 0 0 5 5h11a2 2 0 0 0 2-2v-4a9 9 0 0 0-9-9ZM21 12h-7a5 5 0 0 0-5 5v1',
+  /* Alto-falante com duas ondas. A segunda onda some no ícone cortado, e é o
+     traço diagonal — não a ausência de onda — que diz "mudo": ausência se lê
+     como volume baixo. */
+  som: 'M11 5 6 9H3v6h3l5 4V5ZM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13',
+  'som-cortado': 'M11 5 6 9H3v6h3l5 4V5ZM16 9.5l5 5M21 9.5l-5 5',
 }
 
 export interface PropsDoIcone extends Omit<SVGProps<SVGSVGElement>, 'children'> {

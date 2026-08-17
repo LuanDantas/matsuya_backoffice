@@ -1311,7 +1311,15 @@
   background: var(--superficie-1);
   border-right: 1px solid var(--borda);
   transition: width var(--duracao) var(--curva);
-  overflow: hidden;
+  /*
+   * `visible`, e não `hidden`.
+   *
+   * O recorte estava aqui para o rótulo não vazar durante a transição de
+   * largura — mas `.menu__rotulo` já se recorta sozinho, com `max-width: 0` e
+   * `overflow: hidden` próprios. O que o recorte no trilho fazia de fato era
+   * cortar o balão de dica, que por definição sai para fora dos 72 px.
+   */
+  overflow: visible;
 }
 
 .menu[data-expandido] {
@@ -1750,6 +1758,31 @@
   text-align: left;
   cursor: pointer;
   transition: border-color var(--duracao-rapida) var(--curva);
+}
+
+/* Invólucro de dica na barra: não pode alterar o alinhamento do que envolve. */
+.barra__dica {
+  display: inline-flex;
+  align-items: center;
+}
+
+/*
+ * Estado ligado — hoje só o som silenciado.
+ *
+ * Fundo preenchido em vez de só trocar o ícone: o alto-falante cortado é uma
+ * diferença de dois traços a 20 px, e num cabeçalho que se olha de relance
+ * isso não se vê. O preenchimento é o que responde "o som está mudo?" sem
+ * ninguém precisar focalizar o ícone.
+ */
+.contador[data-ativo] {
+  background: var(--superficie-3);
+  border-color: var(--borda-forte);
+  color: var(--texto);
+}
+
+.contador:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .rota__item:hover,

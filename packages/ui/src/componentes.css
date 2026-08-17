@@ -603,3 +603,115 @@ button.ui-painel__alerta[aria-pressed='true'] {
 @media (prefers-reduced-motion: reduce) {
   .ui-painel__alerta { animation: none; }
 }
+
+/* ── Dica ───────────────────────────────────────────────────────────────── */
+
+/*
+ * Balão de dica em CSS puro, ligado por `data-dica="texto"`.
+ *
+ * Sem componente e sem portal de propósito: é decoração de um alvo que já
+ * tem nome acessível próprio (`aria-label`), então o balão não precisa
+ * existir para leitor de tela nenhum — precisa existir para quem olha um
+ * trilho de ícones e não sabe o que eles fazem. Um `::after` resolve isso sem
+ * estado, sem posicionamento em JavaScript e sem uma árvore paralela para
+ * manter sincronizada.
+ *
+ * **Substitui o `title` nativo, não convive com ele.** Onde há `data-dica`, o
+ * `title` tem de sair: o navegador mostraria os dois, um por cima do outro,
+ * com meio segundo de diferença.
+ *
+ * Aparece no foco além do hover. Quem chega de teclado tem exatamente a mesma
+ * dúvida sobre o ícone que quem chega com o ponteiro.
+ */
+[data-dica] {
+  position: relative;
+}
+
+[data-dica]::after {
+  content: attr(data-dica);
+  position: absolute;
+  z-index: var(--z-sobreposicao);
+  padding: 7px var(--e-3);
+  border-radius: var(--raio-1);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-medio);
+  line-height: 1.25;
+  /*
+   * `width: max-content` **antes** do teto, e a ordem importa.
+   *
+   * Caixa posicionada em absoluto sem largura declarada é dimensionada pelo
+   * bloco de contenção — que aqui é o próprio botão, de 44 px. Sem esta linha,
+   * "Sair do Hub" quebrava em três linhas dentro de uma tira de 44 px, e o
+   * `max-width` nunca chegava a valer: ele limita o máximo, não garante o
+   * mínimo. `max-content` dimensiona pelo texto; o teto entra depois, para o
+   * balão não virar uma tira de trezentos pixels saindo pela borda da tela.
+   */
+  width: max-content;
+  max-width: 34ch;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 120ms ease-out,
+    visibility 120ms;
+}
+
+[data-dica]:hover::after,
+[data-dica]:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 250ms;
+}
+
+/*
+ * Cabeçalho: balão preto, abaixo do alvo.
+ *
+ * Abaixo porque acima esbarraria na borda da janela — estes botões ficam na
+ * primeira faixa da tela. Preto para se separar do cabeçalho claro.
+ */
+[data-dica][data-dica-lado='abaixo']::after {
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dica-escura-fundo);
+  color: var(--dica-escura-texto);
+  /* Um degrau acima do resto: são cinco alvos só de ícone no cabeçalho, e o
+     balão é a única coisa que os nomeia. */
+  font-size: 13px;
+}
+
+/*
+ * Encostado à direita, para os controles do fim do cabeçalho.
+ *
+ * Centralizado, o balão de um botão a 40 px da borda joga metade da própria
+ * largura para fora da janela. Aqui ele cresce para dentro. É atributo
+ * explícito e não regra de posição porque a ordem dos botões muda, e uma
+ * seleção do tipo "os dois últimos" quebraria em silêncio no dia seguinte.
+ */
+[data-dica][data-dica-lado='abaixo'][data-dica-alinhar='fim']::after {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+/*
+ * Menu lateral: balão cinza, à direita.
+ *
+ * À direita porque o trilho é estreito e vertical: um balão abaixo cairia
+ * sobre o próximo item da lista, que é justamente o que a pessoa está
+ * tentando comparar.
+ */
+[data-dica][data-dica-lado='direita']::after {
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--dica-clara-fundo);
+  color: var(--dica-clara-texto);
+  border: 1px solid var(--borda-forte);
+}
+
+/* Movimento reduzido: o balão continua aparecendo, sem o esmaecer. */
+@media (prefers-reduced-motion: reduce) {
+  [data-dica]::after { transition: none; }
+}

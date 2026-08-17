@@ -11,9 +11,13 @@ import { telasPermitidas, type Tela } from './telas'
  * porque quem decorou não quer reexpandir todo turno.
  *
  * Ícone sozinho é ruim de descobrir; por isso, mesmo recolhido, cada item
- * carrega `aria-label` completo e `title`. Um trilho de ícones sem rótulo
- * acessível é uma barra de navegação que só serve para quem já sabe onde as
- * coisas estão.
+ * carrega `aria-label` completo e um balão de dica à direita. Um trilho de
+ * ícones sem rótulo acessível é uma barra de navegação que só serve para quem
+ * já sabe onde as coisas estão.
+ *
+ * O balão sai à direita, e não abaixo: o trilho é estreito e vertical, e um
+ * balão abaixo cairia sobre o próximo item — justamente o que a pessoa está
+ * tentando comparar.
  */
 
 const CHAVE = 'matsuya.hub.menu-expandido'
@@ -52,7 +56,8 @@ export function MenuLateral({
         onClick={() => definirExpandido((v) => !v)}
         aria-expanded={expandido}
         aria-label={expandido ? 'Recolher o menu' : 'Expandir o menu'}
-        title={expandido ? 'Recolher o menu' : 'Expandir o menu'}
+        data-dica={expandido ? 'Recolher o menu' : 'Expandir o menu'}
+        data-dica-lado="direita"
       >
         <Icone nome="menu" tamanho={20} />
         <span className="menu__rotulo">Menu</span>
@@ -73,7 +78,14 @@ export function MenuLateral({
                 // O rótulo acessível é sempre o completo, esteja o menu
                 // recolhido ou não — o leitor de tela não vê o ícone.
                 aria-label={item.descricao}
-                title={item.rotulo}
+                /*
+                  O balão traz a descrição, não o rótulo curto. Recolhido, o
+                  rótulo já é a única coisa que falta — mas expandido ele está
+                  ali do lado, e um balão repetindo a palavra que se acabou de
+                  ler não ajuda ninguém.
+                */
+                data-dica={item.descricao}
+                data-dica-lado="direita"
               >
                 <span className="menu__icone">
                   <Icone nome={item.icone} tamanho={20} />

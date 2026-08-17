@@ -119,6 +119,17 @@
   --alarme-texto: #ffffff;
 
   /*
+   * Balões de dica. Dois pares, e a diferença é posicional, não decorativa: o
+   * escuro fica sob os botões do cabeçalho, onde precisa se separar de uma
+   * faixa clara; o claro fica ao lado do menu, onde um balão preto no canto da
+   * tela pesaria mais que a navegação que ele explica.
+   */
+  --dica-escura-fundo: #1a1a1a;
+  --dica-escura-texto: #ffffff;
+  --dica-clara-fundo: #e2e2e2;
+  --dica-clara-texto: #1f1f1f;
+
+  /*
    * A faixa de contagem do preparo: âmbar **sólido** com texto escuro, como na
    * referência — não o âmbar suave com texto âmbar dos selos.
    *
@@ -234,6 +245,13 @@
      desce. 6.60:1, contra os 2.77:1 do branco cravado que havia antes. */
   --alarme-fundo: #f87171;
   --alarme-texto: #2b0a0a;
+
+  /* A dica escura nao muda: preta ja e a cor certa nos dois temas. A clara
+     sobe para a superficie do tema, senao vira um bloco branco no escuro. */
+  --dica-escura-fundo: #1a1a1a;
+  --dica-escura-texto: #ffffff;
+  --dica-clara-fundo: #2a3441;
+  --dica-clara-texto: #e6edf3;
 
   /* Idênticos ao claro: âmbar claro com texto quase preto já funciona nos dois
      temas, e inverter criaria um terceiro estado para manter. */

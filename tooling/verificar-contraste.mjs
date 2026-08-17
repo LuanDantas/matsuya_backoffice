@@ -129,6 +129,11 @@ const PARES = [
   ['painel do farol: chip claro do cabeçalho', 'painel-elevado', 'painel-texto', 4.5],
   ['painel do farol: divisória', 'painel-borda', 'painel-fundo', 1.3],
   ['painel do farol: cartão sobre o fundo', 'painel-elevado', 'painel-fundo', 1.05],
+
+  // Balões de dica. Dois pares porque a posição muda o fundo em que caem: o
+  // escuro sobre o cabeçalho claro, o claro ao lado do menu.
+  ['dica do cabeçalho', 'dica-escura-texto', 'dica-escura-fundo', 4.5],
+  ['dica do menu lateral', 'dica-clara-texto', 'dica-clara-fundo', 4.5],
 ]
 
 let falhas = 0

@@ -6,6 +6,7 @@ import type { useSessao } from '../dados/useSessao'
 import { useQuadro } from '../dados/useQuadro'
 import { useAcoesDoPedido } from '../dados/useAcoesDoPedido'
 import { useAlertas } from '../som/useAlertas'
+import type { EstadoDoSom } from '../som/alertas'
 import { useFilaOffline } from '../offline/useFilaOffline'
 import { useImpressao } from '../impressao/useImpressao'
 import { Reconciliacao } from '../offline/Reconciliacao'
@@ -36,6 +37,21 @@ import { Ajustes } from '../modules/ajustes/Ajustes'
  * derrubar socket, cursor e cache de uma vez. Reaproveitar o estado entre
  * unidades é como um pedido da Mooca aparece no quadro da Santana.
  */
+
+/**
+ * O que o balão do botão de som diz, por estado.
+ *
+ * Cada texto nomeia a **ação**, não o estado: "Som ligado" descreveria o
+ * botão, e quem passa o ponteiro está perguntando o que acontece se clicar.
+ * `indisponivel` é a exceção — ali não há ação, e o balão existe para explicar
+ * por que o botão está apagado, em vez de deixar a pessoa insistindo.
+ */
+const DICA_DO_SOM: Record<EstadoDoSom, string> = {
+  pronto: 'Silenciar os alertas',
+  mudo: 'Ligar o som',
+  bloqueado: 'Ligar o som (o navegador exige um toque)',
+  indisponivel: 'Som indisponível neste dispositivo',
+}
 
 const CHAVE_MODO = 'matsuya.hub.modo'
 
@@ -122,6 +138,20 @@ export function Casca({
   )
 
   const som = useAlertas(quadro.pedidos, true)
+
+  /**
+   * O que o botão de som faz, por estado.
+   *
+   * `bloqueado` é o portão de autoplay do navegador: nenhum áudio toca antes
+   * de um gesto do usuário, e este clique é esse gesto. Por isso ele leva a
+   * `destravar()` e não a `religar()` — religar sem destravar não produz som
+   * nenhum, e o operador ficaria achando que ligou.
+   */
+  const alternarSom = useCallback(async () => {
+    if (som.estado === 'pronto') return som.silenciar()
+    if (som.estado === 'mudo') return som.religar()
+    if (som.estado === 'bloqueado') await som.destravar()
+  }, [som])
   const impressao = useImpressao(nomeDaUnidade)
   const fila = useFilaOffline(unidadeFoco, api, quadro.recarregar)
   const acoes = useAcoesDoPedido({
@@ -320,6 +350,8 @@ export function Casca({
                 ? `Farol da Operação: ${rotuloDoFarol}. Abrir detalhes.`
                 : 'Farol da Operação: sem alertas. Abrir detalhes.'
             }
+            data-dica={rotuloDoFarol ? 'Ver os alertas da operação' : 'Nenhum alerta agora'}
+            data-dica-lado="abaixo"
           >
             <span className="barra__farol-ponto" aria-hidden="true" />
             <span aria-hidden="true">Farol da Operação</span>
@@ -342,15 +374,6 @@ export function Casca({
               {ROTULO_DA_CONEXAO[quadro.conexao] ?? quadro.conexao}
             </Selo>
 
-            {som.estado !== 'pronto' && (
-              <Botao
-                enfase={som.estado === 'mudo' ? 'fantasma' : 'secundaria'}
-                onClick={() => void (som.estado === 'mudo' ? som.religar() : som.destravar())}
-              >
-                {som.estado === 'mudo' ? 'Som desligado' : 'Ligar o som'}
-              </Botao>
-            )}
-
             {/*
               "Atendimento" na referência abre o suporte da plataforma. Aqui
               abre a fila de exceções: é o que, no nosso produto, precisa de
@@ -370,9 +393,40 @@ export function Casca({
               aoClicar={() => definirTela('conversas')}
             />
 
-            <Botao enfase="fantasma" icone="sair" onClick={sessao.sair}>
-              <span className="ui-visualmente-oculto">Sair</span>
-            </Botao>
+            {/*
+              O som virou o terceiro quadrado, ao lado dos outros dois.
+              Antes era um botão de texto que só existia quando havia algo
+              errado — e sumia quando o som estava bom, deixando o operador sem
+              onde silenciar no meio de um pico. Um controle que só aparece
+              quando falha não é um controle, é um aviso.
+            */}
+            <BotaoComContador
+              icone={som.estado === 'pronto' ? 'som' : 'som-cortado'}
+              rotulo="Som"
+              dica={DICA_DO_SOM[som.estado]}
+              ativo={som.estado !== 'pronto'}
+              desabilitado={som.estado === 'indisponivel'}
+              alinharDicaNoFim
+              aoClicar={() => void alternarSom()}
+            />
+
+            {/*
+              O invólucro existe só para ancorar o balão — `Botao` não repassa
+              atributos soltos. `inline-flex` é obrigatório: um `span` inline
+              herda `line-height` e desloca o botão alguns pixels para baixo em
+              relação aos quadrados vizinhos, e o desalinhamento aparece na
+              primeira vez que alguém passa o ponteiro pela fileira.
+            */}
+            <span
+              className="barra__dica"
+              data-dica="Sair do Hub"
+              data-dica-lado="abaixo"
+              data-dica-alinhar="fim"
+            >
+              <Botao enfase="fantasma" icone="sair" onClick={sessao.sair}>
+                <span className="ui-visualmente-oculto">Sair</span>
+              </Botao>
+            </span>
           </div>
         </header>
 
