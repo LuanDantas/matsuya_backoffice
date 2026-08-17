@@ -100,6 +100,23 @@ export function Ferramentas({
       )}
 
       <div className="ferramentas__direita">
+        {/*
+          O recarregar vem antes do alternador de modo, e nao depois.
+          Atualizar é sobre o **conteúdo** do quadro; Quadros/Expedição e tela
+          cheia são sobre a **forma** de olhar para ele. Agrupados assim, os
+          dois controles de forma ficam vizinhos e o de conteúdo não se
+          intromete no meio deles.
+        */}
+        <span
+          className="ferramentas__dica"
+          data-dica="Atualizar o quadro"
+          data-dica-lado="abaixo"
+        >
+          <Botao enfase="fantasma" icone="atualizar" onClick={aoAtualizar}>
+            <span className="ui-visualmente-oculto">Atualizar o quadro</span>
+          </Botao>
+        </span>
+
         <div className="ferramentas__modos" role="group" aria-label="Modo de exibição">
           {(['quadros', 'expedicao'] as const).map((opcao) => (
             <button
@@ -114,13 +131,28 @@ export function Ferramentas({
           ))}
         </div>
 
-        <Botao enfase="fantasma" icone="atualizar" onClick={aoAtualizar}>
-          <span className="ui-visualmente-oculto">Atualizar o quadro</span>
-        </Botao>
-
-        <Botao enfase="fantasma" onClick={telaCheia.alternar}>
+        {/*
+          Tela cheia era um botão fantasma só de texto — indistinguível de um
+          rótulo solto no fim da barra. Agora carrega ícone e `aria-pressed`,
+          e ganha preenchimento quando está ligada: é um estado que permanece,
+          e um controle que permanece ligado precisa parecer ligado.
+        */}
+        <button
+          type="button"
+          className="ferramentas__cheia"
+          aria-pressed={telaCheia.cheia}
+          onClick={telaCheia.alternar}
+          data-dica={
+            telaCheia.cheia
+              ? 'Voltar ao tamanho normal'
+              : 'Esconder o menu e a barra do navegador'
+          }
+          data-dica-lado="abaixo"
+          data-dica-alinhar="fim"
+        >
+          <Icone nome="tela-cheia" tamanho={16} />
           {telaCheia.cheia ? 'Sair da tela cheia' : 'Tela cheia'}
-        </Botao>
+        </button>
       </div>
     </div>
   )

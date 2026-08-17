@@ -53,6 +53,26 @@
   width: 100%;
 }
 
+/*
+ * Botão só de ícone: quadrado, e com o ícone no centro de verdade.
+ *
+ * O componente envolve `children` num `<span>` sempre. Quando o rótulo é só
+ * para leitor de tela, esse span fica com largura zero — mas continua sendo
+ * item flex, e o `gap` de 8 px continua valendo entre ele e o ícone. O
+ * resultado é um ícone deslocado 4 px para a esquerda e um botão 8 px mais
+ * largo do que precisa, que ninguém nota até o fundo do hover aparecer atrás.
+ *
+ * O padding também sai: sem ele o `min-width` de 44 px manda sozinho, e o
+ * botão fica do mesmo tamanho dos quadrados vizinhos do cabeçalho.
+ *
+ * `:has` degrada em cosmética, não em função: onde não houver, o botão volta a
+ * ficar levemente descentralizado — que é exatamente como ele estava antes.
+ */
+.ui-botao:has(> span > .ui-visualmente-oculto:only-child) {
+  gap: 0;
+  padding: 0;
+}
+
 /* Retorno tátil sem deslocar o layout: só a escala, que não reflui nada. */
 .ui-botao:active:not(:disabled) {
   transform: scale(0.97);

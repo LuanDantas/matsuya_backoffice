@@ -185,6 +185,57 @@
   margin-left: auto;
 }
 
+/* Invólucro de dica na barra de ferramentas — não pode mexer no alinhamento. */
+.ferramentas__dica {
+  display: inline-flex;
+  align-items: center;
+}
+
+/*
+ * Tela cheia: controle com contorno, não texto solto.
+ *
+ * Era um botão fantasma sem ícone e sem borda, encostado no fim da barra —
+ * lia-se como legenda, não como algo apertável. Agora tem a mesma altura do
+ * alternador de modo ao lado, para os dois controles de "forma de olhar"
+ * formarem um grupo visual.
+ */
+.ferramentas__cheia {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-height: 44px;
+  padding: 0 var(--e-3);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-1);
+  background: var(--superficie-1);
+  color: var(--texto-corpo);
+  font: inherit;
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--duracao-rapida) var(--curva),
+    border-color var(--duracao-rapida) var(--curva);
+}
+
+.ferramentas__cheia:hover {
+  background: var(--superficie-3);
+}
+
+.ferramentas__cheia:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+}
+
+/* Ligada, o botão fica preenchido: tela cheia é um estado que permanece, e um
+   controle que permanece ligado precisa parecer ligado. */
+.ferramentas__cheia[aria-pressed='true'] {
+  background: var(--texto);
+  border-color: var(--texto);
+  color: var(--superficie-1);
+}
+
 /* Alternador de modo: dois botões num trilho, o ativo em branco elevado.
    É o padrão de "segmento" — mais direto que um menu suspenso para duas
    opções, e mostra as duas de uma vez. */
