@@ -1,5 +1,5 @@
 /**
- * Alertas sonoros do Order Hub.
+ * Alertas sonoros do Gestor de Pedidos.
  *
  * Sintetizados com a Web Audio API, sem arquivo de áudio. Três motivos, nesta
  * ordem de importância:

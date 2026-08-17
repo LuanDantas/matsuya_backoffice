@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Icone } from '@matsuya/ui'
+import { Icone, Marca } from '@matsuya/ui'
 import { useFonteDaEntrada } from './fonteDaEntrada'
 
 /**
@@ -38,9 +38,9 @@ export function LayoutDeEntrada({
       <div className="entrada__coluna">
         <header className="entrada__barra">
           <span className="entrada__marca">
-            <Icone nome="loja" tamanho={26} />
+            <Marca tamanho={36} />
             <span>
-              <strong>Order Hub</strong>
+              <strong>Gestor de Pedidos</strong>
               <small>Matsuya</small>
             </span>
           </span>

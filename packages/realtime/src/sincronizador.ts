@@ -6,7 +6,7 @@ import {
 } from '@matsuya/contracts'
 
 /**
- * O sincronizador de cursor — a peça que faz o Order Hub não perder pedido.
+ * O sincronizador de cursor — a peça que faz o Gestor de Pedidos não perder pedido.
  *
  * A ideia inteira cabe numa frase: **o socket é uma otimização; a correção vem
  * do número de sequência.** Todo evento carrega um `seq` monotônico por

@@ -1,4 +1,5 @@
 export * from './Icone'
+export * from './Marca'
 export * from './Botao'
 export * from './Drawer'
 export * from './Modal'

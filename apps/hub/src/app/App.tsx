@@ -7,7 +7,7 @@ import { RecuperarSenha } from '../modules/sessao/RecuperarSenha'
 import { EscolhaDeUnidade } from '../modules/sessao/EscolhaDeUnidade'
 
 /**
- * Raiz do Order Hub.
+ * Raiz do Gestor de Pedidos.
  *
  * Só decide qual das quatro situações está valendo: verificando sessão, sem
  * sessão, sem unidade escolhida, ou trabalhando. Tudo o que acontece dentro da

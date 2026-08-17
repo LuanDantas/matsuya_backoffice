@@ -10,7 +10,7 @@ docs/                    especificação (26 capítulos, 17 ADRs)
 RELATORIO-EXECUTIVO.html relatório autocontido para apresentar
 
 apps/
-  hub/                   Order Hub — quadro de pedidos da loja (tablet)
+  hub/                   Gestor de Pedidos — quadro da loja (tablet)
   console/               Corporate + Portal da Unidade (não iniciado)
 packages/
   contracts/             espelho do domínio: estados, motivos, ações, permissões

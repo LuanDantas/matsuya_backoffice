@@ -48,7 +48,7 @@ export function MenuLateral({
     <nav
       className="menu"
       data-expandido={expandido || undefined}
-      aria-label="Seções do Order Hub"
+      aria-label="Seções do Gestor de Pedidos"
     >
       <button
         type="button"
