@@ -156,6 +156,23 @@
   --alarme-suave-texto: #9a0e19;
 
   /*
+   * A capa do detalhe do pedido.
+   *
+   * Segunda — e última — exceção à regra de "nem gradiente nem sombra". A
+   * primeira é o painel da entrada, e a justificativa é a mesma: nenhuma das
+   * duas é superfície de trabalho. O quadro é onde se opera o turno inteiro e
+   * continua chapado; a capa é a identidade do objeto que se abriu, aparece um
+   * de cada vez e some ao fechar.
+   *
+   * Vermelho e não neutro porque é o único lugar em que a marca pode ser a
+   * marca sem virar alarme: não há cartão nenhum ao lado dela para confundir.
+   */
+  --capa-de: #8e0b14;
+  --capa-ate: #c1121f;
+  --capa-texto: #ffffff;
+  --capa-fraco: #ffd9dc;
+
+  /*
    * Balões de dica. Dois pares, e a diferença é posicional, não decorativa: o
    * escuro fica sob os botões do cabeçalho, onde precisa se separar de uma
    * faixa clara; o claro fica ao lado do menu, onde um balão preto no canto da
@@ -350,6 +367,10 @@
   --alarme-texto: #ffffff;
   --alarme-suave: #3a1216;
   --alarme-suave-texto: #ffb0b7;
+  --capa-de: #6d0810;
+  --capa-ate: #9a0e19;
+  --capa-texto: #ffffff;
+  --capa-fraco: #ffd9dc;
 
   /* A dica escura nao muda: preta ja e a cor certa nos dois temas. A clara
      sobe para a superficie do tema, senao vira um bloco branco no escuro. */

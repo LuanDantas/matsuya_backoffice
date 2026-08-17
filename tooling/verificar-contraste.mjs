@@ -68,6 +68,10 @@ const PARES = [
   ['botão destrutivo (texto sobre superfície 2)', 'perigo', 'superficie-2', 4.5],
   ['botão destrutivo em hover', 'perigo', 'perigo-suave', 4.5],
   ['selo sucesso', 'sucesso', 'sucesso-suave', 4.5],
+  // A capa do detalhe do pedido. Aferida contra a parada mais clara do
+  // gradiente, que é o pior caso para texto branco.
+  ['nome do cliente na capa', 'capa-texto', 'capa-ate', 4.5],
+  ['meta da capa', 'capa-fraco', 'capa-ate', 4.5],
   // O alarme em voz baixa: entregador esperando, corrida sem entregador.
   ['chip de alarme suave', 'alarme-suave-texto', 'alarme-suave', 4.5],
   // O check da loja selecionada, preenchido na cor da marca.

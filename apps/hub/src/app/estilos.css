@@ -2324,12 +2324,175 @@
 /* ── Drawer do pedido ───────────────────────────────────────────────────── */
 
 /*
- * O corpo vira uma tela cinza, e cada seção um cartão branco.
+ * ## A capa
+ *
+ * O cabeçalho do painel vira uma faixa pintada. É a segunda e última exceção à
+ * regra de "nem gradiente nem sombra" — a primeira é o painel da entrada —, e
+ * a justificativa é a mesma: nenhuma das duas é superfície de trabalho. O
+ * quadro, onde o turno inteiro acontece, continua chapado.
+ *
+ * As formas são recortadas com `clip-path` em pseudo-elementos: mesma figura
+ * que um SVG por muito menos, sem um nó a mais no DOM, e nada aqui escala.
+ * Ficam nos cantos e em branco quase transparente — moldura que puxa o olho
+ * deixou de ser moldura, e o que precisa ser lido aqui é o número do pedido.
+ */
+.ui-drawer[data-variante='pedido'] .ui-drawer__cabecalho {
+  position: relative;
+  overflow: hidden;
+  align-items: center;
+  padding: var(--e-5) var(--e-4);
+  padding-top: max(var(--e-5), env(safe-area-inset-top));
+  border-bottom: 0;
+  background: linear-gradient(135deg, var(--capa-de) 0%, var(--capa-ate) 100%);
+  color: var(--capa-texto);
+}
+
+.ui-drawer[data-variante='pedido'] .ui-drawer__cabecalho::before,
+.ui-drawer[data-variante='pedido'] .ui-drawer__cabecalho::after {
+  content: '';
+  position: absolute;
+  display: block;
+  background: rgb(255 255 255 / 0.09);
+  pointer-events: none;
+}
+
+.ui-drawer[data-variante='pedido'] .ui-drawer__cabecalho::before {
+  top: 0;
+  right: 88px;
+  width: 128px;
+  height: 128px;
+  clip-path: polygon(100% 0, 100% 100%, 0 0);
+}
+
+.ui-drawer[data-variante='pedido'] .ui-drawer__cabecalho::after {
+  right: -30px;
+  bottom: -46px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+}
+
+/* O conteúdo sobe acima das formas. Sem isto o círculo passa por cima do
+   horário, que é justamente a informação que ele deveria emoldurar. */
+.ui-drawer[data-variante='pedido'] .ui-drawer__titulo,
+.ui-drawer[data-variante='pedido'] .ui-drawer__acoes {
+  position: relative;
+  z-index: 1;
+}
+
+.ui-drawer[data-variante='pedido'] .ui-drawer__subtitulo {
+  gap: var(--e-3);
+  margin-top: var(--e-3);
+  color: var(--capa-fraco);
+}
+
+.capa__identidade {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  flex-wrap: wrap;
+}
+
+/*
+ * O número em placa vazada.
+ *
+ * Contorno e não preenchimento: sobre a faixa vermelha, uma placa branca
+ * sólida viraria o elemento mais pesado da tela e roubaria a leitura do nome
+ * do cliente, que é quem se atende. Vazada, ela delimita sem competir.
+ */
+.capa__codigo {
+  padding: var(--e-1) var(--e-3);
+  border: 2px solid rgb(255 255 255 / 0.55);
+  border-radius: var(--raio-2);
+  font-size: var(--texto-2xl);
+  font-weight: var(--peso-forte);
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+
+.ui-drawer[data-variante='pedido'] .ui-drawer__titulo h2 {
+  color: var(--capa-texto);
+}
+
+.capa__modo {
+  padding: 2px var(--e-2);
+  border: 1px solid rgb(255 255 255 / 0.35);
+  border-radius: var(--raio-total);
+}
+
+/*
+ * Botões redondos sobre a capa, em vidro.
+ *
+ * Redondos e não retangulares para se lerem como "ferramenta do painel" e não
+ * como ação de fluxo — as do rodapé são retangulares. O fundo translúcido deixa
+ * o gradiente passar, então eles pertencem à faixa em vez de flutuar sobre ela.
+ */
+.ui-drawer[data-variante='pedido'] .ui-drawer__acoes .ui-botao,
+.capa__redondo {
+  /* 44 px e não 40: é o alvo mínimo do sistema (`--alvo`), e o Hub roda em
+     tablet de balcão onde a diferença é acerto ou toque perdido. */
+  width: var(--alvo);
+  height: var(--alvo);
+  min-height: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(255 255 255 / 0.3);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.14);
+  color: var(--capa-texto);
+  cursor: pointer;
+  transition:
+    background-color var(--duracao) var(--curva),
+    border-color var(--duracao) var(--curva),
+    transform var(--duracao) var(--curva);
+}
+
+.ui-drawer[data-variante='pedido'] .ui-drawer__acoes .ui-botao:hover,
+.capa__redondo:hover {
+  background: rgb(255 255 255 / 0.26);
+  border-color: rgb(255 255 255 / 0.5);
+  transform: translateY(-1px);
+}
+
+.capa__redondo {
+  position: relative;
+}
+
+.capa__redondo:focus-visible {
+  outline: 3px solid var(--capa-texto);
+  outline-offset: 2px;
+}
+
+/* O distintivo sai da borda do botão de propósito: dentro do círculo ele
+   competiria com o ícone, e o número é o que precisa ser visto primeiro. */
+.capa__nao-lidas {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--capa-ate);
+  border-radius: var(--raio-total);
+  background: var(--capa-texto);
+  color: var(--capa-ate);
+  font-size: 10px;
+  font-weight: var(--peso-forte);
+}
+
+/* ── O corpo ────────────────────────────────────────────────────────────── */
+
+/*
+ * Tela cinza com seções em cartões brancos.
  *
  * O painel responde perguntas de naturezas diferentes — o que a cozinha monta,
  * para onde vai, quem leva, quanto é. Numa folha branca contínua elas viram um
- * texto só, e achar o endereço exige atravessar a lista de itens. O cinza entre
- * os cartões é o que permite pular de uma pergunta para outra sem ler o meio.
+ * texto só, e achar o endereço exige atravessar a lista de itens.
  *
  * Escopado em `[data-variante='pedido']` porque os outros drawers — conversa,
  * ferramentas, exceções — são de um assunto só, e ali a folha branca é o certo.
@@ -2342,181 +2505,281 @@
 .ui-drawer__acoes {
   display: flex;
   align-items: center;
-  gap: var(--e-1);
+  gap: var(--e-2);
   flex-shrink: 0;
 }
 
-.drawer-pedido__titulo {
-  display: flex;
-  align-items: center;
-  gap: var(--e-3);
-  flex-wrap: wrap;
+/*
+ * Entrada escalonada dos blocos.
+ *
+ * O painel inteiro aparecendo de uma vez é uma parede que chega; escalonado,
+ * ele se monta, e o olho acompanha a construção de cima para baixo — que é a
+ * ordem em que se lê depois. 40 ms entre blocos, seis blocos: 200 ms do
+ * primeiro ao último, dentro do gesto de abrir.
+ */
+.ui-drawer[data-variante='pedido'] .ui-drawer__corpo > * {
+  animation: drawer-bloco 280ms var(--curva) both;
 }
 
-/* Código em caixa, como a referência: separa o identificador do nome sem
-   precisar de rótulo. */
-.drawer-pedido__codigo {
-  padding: 4px var(--e-2);
-  border: 2px solid var(--texto);
-  border-radius: var(--raio-1);
-  font-size: var(--texto-lg);
-  font-weight: var(--peso-forte);
+.ui-drawer[data-variante='pedido'] .ui-drawer__corpo > :nth-child(2) { animation-delay: 40ms; }
+.ui-drawer[data-variante='pedido'] .ui-drawer__corpo > :nth-child(3) { animation-delay: 80ms; }
+.ui-drawer[data-variante='pedido'] .ui-drawer__corpo > :nth-child(4) { animation-delay: 120ms; }
+.ui-drawer[data-variante='pedido'] .ui-drawer__corpo > :nth-child(5) { animation-delay: 160ms; }
+.ui-drawer[data-variante='pedido'] .ui-drawer__corpo > :nth-child(n + 6) { animation-delay: 200ms; }
+
+@keyframes drawer-bloco {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-drawer[data-variante='pedido'] .ui-drawer__corpo > * {
+    animation: none;
+  }
+}
+
+/* ── O pulso ────────────────────────────────────────────────────────────── */
+
+/*
+ * O cartão que muda sozinho enquanto o painel está aberto — e por isso o
+ * primeiro. Anel do prazo em cima, linha do tempo embaixo.
+ */
+.pulso {
+  padding: var(--e-4);
+  border: 1px solid var(--borda);
+  border-radius: 16px;
+  background: var(--superficie-1);
+}
+
+.pulso__topo {
+  display: flex;
+  align-items: center;
+  gap: var(--e-4);
 }
 
 /*
- * Botão redondo do cabeçalho.
+ * O anel gasta a volta conforme o tempo corre.
  *
- * Redondo e não retangular para se ler como "ferramenta do painel" e não como
- * mais uma ação de fluxo — as do rodapé são retangulares. 40 px de diâmetro
- * com o alvo estendido por `padding` do cabeçalho.
+ * `conic-gradient` e não SVG: é uma propriedade só, anima pela variável e não
+ * acrescenta nó nenhum. O miolo branco por cima é o que transforma o disco em
+ * anel — recortar com `mask` daria o mesmo resultado com pior suporte.
+ *
+ * A cor sai do tom do cartão, então o anel, o texto e a borda esquerda contam
+ * a mesma coisa sem três decisões separadas.
  */
-.drawer-pedido__redondo {
+.pulso__anel {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--pulso-cor) calc(var(--fracao, 1) * 360deg),
+    var(--superficie-3) 0
+  );
+}
+
+.pulso__anel::before {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border-radius: 50%;
+  background: var(--superficie-1);
+}
+
+/* Sem janela de prazo não há volta para gastar: o anel vira um disco cheio e
+   quem conta é só o ícone no miolo. */
+.pulso__anel[data-vazio] {
+  background: var(--superficie-3);
+}
+
+.pulso__anel-miolo {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--borda-forte);
-  border-radius: 50%;
-  background: var(--superficie-1);
+  font-size: var(--texto-base);
+  font-weight: var(--peso-forte);
+  color: var(--pulso-cor);
+}
+
+.pulso__dizer h3 {
+  margin: 0;
+  font-size: var(--texto-xl);
+  font-weight: var(--peso-forte);
+  line-height: var(--linha-apertada);
+}
+
+.pulso__dizer p {
+  margin: var(--e-1) 0 0;
+  font-size: var(--texto-sm);
   color: var(--texto-corpo);
-  cursor: pointer;
-  transition:
-    background-color var(--duracao) var(--curva),
-    border-color var(--duracao) var(--curva),
-    color var(--duracao) var(--curva);
 }
 
-.drawer-pedido__redondo:hover {
-  background: var(--superficie-3);
-  border-color: var(--texto-fraco);
-  color: var(--texto);
+.pulso { --pulso-cor: var(--texto-fraco); }
+.pulso[data-tom='sucesso'] { --pulso-cor: var(--sucesso); }
+.pulso[data-tom='atencao'] { --pulso-cor: var(--atencao); }
+.pulso[data-tom='critico'] { --pulso-cor: var(--alarme-suave-texto); }
+
+/* ── A trilha ───────────────────────────────────────────────────────────── */
+
+/*
+ * A linha do tempo do pedido.
+ *
+ * Horizontal e não vertical porque as etapas são poucas e de larguras
+ * parecidas — na vertical ela ocuparia meio painel para dizer cinco horários.
+ * O trilho entre os pontos é `::before` no item, e não uma régua atrás de
+ * tudo: assim ele acende junto com a etapa, e a parte cumprida do caminho fica
+ * pintada sem uma segunda conta em JavaScript.
+ */
+.trilha {
+  display: flex;
+  list-style: none;
+  margin: var(--e-4) 0 0;
+  padding: var(--e-4) 0 0;
+  border-top: 1px solid var(--borda);
 }
 
-.drawer-pedido__redondo:focus-visible {
-  outline: 3px solid var(--foco);
-  outline-offset: 2px;
+.trilha li {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--e-1);
+  min-width: 0;
+  text-align: center;
 }
 
-/* O distintivo sai da borda do botão de propósito: dentro do círculo ele
-   competiria com o ícone, e o número é o que precisa ser visto primeiro. */
-.drawer-pedido__nao-lidas {
+/* O trilho liga este ponto ao anterior — daí não existir no primeiro. */
+.trilha li::before {
+  content: '';
   position: absolute;
-  top: -2px;
-  right: -2px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
+  top: 8px;
+  right: 50%;
+  left: -50%;
+  height: 2px;
+  background: var(--borda);
+  transition: background-color var(--duracao) var(--curva);
+}
+
+.trilha li:first-child::before {
+  display: none;
+}
+
+.trilha li[data-feita]::before,
+.trilha li[data-corrente]::before {
+  background: var(--sucesso);
+}
+
+.trilha__ponto {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--raio-total);
-  background: var(--alarme-fundo);
-  color: var(--alarme-texto);
-  font-size: 10px;
-  font-weight: var(--peso-forte);
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--borda-forte);
+  border-radius: 50%;
+  background: var(--superficie-1);
+  color: var(--texto-inverso);
+  transition:
+    background-color var(--duracao) var(--curva),
+    border-color var(--duracao) var(--curva);
 }
 
-/* ── Faixa de fatos ─────────────────────────────────────────────────────── */
+.trilha li[data-feita] .trilha__ponto {
+  background: var(--sucesso);
+  border-color: var(--sucesso);
+}
 
 /*
- * Os números que decidem alguma coisa, juntos no topo.
+ * A etapa corrente pulsa — devagar, e é a única coisa do cartão que se move.
  *
- * Substituem três selos que traziam só a categoria — "Entrega", "Retirada" —
- * e obrigavam a procurar o valor correspondente lá embaixo. Cada bloco aqui é
- * um par rótulo/valor: o rótulo em cinza pequeno, o valor no peso do texto.
- *
- * `auto-fit` com mínimo de 150 px: em painel médio dão dois por linha, e num
- * monitor largo os quatro cabem numa faixa só. Ninguém precisa decidir a
- * quebra à mão.
+ * O mesmo argumento do farol em repouso: diz que há algo acontecendo agora,
+ * não que algo deu errado. Uma trilha parada e uma trilha travada são
+ * indistinguíveis.
  */
-.drawer-pedido__fatos {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: var(--e-2);
+.trilha li[data-corrente] .trilha__ponto {
+  border-color: var(--pulso-cor);
 }
 
-.drawer-pedido__fato {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: var(--e-2) var(--e-3);
-  border: 1px solid var(--borda);
-  border-radius: var(--raio-2);
-  background: var(--superficie-1);
-  min-width: 0;
+.trilha li[data-corrente] .trilha__ponto::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: var(--pulso-cor);
+  opacity: 0.35;
+  animation: trilha-pulsar 2s ease-out infinite;
 }
 
-.drawer-pedido__fato-rotulo {
+@keyframes trilha-pulsar {
+  0% { transform: scale(1); opacity: 0.35; }
+  70% { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trilha li[data-corrente] .trilha__ponto::after { animation: none; content: none; }
+}
+
+.trilha__rotulo {
   font-size: var(--texto-xs);
   font-weight: var(--peso-medio);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   color: var(--texto-fraco);
 }
 
-.drawer-pedido__fato-valor {
-  font-size: var(--texto-base);
-  font-weight: var(--peso-forte);
-  /* Sobra em vez de cortar: "atrasado há 1h12" é curto, mas um endereço de
-     previsão em outra locale pode não ser. */
-  overflow-wrap: anywhere;
+.trilha li[data-feita] .trilha__rotulo,
+.trilha li[data-corrente] .trilha__rotulo {
+  color: var(--texto);
 }
 
-/*
- * Prazo vencido é o único fato que se pinta.
- *
- * Suave e não sólido, pela mesma regra do cartão: o preenchimento cheio de
- * alarme é do quadro, onde ele compete com dezenas de cartões. Aqui há um
- * pedido só na tela, e o contorno já basta para o olho parar.
- */
-.drawer-pedido__fato[data-alarme] {
-  background: var(--alarme-suave);
-  border-color: color-mix(in srgb, var(--alarme-suave-texto) 30%, transparent);
-}
-
-.drawer-pedido__fato[data-alarme] .drawer-pedido__fato-rotulo,
-.drawer-pedido__fato[data-alarme] .drawer-pedido__fato-valor {
-  color: var(--alarme-suave-texto);
+.trilha__hora {
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
 }
 
 /* ── Avisos ─────────────────────────────────────────────────────────────── */
 
-/*
- * Observação do cliente e alteração do pedido.
- *
- * Fora dos cartões e antes deles: são as duas coisas que mudam o que a cozinha
- * faz, e dentro de um cartão de seção elas herdariam o peso de "mais um
- * assunto". O rótulo pequeno em cima diz o que é sem gastar uma linha inteira.
- */
-.drawer-pedido__observacao {
+.aviso-d {
   display: flex;
   align-items: flex-start;
   gap: var(--e-3);
   margin: 0;
   padding: var(--e-3);
   border: 1px solid color-mix(in srgb, var(--atencao) 32%, transparent);
-  border-radius: var(--raio-2);
+  border-radius: 14px;
   background: var(--atencao-suave);
   color: var(--atencao);
   font-size: var(--texto-sm);
   line-height: var(--linha-normal);
 }
 
-.drawer-pedido__observacao svg {
+.aviso-d__icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
-  margin-top: 1px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--atencao) 16%, transparent);
 }
 
-.drawer-pedido__observacao span {
+.aviso-d span:last-child {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  padding-top: 5px;
 }
 
-.drawer-pedido__observacao small {
+.aviso-d small {
   font-size: var(--texto-xs);
   font-weight: var(--peso-forte);
   letter-spacing: 0.04em;
@@ -2526,14 +2789,22 @@
 
 /* ── Cartão de seção ────────────────────────────────────────────────────── */
 
-.drawer-pedido__cartao {
-  padding: var(--e-3);
+.cartao-d {
+  padding: var(--e-4);
   border: 1px solid var(--borda);
-  border-radius: 14px;
+  border-radius: 16px;
   background: var(--superficie-1);
+  transition: border-color var(--duracao) var(--curva);
 }
 
-.drawer-pedido__cabecalho {
+/* O cartão responde ao ponteiro sem se mexer: a borda escurece e só. Levantar
+   ou tingir faria parecer clicável, e não há nada para clicar num cartão de
+   leitura — o que se toca são os botões do rodapé. */
+.cartao-d:hover {
+  border-color: var(--borda-forte);
+}
+
+.cartao-d__cabecalho {
   display: flex;
   align-items: center;
   gap: var(--e-2);
@@ -2543,97 +2814,115 @@
   color: var(--texto);
 }
 
-/* O disco dá ao título uma âncora fixa na margem esquerda: com quatro cartões
+/* O disco dá ao título uma âncora fixa na margem esquerda: com os cartões
    empilhados, o olho desce por essa coluna de ícones e para no que procura sem
    ler nenhum título inteiro. */
-.drawer-pedido__disco {
+.cartao-d__disco {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
-  border-radius: 50%;
+  border-radius: 10px;
   background: var(--superficie-3);
   color: var(--texto-corpo);
+  transition: background-color var(--duracao) var(--curva);
 }
 
-.drawer-pedido__contagem {
-  padding: 1px 7px;
+.cartao-d:hover .cartao-d__disco {
+  background: var(--marca-suave);
+  color: var(--marca);
+}
+
+/* Empurrada para a direita: carrega o número da seção — quantos itens, que
+   horas — que antes obrigava a entrar no cartão para saber se valia entrar. */
+.cartao-d__etiqueta {
+  margin-left: auto;
+  padding: 2px var(--e-2);
   border-radius: var(--raio-total);
-  background: var(--contagem-fundo);
-  color: var(--contagem-texto);
+  background: var(--superficie-3);
+  color: var(--texto-corpo);
   font-size: var(--texto-xs);
+  font-weight: var(--peso-medio);
+}
+
+.cartao-d__texto {
+  margin: 0;
+  font-size: var(--texto-sm);
+  line-height: var(--linha-normal);
+}
+
+.cartao-d__texto--fraco {
+  color: var(--texto-fraco);
 }
 
 /* ── Corrida ────────────────────────────────────────────────────────────── */
 
 /*
- * O cartão do entregador.
- *
- * Tem tom próprio porque é o único assunto do painel que **muda sozinho**
- * enquanto ele está aberto: o entregador chega, sai, some. Os outros cartões
- * só mudam se alguém agir. A cor à esquerda é onde essa mudança aparece.
+ * O cartão do entregador tem tom próprio porque é o único assunto do painel
+ * que muda por conta de alguém que não está aqui: ele chega, sai, some. A cor
+ * à esquerda é onde essa mudança aparece.
  */
-.drawer-pedido__corrida {
+.cartao-d--corrida {
   display: flex;
   align-items: center;
   gap: var(--e-3);
-  border-left: 3px solid var(--borda-forte);
+  border-left: 4px solid var(--borda-forte);
 }
 
-.drawer-pedido__corrida h3 {
+.cartao-d--corrida h3 {
   margin: 0;
   font-size: var(--texto-base);
   font-weight: var(--peso-forte);
 }
 
-.drawer-pedido__corrida-quem {
+.cartao-d__quem {
   margin: 2px 0 0;
   font-size: var(--texto-sm);
   color: var(--texto-corpo);
 }
 
-.drawer-pedido__corrida-tempo {
+.cartao-d__apoio {
   margin: 2px 0 0;
   font-size: var(--texto-sm);
   color: var(--texto-fraco);
 }
 
-.drawer-pedido__corrida[data-tom='sucesso'] { border-left-color: var(--sucesso); }
-.drawer-pedido__corrida[data-tom='atencao'] { border-left-color: var(--atencao); }
-.drawer-pedido__corrida[data-tom='critico'] { border-left-color: var(--alarme-fundo); }
+.cartao-d--corrida[data-tom='sucesso'] { border-left-color: var(--sucesso); }
+.cartao-d--corrida[data-tom='atencao'] { border-left-color: var(--atencao); }
+.cartao-d--corrida[data-tom='critico'] { border-left-color: var(--alarme-fundo); }
 
-.drawer-pedido__marca-agua {
+.cartao-d__medalha {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   flex-shrink: 0;
   border-radius: 50%;
   background: var(--superficie-3);
   color: var(--texto-corpo);
 }
 
-.drawer-pedido__corrida[data-tom='sucesso'] .drawer-pedido__marca-agua {
+.cartao-d--corrida[data-tom='sucesso'] .cartao-d__medalha {
   background: var(--sucesso-suave);
   color: var(--sucesso);
 }
 
-.drawer-pedido__corrida[data-tom='atencao'] .drawer-pedido__marca-agua {
+.cartao-d--corrida[data-tom='atencao'] .cartao-d__medalha {
   background: var(--atencao-suave);
   color: var(--atencao);
 }
 
-.drawer-pedido__corrida[data-tom='critico'] .drawer-pedido__marca-agua {
+.cartao-d--corrida[data-tom='critico'] .cartao-d__medalha {
   background: var(--alarme-suave);
   color: var(--alarme-suave-texto);
 }
 
 /* ── Endereço ───────────────────────────────────────────────────────────── */
 
-.drawer-pedido__endereco {
+.endereco {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -2645,18 +2934,18 @@
 
 /* A rua e o número no peso do texto: é a linha que se lê em voz alta ao
    telefone, e as outras duas são contexto dela. */
-.drawer-pedido__endereco strong {
+.endereco strong {
   font-size: var(--texto-base);
   color: var(--texto);
 }
 
-.drawer-pedido__endereco span {
+.endereco span {
   color: var(--texto-fraco);
 }
 
 /* ── Itens ──────────────────────────────────────────────────────────────── */
 
-.drawer-pedido__itens {
+.itens {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -2664,45 +2953,54 @@
   flex-direction: column;
 }
 
-.drawer-pedido__itens li {
+.itens li {
   display: grid;
-  grid-template-columns: 36px 1fr auto;
-  gap: var(--e-2);
+  grid-template-columns: 38px 1fr auto;
+  gap: var(--e-3);
   align-items: baseline;
-  padding: var(--e-2) 0;
+  padding: var(--e-2);
+  margin: 0 calc(var(--e-2) * -1);
+  border-radius: 10px;
+  transition: background-color var(--duracao) var(--curva);
+}
+
+/* Realce da linha sob o ponteiro. Numa lista de dez itens com opções, é o que
+   mantém o olho na linha certa ao cruzar do nome para o preço. */
+.itens li:hover {
+  background: var(--superficie-3);
+}
+
+.itens li + li {
   border-top: 1px solid var(--borda);
 }
 
-/* A primeira linha encosta no cabeçalho da seção, então não leva divisória —
-   senão o cartão ganha duas réguas seguidas com nada entre elas. */
-.drawer-pedido__itens li:first-child {
-  border-top: 0;
-  padding-top: 0;
-}
-
-.drawer-pedido__itens li:last-child {
-  padding-bottom: 0;
-}
-
-/* Quantidade em disco: numa lista de dez itens a coluna de números é o que a
-   cozinha confere, e o fundo a mantém alinhada mesmo com "1×" e "12×". */
-.drawer-pedido__qtd {
+/* Quantidade em disco: numa lista longa a coluna de números é o que a cozinha
+   confere, e o fundo a mantém alinhada com "1×" e com "12×". */
+.itens__qtd {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 1px 0;
-  border-radius: var(--raio-1);
+  padding: 2px 0;
+  border-radius: 8px;
   background: var(--superficie-3);
   font-weight: var(--peso-forte);
   font-size: var(--texto-sm);
+  transition:
+    background-color var(--duracao) var(--curva),
+    color var(--duracao) var(--curva);
 }
 
-.drawer-pedido__item {
+.itens li:hover .itens__qtd {
+  background: var(--marca-suave);
+  color: var(--marca);
+}
+
+.itens__nome {
   font-size: var(--texto-base);
   line-height: var(--linha-normal);
 }
 
-.drawer-pedido__opcoes {
+.itens__opcoes {
   list-style: none;
   margin: var(--e-1) 0 0;
   padding: 0 0 0 var(--e-3);
@@ -2714,72 +3012,107 @@
   color: var(--texto-fraco);
 }
 
-.drawer-pedido__preco {
+.itens__preco {
   font-size: var(--texto-sm);
-  color: var(--texto-fraco);
+  color: var(--texto-corpo);
 }
 
-.drawer-pedido__sem-itens,
-.drawer-pedido__texto {
+.itens__vazio {
   margin: 0;
   font-size: var(--texto-sm);
-  line-height: var(--linha-normal);
-}
-
-.drawer-pedido__texto--fraco {
   color: var(--texto-fraco);
 }
 
 /* ── Valores ────────────────────────────────────────────────────────────── */
 
-.drawer-pedido__valores {
+/*
+ * O total sai da tabela e vira a linha de cima do cartão.
+ *
+ * É o número que a pessoa procura quando desce até aqui, e as linhas abaixo
+ * existem para explicá-lo. Como última linha de uma soma, ele obrigava a
+ * atravessar subtotal e taxa antes de chegar no que se queria.
+ */
+.valores__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
+  padding-bottom: var(--e-3);
+  border-bottom: 1px solid var(--borda);
+}
+
+.valores__topo > span:first-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.valores__topo small {
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-medio);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
+}
+
+.valores__topo strong {
+  font-size: var(--texto-2xl);
+  font-weight: var(--peso-forte);
+  line-height: var(--linha-apertada);
+}
+
+.valores__pagamento {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  padding: var(--e-1) var(--e-3);
+  border-radius: var(--raio-total);
+  background: var(--atencao-suave);
+  color: var(--atencao);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+}
+
+/* Pago é conclusão de etapa, não ação pendente — o mesmo verde do chip de
+   "chegou na loja" no cartão do quadro. */
+.valores__pagamento[data-pago] {
+  background: var(--sucesso-suave);
+  color: var(--sucesso);
+}
+
+.valores__lista {
   margin: 0;
   display: flex;
   flex-direction: column;
 }
 
-.drawer-pedido__linha {
+.valores__linha {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--e-3);
   padding: var(--e-2) 0;
+}
+
+.valores__linha + .valores__linha {
   border-top: 1px solid var(--borda);
 }
 
-.drawer-pedido__linha:first-child {
-  border-top: 0;
-  padding-top: 0;
-}
-
-.drawer-pedido__linha dt {
+.valores__linha dt {
   display: flex;
   flex-direction: column;
   color: var(--texto-corpo);
   font-size: var(--texto-sm);
 }
 
-.drawer-pedido__linha dt small {
+.valores__linha dt small {
   font-size: var(--texto-xs);
   color: var(--texto-fraco);
 }
 
-.drawer-pedido__linha dd {
+.valores__linha dd {
   margin: 0;
   font-size: var(--texto-sm);
   color: var(--texto-corpo);
-}
-
-/* O total sobe de peso e de corpo: é o número que a pessoa procura quando abre
-   a seção, e os outros três existem para explicá-lo. */
-.drawer-pedido__linha[data-destaque] dt,
-.drawer-pedido__linha[data-destaque] dd {
-  color: var(--texto);
-  font-weight: var(--peso-forte);
-}
-
-.drawer-pedido__linha[data-destaque] dd {
-  font-size: var(--texto-lg);
 }
 
 /* Empurra as ações de fluxo para a direita, deixando "Imprimir" sozinho na
