@@ -512,12 +512,29 @@
   color: var(--atencao);
 }
 
-/* Mesmo vermelho do chip de atraso no cabeçalho da coluna: é o mesmo fato
-   contado em duas escalas — a coluna diz quantos, o cartão diz qual. Dois
-   vermelhos diferentes fariam parecer dois assuntos. */
+/*
+ * Vermelho contornado, e não preenchido.
+ *
+ * Este chip e a pílula do rodapé podem ficar vermelhos **ao mesmo tempo**: o
+ * pedido estourou o prazo e o entregador está esperando há minutos. Usando os
+ * dois o mesmo `--alarme-fundo` sólido, o cartão virava dois retângulos
+ * vermelhos iguais, e uma coluna deles virava uma parede — em que os dois
+ * fatos, que pedem coisas diferentes, pareciam o mesmo.
+ *
+ * A separação é por **peso**, e não por matiz: mesma cor, porque é a mesma
+ * gravidade e um segundo vermelho faria parecer um terceiro assunto. Cheio é o
+ * atraso, que é trabalho da loja e a razão de o cartão existir na coluna;
+ * contornado é a consequência — alguém esperando, corrida sem entregador.
+ *
+ * Cor não é o único canal: o texto diz o que houve e o ícone muda junto
+ * (capacete aqui, relógio na pílula).
+ */
 .cartao__contexto[data-tom='estourado'] {
-  background: var(--alarme-fundo);
-  color: var(--alarme-texto);
+  background: var(--alarme-suave);
+  color: var(--alarme-suave-texto);
+  /* Borda dentro do padding existente, para o chip não mudar de tamanho entre
+     os tons e a linha do cartão não saltar quando o entregador passa dos 3min. */
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--alarme-suave-texto) 30%, transparent);
 }
 
 /*
@@ -535,11 +552,19 @@
   .cartao__contexto[data-buscando] svg { animation: none; }
 }
 
-/* Entregue e "chegou na loja": o verde do chip. Vale a cor nos dois casos por
-   serem informação de encerramento de uma etapa, não de ação pendente. */
+/*
+ * Entregue e "chegou na loja": o verde do chip. Vale a cor nos dois casos por
+ * serem informação de encerramento de uma etapa, não de ação pendente.
+ *
+ * Estava em `--marca-suave`/`--marca`, que era verde quando isto foi escrito.
+ * Com a marca virando vermelha, o chip de **sucesso** passou a ser vermelho
+ * junto — e "Entregador(a) chegou na loja" era mais uma etiqueta vermelha na
+ * coluna, contribuindo para a parede sem nunca ter sido um problema. `--sucesso`
+ * existe justamente para o verde que não é mais a marca.
+ */
 .cartao__contexto[data-tom='sucesso'] {
-  background: var(--marca-suave);
-  color: var(--marca);
+  background: var(--sucesso-suave);
+  color: var(--sucesso);
 }
 
 .cartao__alteracao {
