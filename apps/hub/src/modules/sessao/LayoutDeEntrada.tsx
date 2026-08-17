@@ -74,6 +74,36 @@ export function LayoutDeEntrada({
   )
 }
 
+/**
+ * Os itens da amostra.
+ *
+ * Produtos e fotos que existem no catálogo de verdade — as mesmas URLs que o
+ * seeder grava em `products.image_url`. Não são imagens escolhidas para a tela
+ * de login: são o cardápio da casa, e é isso que faz o cartão parecer um pedido
+ * e não uma maquete.
+ *
+ * `w=200` porque a miniatura tem 44px: pedir a versão de 600 para exibir em 44
+ * seria baixar catorze vezes mais pixel do que a tela usa, na primeira coisa
+ * que a loja abre.
+ */
+const ITENS = [
+  {
+    qtd: 1,
+    nome: 'Combinado Matsuya (20 peças)',
+    foto: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=200&auto=format&fit=crop',
+  },
+  {
+    qtd: 2,
+    nome: 'Temaki Salmão',
+    foto: 'https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?w=200&auto=format&fit=crop',
+  },
+  {
+    qtd: 1,
+    nome: 'Guioza (6 un)',
+    foto: 'https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=200&auto=format&fit=crop',
+  },
+]
+
 /** Miniatura de um cartão do quadro, montada com os tokens do quadro real. */
 function CartaoDeAmostra() {
   return (
@@ -86,15 +116,31 @@ function CartaoDeAmostra() {
       <p className="amostra__cliente">Ana Carolina · Entrega</p>
 
       <ul className="amostra__itens">
-        <li>
-          <span className="num">2×</span> Temaki de salmão
-        </li>
-        <li>
-          <span className="num">1×</span> Uramaki filadélfia
-        </li>
-        <li>
-          <span className="num">1×</span> Missoshiru
-        </li>
+        {ITENS.map((item) => (
+          <li key={item.nome}>
+            {/*
+              A miniatura tem um fundo tingido por baixo, e é ele que aparece se
+              a foto não carregar. Esta é a primeira imagem de rede do Hub
+              inteiro, na tela que abre quando a internet da loja está pior —
+              um quadrado de ícone quebrado seria a primeira impressão do
+              produto.
+
+              Dimensões declaradas para o espaço já existir antes de a foto
+              chegar: sem isso a lista pula quando as três carregam.
+            */}
+            <img
+              className="amostra__foto"
+              src={item.foto}
+              alt=""
+              width={44}
+              height={44}
+              decoding="async"
+              referrerPolicy="no-referrer"
+            />
+            <span className="amostra__qtd num">{item.qtd}×</span>
+            <span className="amostra__nome">{item.nome}</span>
+          </li>
+        ))}
       </ul>
 
       <div className="amostra__rodape">

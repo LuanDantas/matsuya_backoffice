@@ -1275,15 +1275,45 @@
   border-bottom: 1px solid var(--borda);
   display: flex;
   flex-direction: column;
-  gap: var(--e-2);
+  gap: var(--e-3);
   font-size: var(--texto-sm);
   color: var(--texto);
 }
 
-.amostra__itens .num {
-  display: inline-block;
+.amostra__itens li {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+}
+
+/*
+ * O fundo tingido é o que aparece se a foto não chegar.
+ *
+ * Esta é a primeira imagem de rede do Hub inteiro, e está na tela que abre
+ * quando a internet da loja está pior. Um ícone de imagem quebrada seria a
+ * primeira impressão do produto; um quadrado esverdeado é só um quadrado.
+ */
+.amostra__foto {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: var(--raio-2);
+  object-fit: cover;
+  background: var(--marca-suave);
+}
+
+.amostra__qtd {
   min-width: 22px;
   font-weight: var(--peso-forte);
+}
+
+.amostra__nome {
+  flex: 1;
+  /* Nome longo encolhe em vez de empurrar o cartão. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .amostra__rodape {
