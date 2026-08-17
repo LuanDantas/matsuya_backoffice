@@ -15,6 +15,7 @@ import {
   type EstadoDaLoja,
 } from '@matsuya/api-client'
 import { criarCliente } from '../dados/cliente'
+import { PISO_DE_CARREGAMENTO_MS } from '../dados/useQuadro'
 import { config } from './config'
 import type { Silenciados } from './silenciados'
 
@@ -280,11 +281,29 @@ export function useFarol(
 
   const carregando = selecaoCarregada !== chaveDaSelecao
 
+  /* Lido dentro do efeito sem entrar nas dependências: se `carregando` fosse
+     dependência, cair para false dispararia outra busca, que o poria em true. */
+  const carregandoRef = useRef(false)
+  carregandoRef.current = carregando
+
   useEffect(() => {
     if (unidades.length === 0 || emCurso.current) return
 
     const controle = new AbortController()
     emCurso.current = true
+
+    /*
+     * O mesmo piso do quadro, e só quando a seleção mudou.
+     *
+     * Os dois recarregam juntos ao trocar de loja; sem o piso aqui, o farol
+     * revelava o resultado em ~400 ms enquanto as colunas ainda mostravam
+     * blocos cinzas por mais dois segundos e meio. Numa atualização de rotina
+     * não há piso — ali ninguém está esperando, e segurar a leitura por três
+     * segundos só atrasaria um alerta.
+     */
+    const piso = carregandoRef.current
+      ? new Promise((r) => setTimeout(r, PISO_DE_CARREGAMENTO_MS))
+      : Promise.resolve()
 
     Promise.all(
       unidades.map(async (u) => ({
@@ -296,8 +315,9 @@ export function useFarol(
         alertas: await api.daUnidade(u.id, controle.signal).catch(() => null),
       }))
     )
-      .then((resultado) => {
+      .then(async (resultado) => {
         if (!controle.signal.aborted) definirPorLoja(resultado)
+        await piso
       })
       .finally(() => {
         emCurso.current = false
@@ -328,8 +348,23 @@ export function useFarol(
     [porLoja, observadas]
   )
 
-  const totalDaOperacao = noQuadro.reduce((soma, l) => soma + totalDaLoja(l), 0)
-  const atrasados = noQuadro.reduce((soma, l) => soma + (l.alertas?.atrasados ?? 0), 0)
+  /*
+   * A última leitura estável — a que continua na tela enquanto o esqueleto
+   * está no ar.
+   *
+   * Sem isto, os dados novos chegam antes do piso de carregamento e a pílula
+   * do cabeçalho troca de texto por baixo do brilho, ainda em estado de
+   * espera: a mudança que o esqueleto existe para adiar acontece do mesmo
+   * jeito, só que escondida.
+   */
+  const ultimaEstavel = useRef<AlertasPorLoja[]>([])
+  if (!carregando) ultimaEstavel.current = noQuadro
+  const exibido = carregando ? ultimaEstavel.current : noQuadro
+
+  /* Sobre `exibido`, e não `noQuadro`: as contagens do cabeçalho precisam ficar
+     paradas junto com o resto enquanto o esqueleto está no ar. */
+  const totalDaOperacao = exibido.reduce((soma, l) => soma + totalDaLoja(l), 0)
+  const atrasados = exibido.reduce((soma, l) => soma + (l.alertas?.atrasados ?? 0), 0)
 
   /**
    * Estado de operação por loja, para o seletor rotular cada linha.
@@ -359,7 +394,7 @@ export function useFarol(
     return mapa
   }, [porLoja])
 
-  return { porLoja: noQuadro, totalDaOperacao, atrasados, estados, carregando }
+  return { porLoja: exibido, totalDaOperacao, atrasados, estados, carregando }
 }
 
 

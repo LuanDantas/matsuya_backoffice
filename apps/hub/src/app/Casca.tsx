@@ -388,6 +388,13 @@ export function Casca({
             ref={botaoDoFarol}
             className="barra__farol"
             data-estado={rotuloDoFarol ? 'alerta' : 'ok'}
+            /*
+              A pílula é a única parte do farol que fica à vista o tempo todo —
+              o painel está fechado quando se troca de loja. Sem estado de
+              espera aqui, o esqueleto do painel corrigia algo que ninguém via,
+              e a pílula continuava invertendo de cor de uma vez.
+            */
+            data-carregando={farol.carregando || undefined}
             data-aberto={farolAberto || undefined}
             onClick={() => definirFarolAberto(true)}
             aria-label={

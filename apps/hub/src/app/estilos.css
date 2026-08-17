@@ -3049,6 +3049,86 @@
   font-size: var(--texto-sm);
   font-weight: var(--peso-medio);
   cursor: pointer;
+  /* Nomeadas, nunca `all`: a pílula inverte inteira entre repouso e alerta, e
+     sem transição a troca acontece num quadro só — que é o que se lê como
+     "estourou na cara". 240 ms é o tempo de a mudança ser percebida como
+     mudança, e não como outra tela. */
+  transition:
+    background-color var(--duracao) var(--curva),
+    border-color var(--duracao) var(--curva),
+    color var(--duracao) var(--curva);
+}
+
+/*
+ * A pílula esperando.
+ *
+ * Ela não some nem esvazia: fica exatamente onde estava, com o conteúdo da
+ * leitura anterior segurado por baixo de um brilho. Substituir o texto por
+ * blocos cinzas encolheria a pílula e deslocaria o cabeçalho inteiro, que é
+ * uma mudança maior do que a que se está tentando suavizar.
+ *
+ * O estado neutro é deliberado: durante a espera a pílula não afirma "alerta"
+ * nem "tudo bem". Um alerta que talvez pertença à loja que acabou de sair da
+ * seleção não deve continuar gritando em preto e âmbar.
+ */
+.barra__farol[data-carregando] {
+  background: var(--superficie-3);
+  border-color: transparent;
+  color: var(--texto-fraco);
+  cursor: progress;
+}
+
+.barra__farol[data-carregando] .barra__farol-chip {
+  background: var(--superficie-2);
+  color: transparent;
+  /* O ícone dentro do chip também some, senão sobra um símbolo de alerta
+     nítido sobre um chip apagado. */
+  opacity: 0.9;
+}
+
+.barra__farol[data-carregando] .barra__farol-chip svg {
+  visibility: hidden;
+}
+
+/*
+ * O pulso sai de cena: pulso é sinal de leitura viva, e durante a espera não
+ * há leitura. O brilho é que diz que algo está vindo.
+ *
+ * `content: none` e não `animation: none` — parar a animação deixaria o halo
+ * parado em cima do ponto, cobrindo o cinza de espera com a cor do estado que
+ * está justamente em dúvida.
+ */
+.barra__farol[data-carregando] .barra__farol-ponto::after {
+  content: none;
+}
+
+.barra__farol[data-carregando] .barra__farol-ponto {
+  background: var(--borda-forte);
+}
+
+/*
+ * O brilho é o mesmo `ui-brilho` dos esqueletos do quadro, na mesma cadência.
+ * Duas velocidades de espera na mesma tela fariam parecer que são duas coisas
+ * diferentes acontecendo.
+ */
+.barra__farol[data-carregando] .barra__farol-ponto,
+.barra__farol[data-carregando] .barra__farol-chip {
+  position: relative;
+  overflow: hidden;
+}
+
+.barra__farol[data-carregando] .barra__farol-ponto::before,
+.barra__farol[data-carregando] .barra__farol-chip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 25%,
+    color-mix(in srgb, var(--texto) 10%, transparent) 50%,
+    transparent 75%
+  );
+  animation: ui-brilho 1.4s linear infinite;
 }
 
 /*
@@ -3111,6 +3191,13 @@
 
 @media (prefers-reduced-motion: reduce) {
   .barra__farol .barra__farol-ponto::after { animation: none; content: none; }
+  /* Mesmo tratamento dos esqueletos do quadro: sem varredura, o cinza sozinho
+     diz que está esperando. */
+  .barra__farol[data-carregando] .barra__farol-ponto::before,
+  .barra__farol[data-carregando] .barra__farol-chip::before {
+    animation: none;
+    content: none;
+  }
   .farol__ponto-titulo::after { animation: none; content: none; }
 }
 
@@ -3692,6 +3779,86 @@
   font-size: var(--texto-xs);
   font-weight: var(--peso-medio);
   cursor: pointer;
+  /* Nomeadas, nunca `all`: a pílula inverte inteira entre repouso e alerta, e
+     sem transição a troca acontece num quadro só — que é o que se lê como
+     "estourou na cara". 240 ms é o tempo de a mudança ser percebida como
+     mudança, e não como outra tela. */
+  transition:
+    background-color var(--duracao) var(--curva),
+    border-color var(--duracao) var(--curva),
+    color var(--duracao) var(--curva);
+}
+
+/*
+ * A pílula esperando.
+ *
+ * Ela não some nem esvazia: fica exatamente onde estava, com o conteúdo da
+ * leitura anterior segurado por baixo de um brilho. Substituir o texto por
+ * blocos cinzas encolheria a pílula e deslocaria o cabeçalho inteiro, que é
+ * uma mudança maior do que a que se está tentando suavizar.
+ *
+ * O estado neutro é deliberado: durante a espera a pílula não afirma "alerta"
+ * nem "tudo bem". Um alerta que talvez pertença à loja que acabou de sair da
+ * seleção não deve continuar gritando em preto e âmbar.
+ */
+.barra__farol[data-carregando] {
+  background: var(--superficie-3);
+  border-color: transparent;
+  color: var(--texto-fraco);
+  cursor: progress;
+}
+
+.barra__farol[data-carregando] .barra__farol-chip {
+  background: var(--superficie-2);
+  color: transparent;
+  /* O ícone dentro do chip também some, senão sobra um símbolo de alerta
+     nítido sobre um chip apagado. */
+  opacity: 0.9;
+}
+
+.barra__farol[data-carregando] .barra__farol-chip svg {
+  visibility: hidden;
+}
+
+/*
+ * O pulso sai de cena: pulso é sinal de leitura viva, e durante a espera não
+ * há leitura. O brilho é que diz que algo está vindo.
+ *
+ * `content: none` e não `animation: none` — parar a animação deixaria o halo
+ * parado em cima do ponto, cobrindo o cinza de espera com a cor do estado que
+ * está justamente em dúvida.
+ */
+.barra__farol[data-carregando] .barra__farol-ponto::after {
+  content: none;
+}
+
+.barra__farol[data-carregando] .barra__farol-ponto {
+  background: var(--borda-forte);
+}
+
+/*
+ * O brilho é o mesmo `ui-brilho` dos esqueletos do quadro, na mesma cadência.
+ * Duas velocidades de espera na mesma tela fariam parecer que são duas coisas
+ * diferentes acontecendo.
+ */
+.barra__farol[data-carregando] .barra__farol-ponto,
+.barra__farol[data-carregando] .barra__farol-chip {
+  position: relative;
+  overflow: hidden;
+}
+
+.barra__farol[data-carregando] .barra__farol-ponto::before,
+.barra__farol[data-carregando] .barra__farol-chip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 25%,
+    color-mix(in srgb, var(--texto) 10%, transparent) 50%,
+    transparent 75%
+  );
+  animation: ui-brilho 1.4s linear infinite;
 }
 
 .farol__reativar:hover { color: var(--f-texto); }
