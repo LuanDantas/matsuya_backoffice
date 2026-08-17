@@ -46,6 +46,10 @@
   --superficie-1: #ffffff;     /* cartão, modal, barra do app */
   --superficie-2: #eaeaea;     /* painel da coluna e da seção */
   --superficie-3: #f0f0f0;     /* pílula neutra, linha ativa */
+  /* Coluna Aceitar: um degrau de cinza abaixo das outras colunas. É o único
+     recorte do quadro que precisa se distinguir sem gritar — a urgência ali
+     está no relógio de cada cartão, não no fundo. */
+  --superficie-aceitar: #dedede;
 
   --borda: #e2e2e2;            /* divisória interna do cartão */
   --borda-forte: #d4d4d4;      /* campo, botão com borda */
@@ -100,6 +104,80 @@
   --atraso-fundo: #7a1114;
   --atraso-texto: #ffffff;
 
+  /*
+   * O vermelho vivo do alarme: chip de atraso no cabeçalho da coluna e no
+   * cartão. Mais claro que `--atraso-fundo`, que é o preenchimento sólido da
+   * barra de aceite — este é um chip pequeno e precisa saltar no meio de texto
+   * cinza.
+   *
+   * É par de tokens porque a versão anterior era `var(--perigo)` com `#fff`
+   * cravado no CSS. No tema claro dava 6.47:1; no escuro, onde `--perigo` é um
+   * vermelho claro, dava **2.77:1** — e passou despercebido justamente por a
+   * cor do texto estar fora dos tokens, fora do alcance do verificador.
+   */
+  --alarme-fundo: #b91c1c;
+  --alarme-texto: #ffffff;
+
+  /*
+   * A faixa de contagem do preparo: âmbar **sólido** com texto escuro, como na
+   * referência — não o âmbar suave com texto âmbar dos selos.
+   *
+   * São dois degraus e não um. Um âmbar único não distingue "faltam 12 min" de
+   * "faltam 2 min", e é aí que o operador decide se larga o que está fazendo.
+   * O escuro não redefine nenhum dos dois: âmbar claro com texto quase preto
+   * funciona igual nos dois temas, e inverter só criaria um terceiro estado
+   * para manter.
+   */
+  --preparo-fundo: #f2cb6b;
+  --preparo-fundo-aperto: #edb130;
+  --preparo-texto: #2b2000;
+
+  /* O trilho vazio da barra de aceite — o rosa que sobra quando ela drena. */
+  --aceite-trilho: #f7d3d6;
+
+  /*
+   * O verde da ação primária do cartão.
+   *
+   * Mais vivo que `--marca`, e é de propósito: o botão do cartão é o alvo que
+   * o operador acerta sem olhar, dezenas de vezes por turno, e precisa saltar
+   * da coluna. A referência usa #52A870, que dá 2.92:1 com texto branco e não
+   * sobrevive ao reflexo de janela num tablet de cozinha. #27864E é o verde
+   * mais claro que ainda passa em AA com branco (4.56:1) — a olho nu, a mesma
+   * cor; ao sol, a diferença entre ler e adivinhar.
+   */
+  --acao: #27864e;
+  --acao-hover: #206b3f;
+  --acao-texto: #ffffff;
+
+  /*
+   * O painel do Farol: escuro nos **dois** temas, como a referência.
+   *
+   * Não segue as superfícies do tema, e por isso está declarado inteiro nos
+   * dois blocos com os mesmos valores. A duplicação é a afirmação: esta
+   * paleta não varia. O farol é uma camada de exceção sobre o quadro, e o
+   * contraste de fundo é o que a separa dele — um painel claro sobre um
+   * quadro claro precisaria de véu pesado e sombra para existir.
+   *
+   * Mora aqui, e não solto no CSS do Hub, porque é assim que o verificador de
+   * contraste enxerga estes pares. Cor escolhida a olho fora do arquivo de
+   * tokens é exatamente a que reprova sem ninguém notar.
+   */
+  --painel-fundo: #0b0b0d;
+  --painel-elevado: #16161a;
+  --painel-borda: #2e2e36;
+  --painel-texto: #f5f5f6;
+  --painel-fraco: #9a9aa2;
+  --painel-ok: #34d399;
+  --painel-alerta: #d9a13a;
+  --painel-critico: #fca5a5;
+
+  /* Farol com alerta: a pílula inteira inverte, como na referência. */
+  --farol-alerta-fundo: #0d0d0d;
+  --farol-alerta-texto: #ffffff;
+  --farol-alerta-borda: transparent;
+  --farol-chip-fundo: #c8901f;
+  --farol-chip-texto: #1f1f1f;
+
   /* Badge de contagem no cabeçalho de coluna e de seção. */
   --contagem-fundo: #3f3e3e;
   --contagem-texto: #ffffff;
@@ -116,6 +194,9 @@
   --superficie-1: #151b23;
   --superficie-2: #1d252f;
   --superficie-3: #26303c;
+  /* No escuro o degrau sobe em vez de descer: um cinza mais escuro que o
+     painel afundaria a coluna no fundo da página. */
+  --superficie-aceitar: #28323e;
 
   --borda: #2a3441;
   --borda-forte: #3a4757;
@@ -148,6 +229,50 @@
 
   --atraso-fundo: #7f1d1d;
   --atraso-texto: #ffffff;
+
+  /* Mesma inversão do verde de ação: no escuro o vermelho sobe e o texto
+     desce. 6.60:1, contra os 2.77:1 do branco cravado que havia antes. */
+  --alarme-fundo: #f87171;
+  --alarme-texto: #2b0a0a;
+
+  /* Idênticos ao claro: âmbar claro com texto quase preto já funciona nos dois
+     temas, e inverter criaria um terceiro estado para manter. */
+  --preparo-fundo: #f2cb6b;
+  --preparo-fundo-aperto: #edb130;
+  --preparo-texto: #2b2000;
+
+  --aceite-trilho: #f7d3d6;
+
+  /*
+   * No escuro a lógica inverte: um verde escuro o bastante para carregar
+   * branco seria mais escuro que o próprio fundo, e o botão sumiria. O verde
+   * fica claro e o texto escuro — 8.41:1, e a pílula continua sendo a coisa
+   * mais viva da coluna, que é o que ela precisa ser.
+   */
+  --acao: #34d399;
+  --acao-hover: #6ee7b7;
+  --acao-texto: #05261a;
+
+  /* Idênticos ao tema claro de propósito — ver a nota lá em cima. */
+  --painel-fundo: #0b0b0d;
+  --painel-elevado: #16161a;
+  --painel-borda: #2e2e36;
+  --painel-texto: #f5f5f6;
+  --painel-fraco: #9a9aa2;
+  --painel-ok: #34d399;
+  --painel-alerta: #d9a13a;
+  --painel-critico: #fca5a5;
+
+  /*
+   * A pílula do farol é quase preta no claro. No escuro isso a apagaria contra
+   * o fundo, então ela sobe um degrau e ganha borda — o recorte precisa
+   * sobreviver, senão o alerta vira texto solto no cabeçalho.
+   */
+  --farol-alerta-fundo: #10151c;
+  --farol-alerta-texto: #ffffff;
+  --farol-alerta-borda: #2a3441;
+  --farol-chip-fundo: #d9a13a;
+  --farol-chip-texto: #1a1205;
 
   --contagem-fundo: #3a4757;
   --contagem-texto: #e6edf3;

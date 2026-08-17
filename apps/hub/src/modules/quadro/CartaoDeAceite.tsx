@@ -4,13 +4,14 @@ import type { PedidoDoQuadro } from '@matsuya/api-client'
 /**
  * O cartão da coluna Aceitar.
  *
- * Deliberadamente estripado, como em `aceitar.png`: número gigante, barra de
- * prazo, nome da loja. **Sem nome de cliente, sem valor, sem endereço.**
+ * Enxuto: número, nome do cliente, barra de prazo e a loja. **Sem valor e sem
+ * endereço** — no momento do aceite a decisão é uma só, e cada informação a
+ * mais disputa atenção com o relógio. O detalhe fica a um toque.
  *
- * No momento do aceite existe uma decisão só — aceitar ou recusar —, e ela é
- * tomada contra o relógio. Cada informação a mais no cartão disputa atenção
- * com o único número que importa e atrasa a decisão que o cartão existe para
- * apressar. O detalhe continua a um toque, para quem precisar conferir antes.
+ * O nome do cliente entrou depois. `aceitar.png` mostra só o número, e a
+ * primeira versão seguiu o print — mas o cartão fica ao lado dos das outras
+ * colunas, que têm nome, e a linha do herói mudando de forma entre colunas faz
+ * o olho reprocessar a cada troca. Vale o pareamento.
  *
  * A barra drena conforme o prazo corre. É a mesma informação do texto, dita
  * de outro jeito: quem está a dois metros lê a barra, quem está perto lê os
@@ -64,7 +65,12 @@ export function CartaoDeAceite({
         onClick={() => aoAbrirDetalhe(pedido)}
         aria-label={`Abrir o pedido ${pedido.code ?? pedido.id} para aceitar ou recusar`}
       >
-        <strong className="aceite__numero num">{pedido.code ?? `#${pedido.id}`}</strong>
+        <span className="aceite__heroi">
+          <strong className="aceite__numero num">{pedido.code ?? `#${pedido.id}`}</strong>
+          {pedido.customerLabel && (
+            <span className="aceite__cliente">{pedido.customerLabel}</span>
+          )}
+        </span>
 
         <span
           className="aceite__barra"
@@ -86,9 +92,17 @@ export function CartaoDeAceite({
             <span className="aceite__rotulo aceite__rotulo--trilho">{rotulo}</span>
           </span>
 
+          {/*
+            A camada preenchida tem a largura da barra inteira e é **recortada**
+            até a proporção do tempo. Ela já teve `width` variável, e aí o
+            rótulo de dentro encolhia junto: centralizado numa caixa que
+            diminuía, o texto caminhava para a esquerda enquanto o prazo corria.
+            Com o recorte, as duas camadas têm sempre o mesmo tamanho, o texto
+            fica parado, e só a área vermelha se move.
+          */}
           <span
             className="aceite__preenchimento"
-            style={{ width: `${proporcao * 100}%` }}
+            style={{ clipPath: `inset(0 ${(1 - proporcao) * 100}% 0 0)` }}
             aria-hidden="true"
           >
             <span className="aceite__rotulo aceite__rotulo--preenchido">{rotulo}</span>

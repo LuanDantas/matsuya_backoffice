@@ -347,6 +347,8 @@
 /* ── Pílula de estado ───────────────────────────────────────────────────── */
 
 .ui-pilula {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -362,25 +364,94 @@
   text-align: center;
 }
 
-/* Âmbar da contagem regressiva. Fundo suave e texto escuro: precisa ser
-   visível sem competir com o vermelho sólido do atraso, que é o alarme. */
+/*
+ * Âmbar **sólido** da contagem regressiva, como na referência — não o âmbar
+ * suave com texto âmbar dos selos.
+ *
+ * A faixa preenchida é o que faz a coluna Em preparo ser lida de longe: numa
+ * pilha de cartões brancos, o olho conta as tarjas amarelas antes de ler
+ * qualquer palavra. Com fundo suave, todas as faixas somem no branco do cartão
+ * e a coluna vira uma lista de texto.
+ */
 .ui-pilula[data-tom='aviso'] {
-  background: var(--atencao-suave);
-  color: var(--atencao);
+  background: var(--preparo-fundo);
+  color: var(--preparo-texto);
   font-weight: var(--peso-forte);
+}
+
+/* Faltando cinco minutos ou menos, o âmbar fecha. É a hora em que o operador
+   decide se larga o que está fazendo, e um âmbar só não distingue "faltam 12"
+   de "faltam 2". */
+.ui-pilula[data-tom='aviso'][data-aperto] {
+  background: var(--preparo-fundo-aperto);
+}
+
+/*
+ * O brilho que atravessa a faixa enquanto o prazo corre.
+ *
+ * Existe para dar ao tempo uma presença que o número sozinho não tem: o
+ * "8min" fica parado por sessenta segundos, e uma faixa parada não parece
+ * estar contando nada. O reflexo passando diz que há um relógio em curso
+ * mesmo quando o dígito não mudou.
+ *
+ * **Só nas faixas que contam.** Não passa no atraso — lá o vermelho já é o
+ * mais forte da tela e movimento por cima competiria com o distintivo pulsante
+ * da coluna, que é o que de fato pede ação. Nem nas faixas de estado que não
+ * têm relógio: brilho em tudo vira ruído e para de significar.
+ *
+ * A velocidade carrega a informação. Com folga é uma passada lenta; nos
+ * últimos cinco minutos, quase o dobro — a mudança de ritmo é percebida pela
+ * visão periférica antes de qualquer leitura.
+ */
+.ui-pilula[data-contando]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /*
+   * O reflexo sai do `currentColor`, e não de um branco fixo. Branco é
+   * invisível sobre a faixa cinza no tema claro; a cor do próprio texto
+   * funciona sobre qualquer um dos fundos e nos dois temas, sem uma variante
+   * por combinação.
+   */
+  background: linear-gradient(
+    100deg,
+    transparent 25%,
+    color-mix(in srgb, currentColor 15%, transparent) 50%,
+    transparent 75%
+  );
+  animation: ui-brilho var(--brilho, 5s) linear infinite;
+}
+
+.ui-pilula[data-tom='aviso'][data-contando] { --brilho: 3.2s; }
+.ui-pilula[data-tom='aviso'][data-aperto][data-contando] { --brilho: 1.8s; }
+
+@keyframes ui-brilho {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+/*
+ * O brilho é enfeite informativo, não informação: quem pede movimento reduzido
+ * perde só a sensação de tempo correndo, e o número continua contando.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .ui-pilula[data-contando]::after { animation: none; content: none; }
 }
 
 .ui-pilula[data-tom='sucesso'] { color: var(--marca); }
 .ui-pilula[data-tom='perigo'] { color: var(--perigo); }
 
 /*
- * O único preenchimento sólido da interface. Ver PilulaDeEstado.tsx: o valor
- * dele vem de ser o único — promover um segundo tom a preenchido faz o atraso
- * deixar de saltar.
+ * O atraso, no mesmo vermelho do chip de contagem do cabeçalho da coluna.
+ *
+ * Os dois falam do mesmo fato em escalas diferentes — a coluna diz quantos
+ * estão atrasados, o cartão diz qual —, e enquanto o cabeçalho usava um
+ * vermelho e o cartão o vinho escuro, eram dois assuntos para quem olha.
  */
 .ui-pilula[data-tom='critico'] {
-  background: var(--atraso-fundo);
-  color: var(--atraso-texto);
+  background: var(--alarme-fundo);
+  color: var(--alarme-texto);
   font-weight: var(--peso-forte);
 }
 
@@ -469,20 +540,51 @@
   padding: 0 var(--e-2) var(--e-2);
 }
 
-/* Distintivo de alerta no cabeçalho da seção. */
+/*
+ * Alerta no cabeçalho da seção.
+ *
+ * Chip com texto, e não um segundo número: a contagem preta já responde
+ * "quantos há aqui", e um círculo vermelho ao lado dela respondia outra
+ * pergunta sem dizer qual. Agora ele se explica sozinho — "⏱ 2 atrasados" —,
+ * e a forma diferente do badge de contagem já separa as duas coisas antes de
+ * qualquer leitura.
+ */
 .ui-painel__alerta {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-width: 22px;
-  height: 20px;
-  padding: 0 6px;
+  gap: 4px;
+  height: 19px;
+  padding: 0 7px;
+  border: 0;
   border-radius: var(--raio-total);
-  background: var(--perigo);
-  color: #fff;
+  background: var(--alarme-fundo);
+  color: var(--alarme-texto);
+  font-family: inherit;
   font-size: var(--texto-xs);
   font-weight: var(--peso-forte);
+  white-space: nowrap;
   animation: ui-pulsar 1.8s ease-in-out infinite;
+}
+
+/* Quando filtra, é botão: precisa parecer apertável antes de ser apertado. */
+button.ui-painel__alerta { cursor: pointer; }
+
+button.ui-painel__alerta:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+}
+
+/*
+ * Filtro ligado: para de pulsar e ganha um anel.
+ *
+ * Parar o pulso é o ponto. Ele existe para chamar a atenção para um alerta não
+ * visto; depois de clicado, o alerta está sendo olhado — continuar piscando
+ * seria pedir de novo o que já foi feito. O anel diz que o botão está preso,
+ * que é outra informação.
+ */
+button.ui-painel__alerta[aria-pressed='true'] {
+  animation: none;
+  box-shadow: 0 0 0 2px var(--superficie-2), 0 0 0 4px var(--alarme-fundo);
 }
 
 /*
@@ -490,12 +592,14 @@
  * trabalha seis horas vira desconforto, e desconforto vira "eu já vi, ignora".
  */
 @keyframes ui-pulsar {
-  0%, 100% { box-shadow: 0 0 0 0 rgb(220 38 38 / 0.5); }
-  50% { box-shadow: 0 0 0 6px rgb(220 38 38 / 0); }
+  /* A onda sai da própria cor do chip, em vez de um vermelho fixo que
+     divergia dela no tema escuro. */
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--alarme-fundo) 50%, transparent); }
+  50% { box-shadow: 0 0 0 6px transparent; }
 }
 
-/* Movimento reduzido: o distintivo continua visível, só para de pulsar. A
-   informação está no número e na cor, não no movimento. */
+/* Movimento reduzido: o chip continua visível, só para de pulsar. A informação
+   está no texto e na cor, não no movimento. */
 @media (prefers-reduced-motion: reduce) {
   .ui-painel__alerta { animation: none; }
 }

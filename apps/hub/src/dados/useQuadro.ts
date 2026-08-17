@@ -29,6 +29,14 @@ export interface EstadoDoQuadro {
   sincronia: EstadoDeSincronia
   /** Cursor por loja, para o diagnóstico em Ajustes. */
   cursores: ReadonlyMap<number, number>
+  /**
+   * Sobe a cada abertura, fechamento ou pausa de loja.
+   *
+   * O quadro não guarda o estado da loja — quem guarda é o farol, que já
+   * consulta `/alerts` por unidade. Um contador é o suficiente para dizer a
+   * ele "reconsulte", e evita duplicar aqui um dado que já tem dono.
+   */
+  versaoDasLojas: number
   agoraDoServidor: () => number
   recarregar: () => void
 }
@@ -40,6 +48,7 @@ export function useQuadro(unityIds: number[], token: string | null): EstadoDoQua
   const [conexao, definirConexao] = useState<EstadoDaConexao>('conectando')
   const [sincronia, definirSincronia] = useState<EstadoDeSincronia>('inicial')
   const [cursores, definirCursores] = useState<ReadonlyMap<number, number>>(new Map())
+  const [versaoDasLojas, definirVersaoDasLojas] = useState(0)
 
   const conexaoRef = useRef<Conexao | null>(null)
   const tokenRef = useRef(token)
@@ -135,6 +144,7 @@ export function useQuadro(unityIds: number[], token: string | null): EstadoDoQua
       // Só a loja que pediu recarrega. Recarregar tudo por causa de uma
       // unidade jogaria fora o cursor das outras sem motivo.
       aoExigirRecarga: (unityId) => void carregarLoja(unityId),
+      aoMudarOperacao: () => definirVersaoDasLojas((v) => v + 1),
       aoMudarEstado: definirConexao,
       aoMudarSincronia: definirSincronia,
     })
@@ -161,6 +171,7 @@ export function useQuadro(unityIds: number[], token: string | null): EstadoDoQua
     conexao,
     sincronia,
     cursores,
+    versaoDasLojas,
     agoraDoServidor,
     recarregar: () => void carregarTudo(),
   }

@@ -129,7 +129,7 @@ export function DrawerDoPedido({
     >
       <div className="drawer-pedido__selos">
         <Selo tom={ORDER_STATUS_TONE[pedido.status]}>{ORDER_STATUS_LABEL[pedido.status]}</Selo>
-        <Selo icone={pedido.deliveryType === 'pickup' ? 'sacola' : 'moto'}>
+        <Selo icone={pedido.deliveryType === 'pickup' ? 'sacola' : 'capacete'}>
           {pedido.deliveryType === 'pickup' ? 'Retirada' : 'Entrega'}
         </Selo>
         {pedido.hasPartialCancellation && (
@@ -216,7 +216,7 @@ export function DrawerDoPedido({
           <Linha icone="sacola" rotulo="Subtotal" valor={moeda.format(pedido.subtotal)} />
           {pedido.deliveryFee > 0 && (
             <Linha
-              icone="moto"
+              icone="capacete"
               rotulo="Taxa de entrega"
               valor={moeda.format(pedido.deliveryFee)}
             />
@@ -257,7 +257,7 @@ function Linha({
   valor,
   destaque = false,
 }: {
-  icone: 'sacola' | 'moto' | 'check' | 'pessoa'
+  icone: 'sacola' | 'capacete' | 'check' | 'pessoa'
   rotulo: string
   descricao?: string
   valor: string

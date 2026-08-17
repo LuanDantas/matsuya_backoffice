@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Botao, Icone, PilulaDeEstado, type TomDaPilula } from '@matsuya/ui'
+import { Icone, PilulaDeEstado, type TomDaPilula } from '@matsuya/ui'
 import {
   ORDER_ACTION_INFO,
   ORDER_STATUS_LABEL,
@@ -8,7 +8,7 @@ import {
   type OrderAction,
 } from '@matsuya/contracts'
 import type { PedidoDoQuadro } from '@matsuya/api-client'
-import { decorrido, horario, moeda, restante } from '../../app/formato'
+import { decorrido, horario, restante } from '../../app/formato'
 
 /**
  * O cartão de pedido.
@@ -20,15 +20,21 @@ import { decorrido, horario, moeda, restante } from '../../app/formato'
  *
  * Quatro faixas, de cima para baixo:
  *
- * 1. contexto (tempo de espera, tipo de entrega) — pequeno, cor semântica
+ * 1. status da entrega — pílula que abraça o texto
  * 2. número + nome do cliente — o herói
- * 3. pílula de estado, largura total
- * 4. ações
+ * 3. **ação primária ou estado**, largura total
+ * 4. rodapé com a loja, quando o quadro mostra mais de uma
  *
- * A faixa 4 é a nossa diferença em relação à referência: no iFood o cartão não
- * age, só informa. Aqui o operador aceita e recusa direto do quadro, e é para
- * isso que ele olha a tela — tirar a ação do cartão custaria dois toques em
- * cada pedido do turno.
+ * A faixa 3 merece explicação. Em `pronto.png` o botão verde ocupa exatamente
+ * o lugar onde, nos cartões sem ação, está a pílula cinza de estado. Não são
+ * duas faixas: é **uma faixa que às vezes informa e às vezes age**. Um cartão
+ * pronto para sair diz "Pronto" com um botão; um cartão finalizado diz o
+ * estado com uma pílula. Mesma geometria, mesmo lugar para o olho voltar.
+ *
+ * Disso decorre a regra de **uma ação por cartão**. O que não couber vai para
+ * o drawer, e o destrutivo vai para lá por escolha, não por falta de espaço:
+ * cancelar desfaz o trabalho da cozinha, e não pode ficar a um toque de
+ * distância do botão que o operador acerta sem olhar.
  */
 
 export type VarianteDoCartao = 'largo' | 'denso'
@@ -52,7 +58,21 @@ export interface PropsDoCartao {
   aoAbrirDetalhe: (pedido: PedidoDoQuadro) => void
 }
 
-type Urgencia = 'normal' | 'perto' | 'estourado'
+/**
+ * Os quatro degraus do prazo, do mais folgado ao vencido.
+ *
+ * Quatro e não dois porque a faixa é o único lugar onde o operador lê o
+ * relógio, e "faltam 12 min" e "faltam 2 min" pedem reações diferentes. Cada
+ * degrau tem cor própria, e a passagem de um para o outro é o que se percebe
+ * pelo canto do olho — mais do que a cor em si.
+ */
+type Urgencia = 'tranquilo' | 'atencao' | 'aperto' | 'estourado'
+
+/** Acima disto o prazo é cinza: existe, mas ainda não pede nada de ninguém. */
+const MINUTOS_DE_ATENCAO = 10
+
+/** Onde o âmbar fecha. Cinco minutos é o ponto em que dá para largar o resto. */
+const MINUTOS_DE_APERTO = 5
 
 /**
  * Urgência a partir do prazo que a API deriva.
@@ -63,12 +83,13 @@ type Urgencia = 'normal' | 'perto' | 'estourado'
  * mais rápido de ensinar alguém a ignorar um alarme.
  */
 function urgencia(pedido: PedidoDoQuadro, agora: number): Urgencia {
-  if (!pedido.deadlineAt) return 'normal'
+  if (!pedido.deadlineAt) return 'tranquilo'
 
   const faltamMs = new Date(pedido.deadlineAt).getTime() - agora
   if (faltamMs < 0) return 'estourado'
-  if (faltamMs <= 3 * 60_000) return 'perto'
-  return 'normal'
+  if (faltamMs <= MINUTOS_DE_APERTO * 60_000) return 'aperto'
+  if (faltamMs <= MINUTOS_DE_ATENCAO * 60_000) return 'atencao'
+  return 'tranquilo'
 }
 
 const VERBO_DO_PRAZO: Record<'aceite' | 'preparo', string> = {
@@ -88,7 +109,7 @@ function estado(
   agora: number,
   nivel: Urgencia,
   denso: boolean
-): { tom: TomDaPilula; icone?: 'relogio' | 'check' | 'x' | 'moto'; texto: string } {
+): { tom: TomDaPilula; icone?: 'relogio' | 'check' | 'x' | 'capacete'; texto: string } {
   if (pedido.deadlineAt && pedido.deadlineKind) {
     const verbo = VERBO_DO_PRAZO[pedido.deadlineKind]
 
@@ -103,8 +124,11 @@ function estado(
 
     const falta = restante(pedido.deadlineAt, agora)
     return {
-      tom: 'aviso',
-      icone: nivel === 'perto' ? 'relogio' : undefined,
+      // Com mais de dez minutos o prazo fica cinza: ele existe, corre, e não
+      // pede nada de ninguém ainda. Pintar de âmbar desde o aceite gastaria a
+      // cor que precisa significar alguma coisa aos cinco minutos.
+      tom: nivel === 'tranquilo' ? 'neutro' : 'aviso',
+      icone: nivel === 'aperto' ? 'relogio' : undefined,
       texto: denso ? `${verbo} em ${falta}` : `${verbo} em até ${falta}`,
     }
   }
@@ -136,37 +160,125 @@ function estado(
   }
 }
 
+type TomDoChip = Urgencia | 'sucesso'
+type IconeDoChip = 'capacete' | 'sacola' | 'relogio' | 'check' | 'x'
+
 /**
- * A linha de contexto, no topo do cartão.
+ * O status de entrega, no topo do cartão.
  *
- * A referência mostra aqui o ETA do entregador até a loja. Não temos isso — não
- * há entregador atribuído nem rastreamento —, então o espaço vai para a
- * informação que existe e que o cliente pergunta ao telefone: quando a comida
- * chega. Cai para tempo na rua quando não há previsão, em vez de mostrar um
- * horário que ninguém pode cumprir.
+ * **O que a referência mostra aqui e nós não temos:** a identidade e a posição
+ * do entregador — "Fulano chega em 9 min", "Fulano aguardando há 3 min",
+ * "Fulano chegou no cliente". A API tem a coluna `orders.courier_id` e a
+ * associação com `User`, mas nada a preenche: nenhum pedido tem entregador
+ * atribuído, e não existe rastreamento nem evento de chegada. Escrever um nome
+ * ou um "chega em 9 min" aqui seria número inventado no lugar onde o operador
+ * mais confia na tela.
+ *
+ * O que este rótulo diz é o mesmo tipo de coisa, com os fatos que existem: o
+ * estado da entrega e o tempo, contados a partir de `dispatchedAt`,
+ * `deliveredAt` e da previsão da zona. Quando o entregador entrar na API, é
+ * aqui que o nome dele encaixa, sem mudar a forma.
+ *
+ * **O prazo não entra aqui.** Ele mora na faixa de baixo, na largura toda do
+ * cartão. Este chip já tomou a contagem uma vez, e o resultado eram dois
+ * relógios no mesmo cartão discordando por um minuto de arredondamento.
  */
-function contexto(pedido: PedidoDoQuadro, agora: number): string {
-  if (pedido.deliveryType === 'pickup') return 'Retirada no balcão'
+function statusDaEntrega(
+  pedido: PedidoDoQuadro,
+  agora: number
+): { texto: string; icone: IconeDoChip; tom: TomDoChip } {
+  // O prazo **não** aparece aqui. Ele já ocupa a faixa de baixo, que diz
+  // "Prepare em até 6min" ou "Pedido em atraso há 3min" na largura toda do
+  // cartão. Repetir a mesma contagem no chip do topo dava dois relógios
+  // discordando por um minuto de arredondamento, e o operador conferindo qual
+  // dos dois valia. Este chip fala só de entrega.
 
-  const emRota =
-    pedido.status === 'out_for_delivery' ||
-    pedido.status === 'awaiting_courier' ||
-    pedido.status === 'delivery_failed' ||
-    pedido.status === 'customer_not_found'
-
-  if (pedido.estimatedDeliveryAt) {
-    const previsao = new Date(pedido.estimatedDeliveryAt)
-    const atrasada = previsao.getTime() < agora
-    return atrasada
-      ? `Previsão vencida às ${horario.format(previsao)}`
-      : `Entrega prevista às ${horario.format(previsao)}`
+  // 1. Desfechos. Entregue é o único verde do cartão — é o fim feliz, e vale
+  //    a cor justamente por ser o estado sobre o qual não há mais nada a fazer.
+  if (pedido.status === 'delivered') {
+    return {
+      texto: pedido.deliveredAt
+        ? `Entregue às ${horario.format(new Date(pedido.deliveredAt))}`
+        : 'Entregue ao cliente',
+      icone: 'check',
+      tom: 'sucesso',
+    }
   }
 
-  if (emRota && pedido.dispatchedAt) {
-    return `Na rua há ${decorrido(pedido.dispatchedAt, agora)}`
+  if (pedido.status === 'delivery_failed') {
+    return { texto: 'Falha na entrega', icone: 'x', tom: 'estourado' }
   }
 
-  return 'Entrega'
+  if (pedido.status === 'customer_not_found') {
+    return { texto: 'Cliente não localizado', icone: 'x', tom: 'estourado' }
+  }
+
+  if (pedido.status === 'cancelled' || pedido.status === 'rejected') {
+    return { texto: 'Pedido cancelado', icone: 'x', tom: 'tranquilo' }
+  }
+
+  if (pedido.deliveryType === 'pickup') {
+    return { texto: 'Retirada no balcão', icone: 'sacola', tom: 'tranquilo' }
+  }
+
+  // 2. Na rua. A previsão vencida é aviso, não erro: o pedido está a caminho,
+  //    só passou da conta — quem decide o que fazer é quem lê.
+  const previsao = pedido.estimatedDeliveryAt ? new Date(pedido.estimatedDeliveryAt) : null
+
+  if (pedido.status === 'out_for_delivery') {
+    if (previsao && previsao.getTime() > agora) {
+      return {
+        texto: `Chega ao cliente em ${restante(pedido.estimatedDeliveryAt!, agora)}`,
+        icone: 'capacete',
+        tom: 'tranquilo',
+      }
+    }
+    if (previsao) {
+      return {
+        texto: `Previsão vencida há ${decorrido(pedido.estimatedDeliveryAt!, agora)}`,
+        icone: 'capacete',
+        tom: 'atencao',
+      }
+    }
+    return {
+      texto: pedido.dispatchedAt
+        ? `Indo para o cliente há ${decorrido(pedido.dispatchedAt, agora)}`
+        : 'Indo para o cliente',
+      icone: 'capacete',
+      tom: 'tranquilo',
+    }
+  }
+
+  if (pedido.status === 'awaiting_courier') {
+    return { texto: 'Aguardando o entregador', icone: 'capacete', tom: 'tranquilo' }
+  }
+
+  // 3. Ainda na loja — em preparo e pronto. O que interessa aqui é a hora que
+  //    a comida chega no cliente, que é o que ele pergunta ao telefone.
+  if (previsao) {
+    return {
+      texto: `Entrega prevista às ${horario.format(previsao)}`,
+      icone: 'capacete',
+      tom: 'tranquilo',
+    }
+  }
+
+  return { texto: 'Entrega', icone: 'capacete', tom: 'tranquilo' }
+}
+
+/**
+ * O ícone que acompanha a ação primária no botão.
+ *
+ * A referência põe um check no botão "Pronto", e o ícone é o que permite ler o
+ * botão de longe, antes do texto. Onde o significado não é confirmação — sair
+ * para entrega — o ícone acompanha o significado em vez de repetir o check.
+ */
+const ICONE_DA_ACAO: Partial<Record<OrderAction, 'check' | 'capacete' | 'relogio'>> = {
+  accept: 'check',
+  preparing: 'relogio',
+  ready: 'check',
+  dispatch: 'capacete',
+  deliver: 'check',
 }
 
 export function Cartao({
@@ -183,6 +295,7 @@ export function Cartao({
   const denso = variante === 'denso'
   const nivel = urgencia(pedido, agora)
   const pilula = estado(pedido, agora, nivel, denso)
+  const topo = statusDaEntrega(pedido, agora)
 
   const acoes = useMemo(
     () =>
@@ -193,12 +306,11 @@ export function Cartao({
     [pedido.status, pedido.deliveryType, permissoes]
   )
 
-  // No modo denso cabe uma ação; no largo, duas. O resto vai para o detalhe.
-  // Uma fileira de seis botões num cartão estreito é uma fileira de alvos que
-  // ninguém acerta.
-  const limite = denso ? 1 : 2
-  const noCartao = acoes.slice(0, limite)
-  const sobraram = acoes.length - noCartao.length
+  // Uma ação, e só a primária. As destrutivas — recusar, cancelar, falha na
+  // entrega — moram no drawer: desfazem trabalho já feito, e um alvo de
+  // largura total ao lado do botão que se acerta sem olhar é um cancelamento
+  // acidental por turno.
+  const principal = acoes.find((a) => ORDER_ACTION_INFO[a].enfase === 'primaria') ?? null
 
   return (
     <article
@@ -213,9 +325,11 @@ export function Cartao({
         onClick={() => aoAbrirDetalhe(pedido)}
         aria-label={`Abrir o pedido ${pedido.code ?? pedido.id}${pedido.customerLabel ? ` de ${pedido.customerLabel}` : ''}`}
       >
-        <span className="cartao__contexto">
-          <Icone nome={pedido.deliveryType === 'pickup' ? 'sacola' : 'moto'} tamanho={13} />
-          {contexto(pedido, agora)}
+        <span className="cartao__topo">
+          <span className="cartao__contexto" data-tom={topo.tom}>
+            <Icone nome={topo.icone} tamanho={13} />
+            {topo.texto}
+          </span>
           {pedido.hasPartialCancellation && (
             <span className="cartao__alteracao">
               <Icone nome="alerta" tamanho={12} />
@@ -230,39 +344,47 @@ export function Cartao({
             <span className="cartao__cliente">{pedido.customerLabel}</span>
           )}
         </span>
+      </button>
 
-        <PilulaDeEstado tom={pilula.tom} icone={pilula.icone}>
+      {/*
+        A faixa mostra o **estado**, e revela a **ação** quando o ponteiro
+        chega. É o que separa `aceitar1.png` de `aceitar2.png`: os dois prints
+        são o mesmo quadro, e a única diferença é o primeiro cartão, onde a
+        contagem regressiva deu lugar ao botão verde sob o ponteiro.
+
+        A troca resolve uma disputa real por espaço. A contagem é o que o
+        operador lê o tempo todo — é dela que sai a ordem de trabalho —, mas a
+        faixa também é o único alvo grande do cartão. Mostrar ação sempre custa
+        a contagem; mostrar contagem sempre custa dois toques por pedido. Sob o
+        ponteiro, o cartão já é o que está sendo decidido, e a contagem
+        cumpriu o papel dela.
+
+        O botão fica fora do `cartao__abrir` porque botão dentro de botão não é
+        HTML válido, e o navegador resolve isso de um jeito que rouba o clique.
+      */}
+      <div className="cartao__faixa">
+        <PilulaDeEstado
+          tom={pilula.tom}
+          icone={pilula.icone}
+          aperto={nivel === 'aperto'}
+          // Só brilha o que tem relógio correndo — e o atraso fica de fora,
+          // porque lá o vermelho sólido já é o elemento mais forte da tela.
+          contando={!!pedido.deadlineAt && nivel !== 'estourado'}
+        >
           {pilula.texto}
         </PilulaDeEstado>
 
-        {!denso && (
-          <span className="cartao__valor num">{moeda.format(pedido.total)}</span>
-        )}
-      </button>
-
-      <div className="cartao__acoes">
-        {noCartao.map((acao) => {
-          const info = ORDER_ACTION_INFO[acao]
-          return (
-            <Botao
-              key={acao}
-              enfase={info.enfase}
-              carregando={ocupado}
-              onClick={() => aoPedirAcao(pedido, acao)}
-            >
-              {info.rotulo}
-            </Botao>
-          )
-        })}
-
-        {sobraram > 0 && (
-          <Botao enfase="fantasma" onClick={() => aoAbrirDetalhe(pedido)}>
-            +{sobraram}
-          </Botao>
-        )}
-
-        {acoes.length === 0 && (
-          <span className="cartao__sem-acao">Sem ações no seu acesso</span>
+        {principal && (
+          <button
+            type="button"
+            className="cartao__acao"
+            data-ocupado={ocupado || undefined}
+            disabled={ocupado}
+            onClick={() => aoPedirAcao(pedido, principal)}
+          >
+            <Icone nome={ICONE_DA_ACAO[principal] ?? 'check'} tamanho={16} />
+            {ORDER_ACTION_INFO[principal].rotulo}
+          </button>
         )}
       </div>
 

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { EstadoVazio, PainelDeSecao } from '@matsuya/ui'
 import type { OrderAction } from '@matsuya/contracts'
 import type { PedidoDoQuadro } from '@matsuya/api-client'
@@ -27,11 +27,21 @@ export interface PropsDoQuadro {
   aoAbrirDetalhe: (pedido: PedidoDoQuadro) => void
 }
 
-/** Quantos pedidos estão fora do prazo — alimenta o distintivo pulsante. */
+/**
+ * Fora do prazo.
+ *
+ * Uma função só, usada para contar no cabeçalho e para filtrar a coluna. Se as
+ * duas contas fossem escritas separadamente, um dia divergiriam num caso de
+ * borda — o pedido que vence entre o cálculo do chip e o da lista — e o chip
+ * diria "3 atrasados" abrindo uma coluna com dois.
+ */
+export function estaAtrasado(pedido: PedidoDoQuadro, agora: number): boolean {
+  return pedido.deadlineAt !== null && new Date(pedido.deadlineAt).getTime() < agora
+}
+
+/** Quantos pedidos estão fora do prazo — alimenta o chip de alerta da coluna. */
 export function contarAtrasados(pedidos: PedidoDoQuadro[], agora: number): number {
-  return pedidos.filter(
-    (p) => p.deadlineAt !== null && new Date(p.deadlineAt).getTime() < agora
-  ).length
+  return pedidos.filter((p) => estaAtrasado(p, agora)).length
 }
 
 export function agruparPorSecao(
@@ -92,20 +102,69 @@ export function Quadros({
   const porSecao = useMemo(() => agruparPorSecao(pedidos, agora), [pedidos, agora])
   const visiveis = useMemo(() => secoesVisiveis(porSecao), [porSecao])
 
+  /**
+   * Colunas filtradas pelo chip de atraso.
+   *
+   * Um conjunto, e não uma coluna só: filtrar Em preparo pelos atrasados não é
+   * motivo para desfazer o filtro que alguém deixou em Em rota. São perguntas
+   * independentes, feitas em lugares independentes da tela.
+   */
+  const [filtradas, definirFiltradas] = useState<ReadonlySet<ChaveDaSecao>>(new Set())
+
+  const alternarFiltro = useCallback((chave: ChaveDaSecao) => {
+    definirFiltradas((atuais) => {
+      const proximo = new Set(atuais)
+      if (proximo.has(chave)) proximo.delete(chave)
+      else proximo.add(chave)
+      return proximo
+    })
+  }, [])
+
+  /**
+   * O filtro se desliga sozinho quando o último atraso da coluna sai.
+   *
+   * Sem isto o chip some junto com o atraso e o filtro fica ligado sem
+   * controle na tela: a coluna aparece vazia, os pedidos existem, e não há o
+   * que clicar para trazê-los de volta. O jeito de sair some antes do estado.
+   */
+  useEffect(() => {
+    definirFiltradas((atuais) => {
+      const proximo = new Set(
+        [...atuais].filter(
+          (chave) => contarAtrasados(porSecao.get(chave) ?? [], agora) > 0
+        )
+      )
+      return proximo.size === atuais.size ? atuais : proximo
+    })
+  }, [porSecao, agora])
+
   const multiLoja = nomesDasUnidades.size > 1
 
   return (
     <div className="quadros">
       {visiveis.map((secao) => {
-        const lista = porSecao.get(secao.chave) ?? []
-        const atrasados = contarAtrasados(lista, agora)
+        const todos = porSecao.get(secao.chave) ?? []
+        const atrasados = contarAtrasados(todos, agora)
+        const filtrando = filtradas.has(secao.chave)
+
+        // A contagem do cabeçalho segue sendo a da coluna inteira, mesmo
+        // filtrada: ela responde "quantos pedidos há aqui", e trocá-la pelo
+        // subconjunto faria o número cair sem que nada tenha saído da fila.
+        const lista = filtrando ? todos.filter((p) => estaAtrasado(p, agora)) : todos
 
         return (
-          <div key={secao.chave} className="quadros__coluna" data-secao={secao.chave}>
+          <div
+            key={secao.chave}
+            className="quadros__coluna"
+            data-secao={secao.chave}
+            data-filtrada={filtrando || undefined}
+          >
             <PainelDeSecao
               titulo={secao.titulo}
-              contagem={lista.length}
+              contagem={todos.length}
               alertas={atrasados}
+              filtrandoAlertas={filtrando}
+              aoFiltrarAlertas={() => alternarFiltro(secao.chave)}
             >
               <div className="quadros__pilha">
                 {lista.map((pedido) =>
@@ -140,6 +199,15 @@ export function Quadros({
 
                 {lista.length === 0 && (
                   <EstadoVazio titulo="Nenhum pedido" descricao={secao.vazio} />
+                )}
+
+                {filtrando && (
+                  <p className="quadros__filtro" role="status">
+                    {todos.length - lista.length === 1
+                      ? '1 pedido no prazo está oculto.'
+                      : `${todos.length - lista.length} pedidos no prazo estão ocultos.`}{' '}
+                    Toque no alerta para ver todos.
+                  </p>
                 )}
               </div>
             </PainelDeSecao>

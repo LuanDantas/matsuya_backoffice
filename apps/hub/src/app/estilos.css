@@ -95,35 +95,25 @@
   color: var(--texto-fraco);
 }
 
-/* ── Área de trabalho: quadro + exceções ────────────────────────────────── */
+/* ── Área de trabalho ───────────────────────────────────────────────────── */
 
+/*
+ * Coluna única.
+ *
+ * Já foi `1fr 300px`, com as exceções numa faixa fixa à direita. Quando elas
+ * viraram drawer, a faixa ficou — e uma trilha de 300 px vazia continuava
+ * reservada, cortando a última coluna do quadro com uma tira branca que não
+ * pertencia a nada.
+ */
 .area {
   flex: 1;
   min-height: 0;
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: var(--e-3);
+  display: flex;
   padding: var(--e-3);
   padding-bottom: max(var(--e-3), env(safe-area-inset-bottom));
 }
 
-/*
- * Abaixo de 1100 px as exceções vão para cima do quadro, não para o lado.
- * Espremer a faixa lateral num tablet em retrato produz uma coluna de 120 px
- * onde nada é legível — e a exceção deixa de ser vista justamente onde ela
- * mais importa.
- */
-@media (max-width: 1100px) {
-  .area {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
-  }
-
-  .excecoes {
-    max-height: 220px;
-    order: -1;
-  }
-}
+.area > * { flex: 1; min-width: 0; }
 
 /* ── Ferramentas ────────────────────────────────────────────────────────── */
 
@@ -232,7 +222,16 @@
   min-height: 0;
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(250px, 1fr);
+  /*
+   * Medido na referência: quatro colunas em ~1560 px úteis dão ~378 px cada.
+   * Com os 250 px de antes, o nome do cliente quebrava em duas linhas ao lado
+   * do número — e um cartão de duas alturas diferentes quebra a varredura da
+   * coluna, que é como o operador acha o pedido.
+   *
+   * O `overflow-x` continua: com cinco colunas em 1280 px o quadro rola, e
+   * rolar é melhor do que espremer o cartão abaixo do que ele precisa.
+   */
+  grid-auto-columns: minmax(340px, 1fr);
   gap: var(--e-3);
   overflow-x: auto;
   /* Cada coluna encaixa ao arrastar: rolagem parcial deixa dois meios-cartões
@@ -290,23 +289,19 @@
   flex-direction: column;
   background: var(--superficie-1);
   border: 1px solid var(--borda);
-  border-radius: var(--raio-1);
+  border-radius: 14px;
   overflow: hidden;
 }
 
 /*
- * Urgência marcada por borda, ícone e peso do texto — nunca só por cor. Um
- * operador com daltonismo, ou um tablet com contraluz de janela, não distingue
- * vermelho de cinza; e o pedido atrasado é justamente o que não pode passar.
+ * A borda do cartão é sempre a mesma cinza clara, em qualquer urgência.
+ *
+ * Ela já foi vermelha no atraso, e a redundância fazia sentido quando o cartão
+ * não tinha outro sinal. Hoje tem: o chip do topo troca de texto, de ícone e
+ * de fundo quando o prazo aperta — três codificações, nenhuma delas só cor.
+ * Contornar o cartão inteiro por cima disso transformava uma coluna com quatro
+ * atrasos num paredão vinho onde nada mais se lê.
  */
-.cartao[data-urgencia='perto'] {
-  border-color: var(--atencao);
-}
-
-.cartao[data-urgencia='estourado'] {
-  border-color: var(--atraso-fundo);
-  box-shadow: inset 0 0 0 1px var(--atraso-fundo);
-}
 
 .cartao__abrir {
   display: flex;
@@ -322,21 +317,65 @@
   cursor: pointer;
 }
 
+.cartao__topo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--e-1);
+}
+
+/*
+ * Pílula que abraça o texto, e não uma linha solta na largura do cartão.
+ *
+ * Na referência este chip tem fundo próprio, e o fundo é o que o separa do
+ * herói logo abaixo. Sem ele, a linha de contexto e o número disputam a mesma
+ * leitura, e o operador lê o cartão de cima para baixo em vez de bater o olho
+ * no número.
+ */
 .cartao__contexto {
   display: inline-flex;
   align-items: center;
   gap: var(--e-1);
+  padding: 2px var(--e-2);
+  border-radius: 999px;
+  background: var(--superficie-2);
   font-size: var(--texto-xs);
   font-weight: var(--peso-medio);
-  color: var(--texto-fraco);
+  color: var(--texto-corpo);
+}
+
+/*
+ * Quando o prazo aperta, o chip troca de assunto e de cor. Cor sozinha não
+ * conta a história — o texto muda junto ("Atrasado há 6min"), e a borda do
+ * cartão marca o mesmo em paralelo, para quem vê a coluna de longe.
+ */
+.cartao__contexto[data-tom='atencao'] {
+  background: var(--atencao-suave);
+  color: var(--atencao);
+}
+
+/* Mesmo vermelho do chip de atraso no cabeçalho da coluna: é o mesmo fato
+   contado em duas escalas — a coluna diz quantos, o cartão diz qual. Dois
+   vermelhos diferentes fariam parecer dois assuntos. */
+.cartao__contexto[data-tom='estourado'] {
+  background: var(--alarme-fundo);
+  color: var(--alarme-texto);
+}
+
+/* Entregue: o único verde do chip. Vale a cor por ser o estado sobre o qual
+   não há mais nada a fazer — é informação de encerramento, não de ação. */
+.cartao__contexto[data-tom='sucesso'] {
+  background: var(--marca-suave);
+  color: var(--marca);
 }
 
 .cartao__alteracao {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  margin-left: var(--e-2);
   color: var(--atencao);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-medio);
 }
 
 .cartao__heroi {
@@ -352,8 +391,11 @@
  * É a mudança que mais afeta o turno. Antes ele tinha 16 px, do tamanho do
  * resto, e achar o pedido que o cliente diz ao telefone exigia varrer a tela.
  */
+/* 26 px, medido na referência: o número continua sendo o herói do cartão, mas
+   um código alfanumérico curto como "M-23" pesa mais que os quatro dígitos do
+   print, e a 32 px ele passava a competir com a própria coluna. */
 .cartao__numero {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: var(--peso-forte);
   line-height: 1;
   letter-spacing: -0.02em;
@@ -361,7 +403,7 @@
 }
 
 .cartao__cliente {
-  font-size: var(--texto-base);
+  font-size: 16px;
   color: var(--texto-corpo);
   min-width: 0;
   overflow: hidden;
@@ -369,27 +411,135 @@
   white-space: nowrap;
 }
 
-.cartao__valor {
-  font-size: var(--texto-sm);
-  color: var(--texto-fraco);
+/*
+ * A faixa que às vezes age e às vezes informa.
+ *
+ * Sem borda superior e sem espaço próprio acima: ela pertence ao corpo do
+ * cartão, não é um rodapé de ações separado. Era essa separação que fazia o
+ * cartão parecer duas caixas empilhadas em vez de uma.
+ */
+.cartao__faixa {
+  position: relative;
+  padding: 0 var(--e-3) var(--e-3);
 }
 
-.cartao__acoes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--e-2);
-  padding: var(--e-3);
-  border-top: 1px solid var(--borda);
-}
-
-.cartao__acoes .ui-botao {
-  flex: 1;
-  min-width: 88px;
-}
-
-.cartao__sem-acao {
+/*
+ * A altura da faixa é imposta aqui, e o `padding` vertical precisa ir junto.
+ *
+ * `.ui-pilula` traz `min-height: 32px` **mais** padding de 8 px em cima e
+ * embaixo. Definir só o `min-height` não encolhe nada: o padding continua
+ * empurrando o conteúdo e a faixa fica em ~38 px. Foi assim que ela "voltou a
+ * ficar grande" depois de já ter sido acertada uma vez.
+ *
+ * 28 px nas colunas em geral, 30 na Em preparo — é a coluna que o operador lê
+ * o turno inteiro, e a faixa dela carrega a contagem regressiva.
+ */
+.cartao__faixa .ui-pilula,
+.cartao__acao {
+  width: 100%;
+  min-height: 28px;
+  height: 28px;
+  padding-block: 0;
+  border-radius: 999px;
+  /* O mesmo corpo do rótulo da barra de aceite. A faixa é estreita e o texto
+     dela é longo — "Aguardando entregador" cabia, mas encostava nas bordas. */
   font-size: var(--texto-xs);
-  color: var(--texto-fraco);
+}
+
+.quadros__coluna[data-secao='preparo'] .cartao__faixa .ui-pilula,
+.quadros__coluna[data-secao='preparo'] .cartao__acao {
+  min-height: 30px;
+  height: 30px;
+}
+
+/*
+ * Uma ação, largura total, formato de pílula.
+ *
+ * 30 px de altura, abaixo do mínimo de 44 px de alvo de toque. O que sustenta
+ * a escolha é a largura: o botão ocupa a coluna inteira, então errar na
+ * horizontal é impossível e só a vertical exige pontaria. Os 12 px de respiro
+ * do cartão em volta somam área tolerável — mas se aparecer toque errado no
+ * uso real, esta é a primeira medida a revisar.
+ */
+.cartao__acao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-2);
+  padding: 0 var(--e-3);
+  border: 0;
+  border-radius: 999px;
+  background: var(--acao);
+  color: var(--acao-texto);
+  font-family: inherit;
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-forte);
+  cursor: pointer;
+  transition: background-color 150ms ease-out;
+}
+
+/*
+ * O botão cobre a pílula quando o ponteiro chega.
+ *
+ * Sobreposto, e não trocado no React: mantendo os dois no DOM a faixa nunca
+ * muda de altura, e o cartão não dá um salto de um pixel a cada vez que o
+ * ponteiro passa por cima de uma coluna cheia.
+ */
+@media (hover: hover) {
+  .cartao__acao {
+    position: absolute;
+    inset: 0 var(--e-3) var(--e-3);
+    width: auto;
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity 120ms ease-out,
+      background-color 150ms ease-out;
+  }
+
+  /*
+   * O gatilho é a **faixa**, não o cartão.
+   *
+   * Com o cartão inteiro, passar o ponteiro para chegar até o rodapé já
+   * trocava a contagem pelo botão, e bastava um clique distraído em qualquer
+   * lugar do cartão estar perto do botão para despachar sem querer. Na faixa,
+   * a ação só aparece quando o ponteiro está sobre ela.
+   *
+   * `:focus-visible` entra junto: quem navega por teclado precisa ver o botão
+   * que acabou de focar. Sem isso a ação existiria só para quem tem ponteiro —
+   * e o botão continuaria no caminho do Tab, invisível.
+   */
+  .cartao__faixa:hover .cartao__acao,
+  .cartao__acao:focus-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/*
+ * Sem ponteiro — o tablet da cozinha, que é onde isto roda — o botão fica
+ * visível o tempo todo. `:hover` em touch depende de um toque prévio que
+ * ninguém sabe que precisa dar, e a alternativa seria a ação nunca aparecer.
+ * Aqui a pílula de estado é que sai de cena, para as duas não se empilharem.
+ */
+@media (hover: none) {
+  .cartao__faixa:has(.cartao__acao) .ui-pilula {
+    display: none;
+  }
+}
+
+.cartao__acao:hover:not(:disabled) {
+  background: var(--acao-hover);
+}
+
+.cartao__acao:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+}
+
+.cartao__acao:disabled {
+  opacity: 0.5;
+  cursor: progress;
 }
 
 /* ── Cartão no modo denso ───────────────────────────────────────────────── */
@@ -409,7 +559,7 @@
 }
 
 .cartao[data-variante='denso'] .cartao__numero {
-  font-size: 30px;
+  font-size: 24px;
 }
 
 .cartao[data-variante='denso'] .cartao__cliente {
@@ -417,19 +567,20 @@
   max-width: 100%;
 }
 
-.cartao[data-variante='denso'] .ui-pilula {
+.cartao[data-variante='denso'] .cartao__topo {
+  justify-content: center;
+}
+
+.cartao[data-variante='denso'] .cartao__faixa {
+  padding: 0 var(--e-2) var(--e-2);
+}
+
+.cartao[data-variante='denso'] .ui-pilula,
+.cartao[data-variante='denso'] .cartao__acao {
   width: 100%;
   min-height: 28px;
+  height: 28px;
   font-size: var(--texto-xs);
-}
-
-.cartao[data-variante='denso'] .cartao__acoes {
-  padding: var(--e-2);
-}
-
-.cartao[data-variante='denso'] .cartao__acoes .ui-botao {
-  min-width: 0;
-  padding: 0 var(--e-2);
 }
 
 /* ── Exceções ───────────────────────────────────────────────────────────── */
@@ -651,6 +802,29 @@
   margin: 0;
   font-size: var(--texto-sm);
   color: var(--texto-fraco);
+}
+
+/*
+ * Atalho de desenvolvimento, separado do formulário por uma linha.
+ *
+ * A separação é o ponto: ele não é uma segunda forma de entrar, é uma muleta
+ * de bancada. Colado no botão real, viraria a opção padrão e alguém acabaria
+ * usando o admin para testar o que devia ser testado com outro papel.
+ */
+.entrada__atalho {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  margin-top: var(--e-2);
+  padding-top: var(--e-4);
+  border-top: 1px dashed var(--borda-forte);
+}
+
+.entrada__aviso {
+  margin: 0;
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+  text-align: center;
 }
 
 .entrada__campo {
@@ -1939,7 +2113,38 @@
   border-color: var(--marca);
 }
 
-.seletor__nome { flex: 1; min-width: 0; font-size: var(--texto-base); }
+.seletor__nome {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: var(--texto-base);
+  text-align: left;
+}
+
+.seletor__nome small {
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+/*
+ * Aberta · Pausada até HH:MM · Fechada.
+ *
+ * O rótulo vem escrito, e não só na cor do ponto: "pausada" e "fechada" são
+ * decisões diferentes com consequências diferentes — uma volta às 14:30, a
+ * outra volta amanhã —, e um ponto âmbar não sabe dizer qual das duas é.
+ */
+.seletor__operacao {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  flex-shrink: 0;
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-medio);
+  color: var(--texto-fraco);
+  white-space: nowrap;
+}
 
 .seletor__ponto {
   width: 8px;
@@ -1947,6 +2152,16 @@
   border-radius: 50%;
   background: var(--marca);
   flex-shrink: 0;
+}
+
+.seletor__operacao[data-estado='pausada'] { color: var(--atencao); }
+.seletor__operacao[data-estado='pausada'] .seletor__ponto { background: var(--atencao); }
+
+/* Fechada usa contorno vazado: a ausência de preenchimento diz "não está
+   funcionando" sem depender de o operador distinguir cinza de âmbar. */
+.seletor__operacao[data-estado='fechada'] .seletor__ponto {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--texto-fraco);
 }
 
 .seletor__vazio {
@@ -1962,10 +2177,13 @@
   display: inline-flex;
   align-items: center;
   gap: var(--e-2);
-  min-height: var(--alvo);
-  padding: 0 var(--e-4);
+  min-height: 0;
+  height: 40px;
+  padding: 0 var(--e-3);
   border: 1px solid var(--borda-forte);
-  border-radius: var(--raio-total);
+  /* Cantos de 12 px em vez da pílula cheia: a 40 px de altura, o raio total
+     arredondava tanto que o chip âmbar interno encostava na curva. */
+  border-radius: 12px;
   background: var(--superficie-3);
   color: var(--texto);
   font: inherit;
@@ -1981,20 +2199,70 @@
   background: var(--marca);
 }
 
-.barra__farol[data-estado='alerta'] {
-  border-color: var(--atencao);
-  background: var(--atencao-suave);
+.barra__farol-setas {
+  display: inline-flex;
+  margin-left: var(--e-1);
+  color: var(--texto-fraco);
 }
 
-.barra__farol[data-estado='alerta'] .barra__farol-ponto { background: var(--atencao); }
+/*
+ * Com alerta, a pílula inteira inverte — não só a bolinha.
+ *
+ * Um retângulo escuro que aparece no meio de um cabeçalho claro é percebido
+ * pela visão periférica; a troca de cor de um ponto de 10 px, não. Quem está
+ * de costas para a tela montando pedido só volta a olhar por causa da primeira.
+ *
+ * A cor sozinha não carrega o recado: o chip traz ícone e texto dizendo o que
+ * é ("3 atrasos"), e o `aria-label` do botão repete isso para quem não vê nada
+ * da pílula.
+ */
+.barra__farol[data-estado='alerta'] {
+  border-color: var(--farol-alerta-borda);
+  background: var(--farol-alerta-fundo);
+  color: var(--farol-alerta-texto);
+}
 
-.barra__farol-contagem {
-  padding: 1px 7px;
-  border-radius: var(--raio-total);
-  background: var(--atencao);
-  color: var(--texto-inverso);
-  font-size: var(--texto-xs);
+/*
+ * O ponto âmbar em rosca, como na referência: o anel externo é o próprio
+ * âmbar rebaixado, e o miolo cheio. Dá volume ao ponto num fundo preto, onde
+ * um círculo chapado parece um furo.
+ */
+.barra__farol[data-estado='alerta'] .barra__farol-ponto {
+  width: 14px;
+  height: 14px;
+  background: var(--farol-chip-fundo);
+  box-shadow: inset 0 0 0 3px rgb(0 0 0 / 0.35);
+}
+
+.barra__farol[data-estado='alerta'] .barra__farol-setas {
+  color: var(--farol-alerta-texto);
+}
+
+.barra__farol-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  padding: 3px var(--e-2);
+  border-radius: 8px;
+  background: var(--farol-chip-fundo);
+  color: var(--farol-chip-texto);
+  font-size: var(--texto-sm);
   font-weight: var(--peso-forte);
+  white-space: nowrap;
+}
+
+/*
+ * A inversão é uma transição, não um corte. 150 ms é rápido o bastante para
+ * não atrasar a informação e lento o bastante para o olho registrar que algo
+ * mudou — que é metade do motivo de o farol existir.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .barra__farol {
+    transition:
+      background-color 150ms ease-out,
+      border-color 150ms ease-out,
+      color 150ms ease-out;
+  }
 }
 
 /* ── Botão com contador ─────────────────────────────────────────────────── */
@@ -2038,96 +2306,466 @@
   .contador__distintivo { animation: none; }
 }
 
-/* ── Farol: conteúdo do modal ───────────────────────────────────────────── */
+/* ── Farol da Operação: painel ancorado ─────────────────────────────────── */
+
+/*
+ * O painel é escuro nos dois temas, como a referência.
+ *
+ * Não é descuido com o tema claro: o farol é uma camada de exceção sobre o
+ * quadro, e o contraste de fundo é o que a separa dele. Um painel claro sobre
+ * um quadro claro precisaria de véu pesado e sombra para existir; o escuro se
+ * separa sozinho. Por isso as cores aqui são literais e não seguem os tokens
+ * de superfície — este bloco é o único do Hub que faz isso, e de propósito.
+ */
+.farol__veu {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  background: rgb(0 0 0 / 0.4);
+}
 
 .farol {
+  /* Apelidos curtos para a paleta de `tokens.css`, que é onde o verificador
+     de contraste consegue enxergar estes pares. */
+  --f-fundo: var(--painel-fundo);
+  --f-elevado: var(--painel-elevado);
+  --f-borda: var(--painel-borda);
+  --f-texto: var(--painel-texto);
+  --f-fraco: var(--painel-fraco);
+  --f-ok: var(--painel-ok);
+  --f-alerta: var(--painel-alerta);
+  --f-critico: var(--painel-critico);
+
+  position: fixed;
+  /*
+   * Ancorado ao topo, não centrado. O painel abre onde o botão está e cresce
+   * dali — centralizar jogaria o conteúdo para longe do ponto que o operador
+   * acabou de tocar, e desmancharia a ideia de que o botão virou o painel.
+   */
+  top: var(--e-2);
+  left: var(--e-2);
+  right: var(--e-2);
+  bottom: var(--e-2);
+  max-width: 1400px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--f-fundo);
+  color: var(--f-texto);
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.5);
+}
+
+.farol:focus { outline: none; }
+
+/* ── Cabeçalho: a mesma anatomia do botão fechado ───────────────────────── */
+
+.farol__cabecalho {
   display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: var(--e-4);
-  min-height: 320px;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  border-bottom: 1px solid var(--f-borda);
 }
 
-@media (max-width: 720px) {
-  .farol { grid-template-columns: 1fr; }
+.farol__ponto-titulo {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--f-ok);
+  box-shadow: inset 0 0 0 6px rgb(0 0 0 / 0.45);
 }
 
-.farol__lojas h3,
-.farol__grupo h4 {
-  margin: 0 0 var(--e-2);
-  font-size: var(--texto-xs);
-  font-weight: var(--peso-forte);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--texto-fraco);
+.farol__ponto-titulo[data-estado='alerta'] { background: var(--f-alerta); }
+
+.farol__titulo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-3);
 }
 
-.farol__lojas ul,
-.farol__grupo ul {
+.farol__titulo h2 {
+  margin: 0;
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-medio);
+}
+
+/* A janela de tempo vira chip claro, como na referência. */
+.farol__janela {
+  padding: 4px var(--e-3);
+  border-radius: var(--raio-total);
+  background: var(--f-texto);
+  color: var(--f-elevado);
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+}
+
+.farol__botoes { display: flex; gap: var(--e-2); }
+
+.farol__quadrado {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--f-borda);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--f-texto);
+  font: inherit;
+  font-size: var(--texto-base);
+  cursor: pointer;
+}
+
+.farol__quadrado:hover { background: var(--f-elevado); }
+.farol__quadrado:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+
+/*
+ * A explicação do `?`.
+ *
+ * Sem `max-width`: ela tinha 90ch, que num painel de 1400 px dava metade da
+ * largura e deixava a metade direita vazia, como se faltasse algo. Aqui a
+ * medida longa é aceitável porque é um parágrafo que se lê uma vez, não texto
+ * corrido de leitura demorada — e uma faixa que ocupa a largura toda se lê
+ * como parte do cabeçalho, que é o que ela é.
+ */
+.farol__ajuda {
+  margin: 0;
+  padding: var(--e-3) var(--e-4);
+  border-bottom: 1px solid var(--f-borda);
+  background: var(--f-elevado);
+  font-size: var(--texto-sm);
+  line-height: 1.6;
+  color: var(--f-fraco);
+  /* A faixa empurra o corpo do painel para baixo; deslizar de altura zero diz
+     isso, aparecer pronta faz o conteúdo dar um salto sem explicação. */
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .farol__ajuda {
+    animation: farol-ajuda-entra 200ms cubic-bezier(0.2, 0, 0, 1);
+  }
+}
+
+@keyframes farol-ajuda-entra {
+  from {
+    max-height: 0;
+    padding-block: 0;
+    opacity: 0;
+  }
+  to {
+    /* Teto folgado, e não a altura exata: a faixa quebra em mais linhas em
+       tela estreita, e um valor justo cortaria o texto no meio do trajeto. A
+       animação não tem `fill`, então ao terminar o `max-height` some junto e
+       o parágrafo volta a se medir sozinho — nada fica preso no teto. */
+    max-height: 12rem;
+    opacity: 1;
+  }
+}
+
+/* ── Corpo em duas colunas ──────────────────────────────────────────────── */
+
+.farol__corpo {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 340px 1fr;
+}
+
+@media (max-width: 860px) {
+  .farol__corpo { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+}
+
+.farol__lojas {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: var(--e-4);
+  border-right: 1px solid var(--f-borda);
+}
+
+.farol__lojas-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2);
+  margin-bottom: var(--e-3);
+}
+
+.farol__lojas h3 {
+  margin: 0;
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-medio);
+}
+
+.farol__redondo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--f-elevado);
+  color: var(--f-texto);
+  cursor: pointer;
+}
+
+.farol__redondo:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+
+.farol__busca {
+  margin-bottom: var(--e-2);
+  padding: var(--e-2) var(--e-3);
+  border: 1px solid var(--f-borda);
+  border-radius: 10px;
+  background: var(--f-elevado);
+  color: var(--f-texto);
+  font: inherit;
+  font-size: var(--texto-sm);
+}
+
+.farol__lojas ul {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--e-2);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
-.farol__lojas li {
+.farol__loja {
   display: flex;
   align-items: center;
-  gap: var(--e-2);
-  padding: var(--e-2);
-  border-radius: var(--raio-1);
-  background: var(--superficie-2);
+  gap: var(--e-3);
+  width: 100%;
+  padding: var(--e-3) var(--e-2);
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
+.farol__loja:hover { background: var(--f-elevado); }
+.farol__loja[data-focada] { background: var(--f-elevado); }
+.farol__loja:focus-visible { outline: 3px solid var(--foco); outline-offset: -3px; }
+.farol__loja > svg:last-child { color: var(--f-fraco); flex-shrink: 0; }
+
+/* Ponto em rosca, como na referência: anel da cor, miolo escuro. */
 .farol__ponto {
-  width: 10px;
-  height: 10px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   flex-shrink: 0;
-  background: var(--marca);
+  background: var(--f-ok);
+  box-shadow: inset 0 0 0 5px rgb(0 0 0 / 0.5);
 }
 
-.farol__ponto[data-estado='alerta'] { background: var(--atencao); }
-.farol__ponto[data-estado='desconhecido'] { background: var(--texto-apagado); }
+.farol__ponto[data-estado='alerta'] { background: var(--f-alerta); }
+.farol__ponto[data-estado='desconhecido'] { background: var(--f-fraco); }
 
-.farol__nome { display: flex; flex-direction: column; font-size: var(--texto-sm); }
-.farol__nome small { font-size: var(--texto-xs); color: var(--texto-fraco); }
+.farol__nome {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+  font-size: var(--texto-base);
+}
+
+.farol__nome small { font-size: var(--texto-sm); color: var(--f-ok); }
+.farol__nome small[data-estado='alerta'] { color: var(--f-alerta); }
+
+.farol__vazio {
+  padding: var(--e-4);
+  text-align: center;
+  font-size: var(--texto-sm);
+  color: var(--f-fraco);
+}
+
+/* ── Coluna da direita ──────────────────────────────────────────────────── */
 
 .farol__detalhe {
   display: flex;
   flex-direction: column;
   gap: var(--e-3);
-  border-left: 1px solid var(--borda);
-  padding-left: var(--e-4);
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--e-4);
 }
 
-@media (max-width: 720px) {
-  .farol__detalhe { border-left: 0; padding-left: 0; }
+.farol__limpar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  align-self: flex-start;
+  padding: var(--e-1) var(--e-2);
+  border: 0;
+  border-radius: 8px;
+  background: var(--f-elevado);
+  color: var(--f-fraco);
+  font: inherit;
+  font-size: var(--texto-xs);
+  cursor: pointer;
 }
 
+.farol__cartoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--e-3);
+}
+
+.farol__cartao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  padding: var(--e-4);
+  border-radius: 12px;
+  background: var(--f-elevado);
+}
+
+.farol__cartao header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e-2);
+  font-size: var(--texto-sm);
+  color: var(--f-fraco);
+}
+
+.farol__janela-pequena { font-size: var(--texto-xs); }
+
+.farol__cartao strong {
+  font-size: var(--texto-2xl);
+  font-weight: var(--peso-medio);
+  line-height: 1.1;
+}
+
+/* A cor só aparece quando há o que ver. Card zerado colorido é o alarme que
+   fica ligado o dia inteiro e para de significar alguma coisa. */
+.farol__cartao[data-gravidade='critico'] strong { color: var(--f-critico); }
+.farol__cartao[data-gravidade='atencao'] strong { color: var(--f-alerta); }
+
+.farol__grupo {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.farol__grupo-topo {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  width: 100%;
+  padding: var(--e-3) var(--e-4);
+  border: 0;
+  border-radius: 12px;
+  background: var(--f-elevado);
+  color: inherit;
+  font: inherit;
+  font-size: var(--texto-base);
+  font-weight: var(--peso-medio);
+  text-align: left;
+  cursor: pointer;
+}
+
+.farol__grupo-topo:focus-visible { outline: 3px solid var(--foco); outline-offset: -3px; }
+
+.farol__grupo-seta {
+  margin-left: auto;
+  display: inline-flex;
+  color: var(--f-fraco);
+}
+
+.farol__grupo ul {
+  list-style: none;
+  margin: var(--e-2) 0 0;
+  padding: 0 0 0 var(--e-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+/*
+ * A linha de alerta expandida.
+ *
+ * Era uma faixa de texto com uma tira colorida à esquerda: para saber que
+ * havia cinco pedidos atrasados era preciso ler a frase inteira. Agora o
+ * número é o primeiro elemento com peso visual, o ícone diz a categoria antes
+ * do texto, e a descrição fica em tom secundário — a ordem em que a informação
+ * é de fato consultada.
+ *
+ * Três codificações por linha: ícone, cor e texto. Duas linhas âmbar
+ * empilhadas só se distinguiriam pela frase, e a frase é o que se lê por
+ * último com a cozinha cheia.
+ */
 .farol__grupo li {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: var(--e-2);
   padding: var(--e-2) var(--e-3);
-  border-left: 3px solid var(--borda-forte);
-  border-radius: var(--raio-1);
-  background: var(--superficie-2);
+  border: 1px solid var(--f-borda);
+  border-radius: 10px;
+  background: var(--f-elevado);
   font-size: var(--texto-sm);
 }
 
+.farol__item-icone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  /* Neutro primeiro: onde `color-mix` não existir, o distintivo continua
+     existindo — só sem a cor da gravidade. */
+  background: rgb(255 255 255 / 0.08);
+  /* O distintivo tira o fundo do `currentColor` da própria linha: ícone,
+     número e borda nunca discordam sobre a gravidade, porque saem todos da
+     mesma declaração. */
+  background: color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.farol__item-numero {
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-forte);
+  line-height: 1;
+  color: inherit;
+  /* Tabular: numa pilha de linhas, "5" e "12" precisam começar na mesma
+     coluna, senão a lista parece torta. */
+  font-variant-numeric: tabular-nums;
+  min-width: 1.2em;
+}
+
+.farol__item-texto {
+  color: var(--f-texto);
+  line-height: 1.4;
+}
+
+/* Sem número à frente, o texto ocupa as duas colunas restantes. */
+.farol__item-texto--sozinho { grid-column: 2 / -1; }
+
 .farol__grupo li[data-gravidade='critico'] {
-  border-left-color: var(--perigo);
-  background: var(--perigo-suave);
+  color: var(--f-critico);
+  border-color: color-mix(in srgb, var(--f-critico) 32%, transparent);
 }
 
 .farol__grupo li[data-gravidade='atencao'] {
-  border-left-color: var(--atencao);
-  background: var(--atencao-suave);
+  color: var(--f-alerta);
+  border-color: color-mix(in srgb, var(--f-alerta) 32%, transparent);
 }
 
 .farol__nota {
-  margin: 0 0 var(--e-2);
+  margin: var(--e-2) 0 0 var(--e-6);
   font-size: var(--texto-xs);
-  color: var(--texto-fraco);
+  color: var(--f-fraco);
 }
 
 .farol__tudo-bem {
@@ -2136,19 +2774,25 @@
   align-items: center;
   justify-content: center;
   gap: var(--e-2);
+  flex: 1;
   padding: var(--e-8) var(--e-4);
   text-align: center;
-  color: var(--marca);
+  color: var(--f-ok);
 }
 
 .farol__tudo-bem p {
   margin: 0;
   font-size: var(--texto-lg);
   font-weight: var(--peso-medio);
-  color: var(--texto);
+  color: var(--f-texto);
 }
 
-.farol__tudo-bem small { color: var(--texto-fraco); max-width: 34ch; }
+.farol__tudo-bem small { color: var(--f-fraco); max-width: 34ch; }
+
+/* Enquanto o painel está aberto, o botão fica apagado: ele "virou" o painel, e
+   dois faróis visíveis ao mesmo tempo desmentem a animação que acabou de rodar. */
+.barra__farol[data-aberto] { opacity: 0; pointer-events: none; }
+
 
 /* ── Cartão de aceite ───────────────────────────────────────────────────── */
 
@@ -2161,10 +2805,14 @@
   overflow: hidden;
 }
 
-.aceite[data-estourou] {
-  border-color: var(--atraso-fundo);
-  box-shadow: 0 0 0 1px var(--atraso-fundo);
-}
+/*
+ * Sem borda especial no atraso, como nos cartões comuns.
+ *
+ * A barra de prazo já é o sinal — ela drena, muda de texto e fica vermelha
+ * sólida ao estourar, ocupando a largura do cartão. Contornar o cartão por
+ * cima disso empilha dois vermelhos e transforma a coluna num bloco onde
+ * nenhum pedido se destaca dos outros.
+ */
 
 .aceite[data-selecionado] {
   border-color: var(--marca);
@@ -2184,13 +2832,27 @@
   cursor: pointer;
 }
 
-/*
- * O maior número da interface inteira. No momento do aceite existe uma decisão
- * só, e ela é tomada contra o relógio — nome, valor e endereço competiriam com
- * o único dado que importa.
- */
+/* Mesma linha de herói dos outros cartões: número e nome pela base. */
+.aceite__heroi {
+  display: flex;
+  align-items: baseline;
+  gap: var(--e-2);
+  flex-wrap: wrap;
+  min-width: 0;
+  width: 100%;
+}
+
+.aceite__cliente {
+  font-size: 16px;
+  color: var(--texto-corpo);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .aceite__numero {
-  font-size: 44px;
+  font-size: 24px;
   font-weight: var(--peso-forte);
   line-height: 1;
   letter-spacing: -0.03em;
@@ -2202,9 +2864,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 40px;
+  /* A mesma altura da faixa das outras colunas. A barra e a pílula ocupam o
+     mesmo lugar do cartão, e alturas diferentes desalinham a coluna Aceitar
+     de todas as vizinhas. */
+  height: 28px;
   border-radius: var(--raio-total);
-  background: var(--perigo-suave);
+  /* O rosa que sobra quando a barra drena, como na referência. */
+  background: var(--aceite-trilho);
   overflow: hidden;
 }
 
@@ -2216,36 +2882,41 @@
  * importa. Assim, cada pedaço do texto tem o contraste do fundo em que está,
  * sem sombra e sem depender de o preenchimento estar cheio.
  */
+/* As duas camadas ocupam a barra inteira. O que muda é o recorte da de cima. */
 .aceite__trilho,
 .aceite__preenchimento {
   position: absolute;
-  inset: 0 auto 0 0;
+  inset: 0;
   display: flex;
   align-items: center;
-  overflow: hidden;
 }
 
-.aceite__trilho { right: 0; }
-
+/* O mesmo vermelho vivo do chip de atraso, e não o vinho escuro de antes: é
+   o mesmo assunto — prazo estourando — e dois vermelhos diferentes para o
+   mesmo assunto fazem parecer dois. */
 .aceite__preenchimento {
-  background: var(--atraso-fundo);
-  transition: width 1s linear;
+  background: var(--alarme-fundo);
+  transition: clip-path 1s linear;
 }
 
-/* O rótulo tem sempre a largura da barra inteira, e é o recorte do pai que
-   decide quanto dele aparece — é o que mantém as duas cópias alinhadas. */
+/* O rótulo ocupa a barra inteira nas duas camadas, e nunca se move: é o
+   recorte do pai que decide qual metade de cada cópia aparece. */
 .aceite__rotulo {
   position: absolute;
-  left: 0;
-  width: var(--largura-da-barra, 100%);
-  text-align: center;
-  font-size: var(--texto-sm);
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Mesmo corpo do rótulo dos outros cartões: a barra é mais alta que a
+     pílula deles, e o texto grande dentro dela fazia a coluna Aceitar parecer
+     de outro sistema. */
+  font-size: var(--texto-xs);
   font-weight: var(--peso-forte);
   white-space: nowrap;
 }
 
-.aceite__rotulo--trilho { color: var(--perigo); }
-.aceite__rotulo--preenchido { color: var(--atraso-texto); }
+.aceite__rotulo--trilho { color: var(--atraso-fundo); }
+.aceite__rotulo--preenchido { color: var(--alarme-texto); }
 
 .aceite__rodape {
   display: flex;
@@ -2270,9 +2941,35 @@
   color: var(--texto-fraco);
 }
 
-/* A coluna Aceitar tem prioridade visual: fundo levemente destacado. */
+/*
+ * Aviso do filtro por atraso, no pé da coluna.
+ *
+ * Fica no fim da pilha e não no topo de propósito: no topo empurraria os
+ * cartões para baixo toda vez que alguém liga o filtro, e o cartão que a
+ * pessoa acabou de olhar sairia do lugar. No pé, ele é encontrado por quem
+ * chegou ao fim da lista e se perguntou onde está o resto.
+ */
+.quadros__filtro {
+  margin: var(--e-2) 0 0;
+  padding: var(--e-2) var(--e-3);
+  border: 1px dashed var(--borda-forte);
+  border-radius: var(--raio-1);
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+  text-align: center;
+}
+
+/*
+ * A coluna Aceitar se distingue por um tom de cinza, não por cor.
+ *
+ * Era vermelho suave, e o vermelho não estava dizendo nada que o cartão já não
+ * dissesse melhor: cada um tem o próprio relógio drenando. Um fundo de alarme
+ * permanente é alarme que se aprende a ignorar — e quando ele é o normal da
+ * coluna, o pedido que de fato estourou o prazo perde o único jeito de se
+ * destacar dos vizinhos.
+ */
 .quadros__coluna[data-secao='aceitar'] .ui-painel {
-  background: var(--perigo-suave);
+  background: var(--superficie-aceitar);
 }
 
 .ajustes__cursores {

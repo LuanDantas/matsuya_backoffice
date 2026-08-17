@@ -24,12 +24,39 @@ export type TomDaPilula = 'neutro' | 'aviso' | 'sucesso' | 'perigo' | 'critico'
 export interface PropsDaPilula {
   tom?: TomDaPilula
   icone?: NomeDoIcone
+  /**
+   * Fecha o âmbar um degrau, para os últimos minutos do prazo.
+   *
+   * Só tem efeito em `aviso` — nos outros tons não há o que apertar, e o
+   * atributo é ignorado.
+   */
+  aperto?: boolean
+  /**
+   * Há um prazo correndo por trás deste texto.
+   *
+   * Liga o reflexo que atravessa a faixa. É o que dá presença ao tempo: o
+   * "8min" fica parado por sessenta segundos, e faixa parada não parece estar
+   * contando nada. Fica de fora do atraso — lá o vermelho já é o mais forte da
+   * tela — e de tudo que não tem relógio, porque brilho em tudo vira ruído.
+   */
+  contando?: boolean
   children: ReactNode
 }
 
-export function PilulaDeEstado({ tom = 'neutro', icone, children }: PropsDaPilula) {
+export function PilulaDeEstado({
+  tom = 'neutro',
+  icone,
+  aperto = false,
+  contando = false,
+  children,
+}: PropsDaPilula) {
   return (
-    <p className="ui-pilula" data-tom={tom}>
+    <p
+      className="ui-pilula"
+      data-tom={tom}
+      data-aperto={aperto || undefined}
+      data-contando={contando || undefined}
+    >
       {icone && <Icone nome={icone} tamanho={14} />}
       <span>{children}</span>
     </p>

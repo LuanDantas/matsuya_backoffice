@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Botao, Drawer, Faixa, Selo } from '@matsuya/ui'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Botao, Drawer, Faixa, Icone, Selo } from '@matsuya/ui'
 import { createApiClient, criarApiDePedidos, type PedidoDoQuadro } from '@matsuya/api-client'
 import { ORDER_ACTION_INFO, type OrderAction } from '@matsuya/contracts'
 import type { useSessao } from '../dados/useSessao'
@@ -12,7 +12,7 @@ import { Reconciliacao } from '../offline/Reconciliacao'
 import { MenuLateral } from './MenuLateral'
 import { SeletorDeLojas } from './SeletorDeLojas'
 import { BotaoComContador } from './BotaoComContador'
-import { Farol, useFarol, type AlertaDoDispositivo } from './Farol'
+import { Farol, rotuloDoAlerta, useFarol, type AlertaDoDispositivo } from './Farol'
 import { telaInicial, type Tela } from './telas'
 import { config } from './config'
 
@@ -88,6 +88,8 @@ export function Casca({
     acao: OrderAction
   } | null>(null)
   const [farolAberto, definirFarolAberto] = useState(false)
+  /** O painel do farol se expande a partir daqui — a origem é medida, não fixa. */
+  const botaoDoFarol = useRef<HTMLButtonElement>(null)
   const [excecoesAbertas, definirExcecoesAbertas] = useState(false)
 
   useEffect(() => {
@@ -206,7 +208,14 @@ export function Casca({
     () => [...nomesDasUnidades].map(([id, name]) => ({ id, name })),
     [nomesDasUnidades]
   )
-  const farol = useFarol(unidadesDoFarol, sessao.token, quadro.pedidos)
+  // O gatilho junta as duas razões de o farol ficar velho: o quadro mudou, ou
+  // uma loja abriu/fechou/pausou. A segunda não passa pelo quadro — uma loja
+  // pode pausar sem que nenhum pedido se mexa.
+  const gatilhoDoFarol = useMemo(
+    () => ({ pedidos: quadro.pedidos, lojas: quadro.versaoDasLojas }),
+    [quadro.pedidos, quadro.versaoDasLojas]
+  )
+  const farol = useFarol(unidadesDoFarol, sessao.token, lojasComPedidos, gatilhoDoFarol)
 
   /**
    * Alertas do próprio tablet, separados dos da loja.
@@ -244,6 +253,12 @@ export function Casca({
     return lista
   }, [impressao.fila.length, fila.pendentes.length, quadro.conexao])
 
+  /** `null` quando não há nada — é o que decide qual das duas pílulas aparece. */
+  const rotuloDoFarol = useMemo(
+    () => rotuloDoAlerta(farol.porLoja, alertasDoDispositivo.length),
+    [farol.porLoja, alertasDoDispositivo.length]
+  )
+
   // Sem endpoint agregado de não lidas por seleção; somar os pedidos com
   // conversa aberta é o que dá para saber sem uma requisição por loja.
   const naoLidasTotal = 0
@@ -279,6 +294,7 @@ export function Casca({
             identidade={sessao.identidade!}
             selecionadas={new Set(lojas)}
             comPedidos={lojasComPedidos}
+            operacao={farol.estados}
             aoSelecionar={sessao.escolherUnidades}
           />
 
@@ -286,20 +302,36 @@ export function Casca({
             O farol vai no centro, como na referência. É o único elemento do
             cabeçalho que muda de cor sozinho, e por isso o olho volta a ele
             sem procurar.
+
+            Com alerta a **pílula inteira inverte** — fundo quase preto, texto
+            branco, chip âmbar —, e não só a bolinha. É o que faz o alerta ser
+            notado na visão periférica de quem está montando pedido de costas
+            para a tela; trocar a cor de um ponto de 8 px não é.
           */}
           <button
             type="button"
+            ref={botaoDoFarol}
             className="barra__farol"
-            data-estado={farol.totalDaOperacao + alertasDoDispositivo.length > 0 ? 'alerta' : 'ok'}
+            data-estado={rotuloDoFarol ? 'alerta' : 'ok'}
+            data-aberto={farolAberto || undefined}
             onClick={() => definirFarolAberto(true)}
+            aria-label={
+              rotuloDoFarol
+                ? `Farol da Operação: ${rotuloDoFarol}. Abrir detalhes.`
+                : 'Farol da Operação: sem alertas. Abrir detalhes.'
+            }
           >
             <span className="barra__farol-ponto" aria-hidden="true" />
-            Farol da Operação
-            {farol.totalDaOperacao + alertasDoDispositivo.length > 0 && (
-              <span className="barra__farol-contagem num">
-                {farol.totalDaOperacao + alertasDoDispositivo.length}
+            <span aria-hidden="true">Farol da Operação</span>
+            {rotuloDoFarol && (
+              <span className="barra__farol-chip" aria-hidden="true">
+                <Icone nome="alerta" tamanho={14} />
+                {rotuloDoFarol}
               </span>
             )}
+            <span className="barra__farol-setas" aria-hidden="true">
+              <Icone nome="cima-baixo" tamanho={16} />
+            </span>
           </button>
 
           <div className="barra__estado">
@@ -550,6 +582,7 @@ export function Casca({
         <Farol
           porLoja={farol.porLoja}
           alertasDoDispositivo={alertasDoDispositivo}
+          ancora={botaoDoFarol}
           aoFechar={() => definirFarolAberto(false)}
         />
       )}

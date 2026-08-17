@@ -82,16 +82,53 @@ const PARES = [
   ['ícone apagado sobre superfície 1', 'texto-apagado', 'superficie-1', 3],
   ['texto fraco sobre superfície 3 (pílula)', 'texto-fraco', 'superficie-3', 4.5],
   ['pílula de atraso (o único preenchimento sólido)', 'atraso-texto', 'atraso-fundo', 4.5],
+  // O chip de atraso, no cabeçalho da coluna e no cartão. Antes era
+  // `var(--perigo)` com `#fff` cravado no CSS — 2.77:1 no tema escuro, e
+  // invisível para este verificador porque a cor do texto não era um token.
+  ['chip de alarme (coluna e cartão)', 'alarme-texto', 'alarme-fundo', 4.5],
   ['badge de contagem', 'contagem-texto', 'contagem-fundo', 4.5],
 
   // Barra de prazo do cartão de aceite. O rótulo fica sobre o preenchimento
   // quando há tempo e sobre o fundo claro quando a barra esvazia — precisa
   // passar nos dois, senão vira ilegível justamente no fim do prazo.
-  ['barra de aceite, sobre o preenchimento', 'atraso-texto', 'atraso-fundo', 4.5],
-  ['barra de aceite, sobre o trilho vazio', 'perigo', 'perigo-suave', 4.5],
-  ['pílula de aviso (contagem regressiva)', 'atencao', 'atencao-suave', 4.5],
+  ['barra de aceite, sobre o preenchimento', 'alarme-texto', 'alarme-fundo', 4.5],
+  ['barra de aceite, sobre o trilho vazio', 'atraso-fundo', 'aceite-trilho', 4.5],
+  ['trilho da barra de aceite sobre o cartão', 'aceite-trilho', 'superficie-1', 1.3],
+
+  // A faixa de contagem do preparo, em âmbar sólido. Dois degraus, e os dois
+  // com o mesmo texto escuro — o segundo existe para separar "faltam 12 min"
+  // de "faltam 2 min", e não adianta separar se um deles não se lê.
+  ['faixa de preparo (com folga)', 'preparo-texto', 'preparo-fundo', 4.5],
+  ['faixa de preparo (últimos minutos)', 'preparo-texto', 'preparo-fundo-aperto', 4.5],
   ['painel da seção sobre a página', 'superficie-2', 'superficie-base', 1.08],
   ['cartão sobre o painel da seção', 'superficie-1', 'superficie-2', 1.05],
+
+  // A ação primária do cartão. É o alvo mais tocado do turno, e o verde é
+  // deliberadamente mais vivo que `--marca` — este par é o que impede a
+  // vivacidade de virar ilegibilidade num tablet com reflexo de janela.
+  ['ação primária do cartão', 'acao-texto', 'acao', 4.5],
+  ['ação primária do cartão, sob o ponteiro', 'acao-texto', 'acao-hover', 4.5],
+
+  // Farol com alerta: a pílula inteira inverte, e cada pedaço do conteúdo cai
+  // sobre um fundo diferente. Todos precisam passar, senão o alerta que existe
+  // para ser lido de longe é o único que não se lê.
+  ['farol com alerta (texto sobre a pílula)', 'farol-alerta-texto', 'farol-alerta-fundo', 4.5],
+  ['farol com alerta (chip âmbar)', 'farol-chip-texto', 'farol-chip-fundo', 4.5],
+  ['farol com alerta (ponto sobre a pílula)', 'farol-chip-fundo', 'farol-alerta-fundo', 3],
+
+  // O painel do farol tem paleta própria, escura nos dois temas. Justamente
+  // por não seguir as superfícies do tema, é o bloco onde uma cor escolhida a
+  // olho passaria despercebida — então cada par dele é medido aqui.
+  ['painel do farol: texto', 'painel-texto', 'painel-fundo', 4.5],
+  ['painel do farol: texto sobre o cartão', 'painel-texto', 'painel-elevado', 4.5],
+  ['painel do farol: texto fraco', 'painel-fraco', 'painel-fundo', 4.5],
+  ['painel do farol: texto fraco sobre o cartão', 'painel-fraco', 'painel-elevado', 4.5],
+  ['painel do farol: "Sem alerta"', 'painel-ok', 'painel-fundo', 4.5],
+  ['painel do farol: alerta', 'painel-alerta', 'painel-fundo', 4.5],
+  ['painel do farol: crítico sobre o cartão', 'painel-critico', 'painel-elevado', 4.5],
+  ['painel do farol: chip claro do cabeçalho', 'painel-elevado', 'painel-texto', 4.5],
+  ['painel do farol: divisória', 'painel-borda', 'painel-fundo', 1.3],
+  ['painel do farol: cartão sobre o fundo', 'painel-elevado', 'painel-fundo', 1.05],
 ]
 
 let falhas = 0

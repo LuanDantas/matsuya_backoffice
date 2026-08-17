@@ -50,11 +50,42 @@ export interface AlertasDaUnidade {
   atrasados: number
   canceladosDuasHoras: number
   itensPausados: number
+  /**
+   * Se a loja está recebendo pedido agora — distinto de `active`, que só diz
+   * que a unidade existe no cadastro.
+   */
+  estado: EstadoDaLoja
+  /** ISO do fim da pausa, só quando `estado === 'pausada'`. */
+  pausadaAte: string | null
+}
+
+export type EstadoDaLoja = 'aberta' | 'pausada' | 'fechada'
+
+/** O que a loja devolve depois de abrir, fechar ou pausar. */
+export interface OperacaoDaLoja {
+  estado: EstadoDaLoja
+  pausadaAte: string | null
 }
 
 export function criarApiDeAlertas(cliente: ApiClient) {
   return {
     daUnidade: (unityId: number, signal?: AbortSignal) =>
       cliente.requisitar<AlertasDaUnidade>(`/stores/${unityId}/alerts`, { signal }),
+
+    /**
+     * Abre, fecha ou pausa a loja.
+     *
+     * Envio parcial: mandar só `pausedUntil` não mexe em abrir/fechar, que é
+     * outra permissão. `pausedUntil: null` cancela a pausa sem reabrir uma
+     * loja que estava fechada.
+     */
+    definirOperacao: (
+      unityId: number,
+      mudanca: { acceptingOrders?: boolean; pausedUntil?: string | null }
+    ) =>
+      cliente.requisitar<OperacaoDaLoja>(`/stores/${unityId}/operacao`, {
+        metodo: 'PATCH',
+        corpo: mudanca,
+      }),
   }
 }

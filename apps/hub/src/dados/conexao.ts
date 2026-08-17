@@ -35,6 +35,17 @@ export interface OpcoesDaConexao {
   aplicar: (mudanca: Mudanca) => void
   /** Recebe a loja que precisa recarregar — só ela, não o quadro inteiro. */
   aoExigirRecarga: (unityId: number) => void
+  /**
+   * A loja abriu, fechou ou pausou.
+   *
+   * Fora do diário de propósito. O cursor existe para garantir que **nenhum
+   * pedido se perca**, e paga por isso: toda mudança registrada consome um
+   * `seq`, e um `seq` que o quadro descarta faz cada Hub enxergar lacuna e
+   * pedir o intervalo por HTTP à toa. Loja fechada não tem essa exigência — se
+   * o evento se perder, a próxima leitura de `/alerts` corrige em segundos, e
+   * nenhum pedido depende do rótulo estar certo neste instante.
+   */
+  aoMudarOperacao?: (unityId: number) => void
   aoMudarEstado: (estado: EstadoDaConexao) => void
   aoMudarSincronia?: (estado: EstadoDeSincronia) => void
 }
@@ -117,6 +128,11 @@ export class Conexao {
       // evento de loja não assinada, que é sintoma de sala errada no servidor.
       const unityId = Number((evento as { unityId?: number } | null)?.unityId)
       this.sincronizadores.get(unityId)?.aoReceberEvento(evento)
+    })
+
+    this.socket.on('store.operation_changed', (evento: unknown) => {
+      const unityId = Number((evento as { unityId?: number } | null)?.unityId)
+      if (Number.isInteger(unityId)) this.opcoes.aoMudarOperacao?.(unityId)
     })
 
     this.socket.on('disconnect', () => {

@@ -39,6 +39,8 @@ export type NomeDoIcone =
   | 'engrenagem'
   | 'menu'
   | 'mapa'
+  | 'cima-baixo'
+  | 'capacete'
 
 const CAMINHOS: Record<NomeDoIcone, string> = {
   check: 'M20 6 9 17l-5-5',
@@ -63,6 +65,20 @@ const CAMINHOS: Record<NomeDoIcone, string> = {
   engrenagem: 'M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z',
   menu: 'M3 6h18M3 12h18M3 18h18',
   mapa: 'M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3ZM9 3v15M15 6v15',
+  /* Duas setas empilhadas — o "abre e fecha" da pílula do farol na referência. */
+  'cima-baixo': 'm8 9 4-4 4 4M16 15l-4 4-4-4',
+  /*
+   * Capacete de moto, como na referência.
+   *
+   * Substitui a silhueta de motocicleta, que a 13 px virava um rabisco de duas
+   * rodas indistinguível de um carro. O capacete tem contorno fechado e uma
+   * linha interna só — sobrevive ao tamanho em que é de fato usado.
+   *
+   * Primeiro traço: a casca, do topo da cúpula descendo à esquerda, pela base
+   * e subindo pela direita. Segundo: a viseira.
+   */
+  capacete:
+    'M12 3a9 9 0 0 0-9 9v1a5 5 0 0 0 5 5h11a2 2 0 0 0 2-2v-4a9 9 0 0 0-9-9ZM21 12h-7a5 5 0 0 0-5 5v1',
 }
 
 export interface PropsDoIcone extends Omit<SVGProps<SVGSVGElement>, 'children'> {

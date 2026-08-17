@@ -39,7 +39,7 @@ export const TELAS: ReadonlyArray<DescricaoDaTela> = [
   {
     tela: 'rota',
     rotulo: 'Em rota',
-    icone: 'moto',
+    icone: 'capacete',
     permissao: 'orders:read',
     descricao: 'Em rota — entregas a caminho',
   },

@@ -19,11 +19,25 @@ export interface PropsDoPainel {
   /**
    * Quantidade de itens fora do prazo nesta seção.
    *
-   * Vira um distintivo pulsante ao lado da contagem. Pulsa **só** enquanto for
-   * maior que zero, e para com `prefers-reduced-motion`: animação infinita na
-   * visão periférica de quem trabalha seis horas é cansaço, não alerta.
+   * Vira um **chip com texto**, e não um segundo número ao lado da contagem.
+   * Dois círculos com números diferentes no mesmo cabeçalho — um preto, um
+   * vermelho — obrigam a decifrar qual conta o quê a cada olhada; a maioria
+   * lia o vermelho como o total e se assustava à toa.
+   *
+   * Pulsa **só** enquanto for maior que zero, e para com
+   * `prefers-reduced-motion`: animação infinita na visão periférica de quem
+   * trabalha seis horas é cansaço, não alerta.
    */
   alertas?: number
+  /**
+   * Torna o chip de alerta clicável, para filtrar a seção pelos atrasados.
+   *
+   * Sem isto ele é só um rótulo — que é o certo onde não há o que filtrar, no
+   * painel de exceções e na grade da expedição.
+   */
+  aoFiltrarAlertas?: () => void
+  /** Se o filtro está ligado. Sem efeito sem `aoFiltrarAlertas`. */
+  filtrandoAlertas?: boolean
   /** Chips à direita do título — usados pelo modo denso. */
   acessorio?: ReactNode
   /** Habilita o recolher. Só o modo Expedição usa. */
@@ -39,6 +53,8 @@ export function PainelDeSecao({
   titulo,
   contagem,
   alertas = 0,
+  aoFiltrarAlertas,
+  filtrandoAlertas = false,
   acessorio,
   recolhivel = false,
   recolhido = false,
@@ -57,14 +73,37 @@ export function PainelDeSecao({
             <span className="ui-painel__contagem num">{contagem}</span>
           )}
 
-          {alertas > 0 && (
-            <span className="ui-painel__alerta num" role="status">
-              <span className="ui-visualmente-oculto">
-                {alertas === 1 ? '1 pedido fora do prazo' : `${alertas} pedidos fora do prazo`}
+          {alertas > 0 &&
+            (aoFiltrarAlertas ? (
+              /*
+                Botão, e não o rótulo com um `onClick` pendurado: quem chega
+                por teclado precisa alcançá-lo, e um leitor de tela precisa
+                anunciar que aquilo alterna alguma coisa. `aria-pressed` diz o
+                estado; o texto diz o que a pressão faz.
+              */
+              <button
+                type="button"
+                className="ui-painel__alerta"
+                aria-pressed={filtrandoAlertas}
+                onClick={aoFiltrarAlertas}
+                title={
+                  filtrandoAlertas
+                    ? `Mostrar todos os pedidos de ${titulo}`
+                    : `Mostrar só os atrasados de ${titulo}`
+                }
+              >
+                <Icone nome="relogio" tamanho={13} aria-hidden="true" />
+                <span className="num">{alertas}</span>
+                {alertas === 1 ? 'atrasado' : 'atrasados'}
+                {filtrandoAlertas && <Icone nome="x" tamanho={13} aria-hidden="true" />}
+              </button>
+            ) : (
+              <span className="ui-painel__alerta" role="status">
+                <Icone nome="relogio" tamanho={13} aria-hidden="true" />
+                <span className="num">{alertas}</span>
+                {alertas === 1 ? 'atrasado' : 'atrasados'}
               </span>
-              <span aria-hidden="true">{alertas}</span>
-            </span>
-          )}
+            ))}
         </h2>
 
         <div className="ui-painel__acessorio">
