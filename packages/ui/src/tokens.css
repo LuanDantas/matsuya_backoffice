@@ -130,6 +130,18 @@
   --dica-clara-texto: #1f1f1f;
 
   /*
+   * O ponto verde do farol em repouso.
+   *
+   * Bem mais claro que `--marca`, que é um esmeralda escuro feito para
+   * carregar texto branco e, num ponto de 10 px, lê-se como cinza-esverdeado.
+   * A referência usa um verde vivo por volta de #35C759, que dá 1,98:1 sobre a
+   * pílula clara e reprova o mínimo de 3:1 de elemento gráfico. #0F9D58 é o
+   * mais claro que ainda passa (3,08:1) — a leitura de "vivo" sem depender de
+   * o operador estar de frente para a tela.
+   */
+  --farol-ok-ponto: #0f9d58;
+
+  /*
    * A faixa de contagem do preparo: âmbar **sólido** com texto escuro, como na
    * referência — não o âmbar suave com texto âmbar dos selos.
    *
@@ -252,6 +264,9 @@
   --dica-escura-texto: #ffffff;
   --dica-clara-fundo: #2a3441;
   --dica-clara-texto: #e6edf3;
+
+  /* No escuro a pílula é escura, então o ponto pode subir: 6,96:1. */
+  --farol-ok-ponto: #34d399;
 
   /* Idênticos ao claro: âmbar claro com texto quase preto já funciona nos dois
      temas, e inverter criaria um terceiro estado para manter. */

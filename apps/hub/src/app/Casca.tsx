@@ -13,7 +13,14 @@ import { Reconciliacao } from '../offline/Reconciliacao'
 import { MenuLateral } from './MenuLateral'
 import { SeletorDeLojas } from './SeletorDeLojas'
 import { BotaoComContador } from './BotaoComContador'
-import { Farol, rotuloDoAlerta, useFarol, type AlertaDoDispositivo } from './Farol'
+import {
+  Farol,
+  listarAlertas,
+  rotuloDoAlerta,
+  useFarol,
+  type AlertaDoDispositivo,
+} from './Farol'
+import { useSilenciados } from './silenciados'
 import { telaInicial, type Tela } from './telas'
 import { config } from './config'
 
@@ -283,11 +290,22 @@ export function Casca({
     return lista
   }, [impressao.fila.length, fila.pendentes.length, quadro.conexao])
 
+  /**
+   * O que foi dado por visto neste tablet — ver `silenciados.ts`.
+   *
+   * Fica aqui e não dentro do farol porque a **pílula do cabeçalho** também
+   * depende dele: silenciar sem a pílula voltar ao verde não silenciaria nada
+   * de fato, e é a pílula que fica na frente do operador o turno inteiro.
+   */
+  const silenciados = useSilenciados()
+
   /** `null` quando não há nada — é o que decide qual das duas pílulas aparece. */
-  const rotuloDoFarol = useMemo(
-    () => rotuloDoAlerta(farol.porLoja, alertasDoDispositivo.length),
-    [farol.porLoja, alertasDoDispositivo.length]
-  )
+  const rotuloDoFarol = useMemo(() => {
+    const ativos = listarAlertas(farol.porLoja).filter(
+      (a) => !silenciados.esta(a.chave, a.contagem)
+    )
+    return rotuloDoAlerta(ativos, alertasDoDispositivo.length)
+  }, [farol.porLoja, silenciados, alertasDoDispositivo.length])
 
   // Sem endpoint agregado de não lidas por seleção; somar os pedidos com
   // conversa aberta é o que dá para saber sem uma requisição por loja.
@@ -638,6 +656,7 @@ export function Casca({
         <Farol
           porLoja={farol.porLoja}
           alertasDoDispositivo={alertasDoDispositivo}
+          silenciados={silenciados}
           ancora={botaoDoFarol}
           aoFechar={() => definirFarolAberto(false)}
         />

@@ -7,7 +7,7 @@ import {
   useState,
   type RefObject,
 } from 'react'
-import { Icone, useCamadaModal } from '@matsuya/ui'
+import { Icone, useCamadaModal, type NomeDoIcone } from '@matsuya/ui'
 import {
   createApiClient,
   criarApiDeAlertas,
@@ -15,6 +15,7 @@ import {
   type EstadoDaLoja,
 } from '@matsuya/api-client'
 import { config } from './config'
+import type { Silenciados } from './silenciados'
 
 /**
  * Farol da Operação.
@@ -76,37 +77,141 @@ function totalDaLoja(l: AlertasPorLoja): number {
 }
 
 /**
+ * Um alerta do farol, já resolvido.
+ *
+ * A lista plana existe para que **silenciar seja um filtro num lugar só**.
+ * Antes cada consumidor — o rótulo da pílula, o total, o painel — recalculava
+ * as categorias por conta própria, e acrescentar "menos os silenciados" em
+ * três lugares é a forma mais confiável de eles discordarem entre si.
+ */
+export interface AlertaDaOperacao {
+  /** Estável entre recargas: loja + categoria. É a chave do silêncio. */
+  chave: string
+  unityId: number
+  loja: string
+  contagem: number
+  gravidade: 'critico' | 'atencao'
+  icone: NomeDoIcone
+  /** O que a linha diz no painel, sem repetir o número. */
+  descricao: string
+  /** Como a categoria é nomeada no chip da pílula, no singular e no plural. */
+  um: string
+  varios: string
+}
+
+const CATEGORIAS = [
+  {
+    chave: 'atrasados',
+    rotulo: 'Atrasados',
+    janela: 'agora',
+    icone: 'relogio' as const,
+    gravidade: 'critico' as const,
+    valor: (a: AlertasDaUnidade) => a.atrasados,
+    descricao: (n: number) =>
+      n === 1 ? 'pedido fora do prazo de aceite ou preparo' : 'fora do prazo de aceite ou preparo',
+    um: 'atraso',
+    varios: 'atrasos',
+  },
+  {
+    chave: 'cancelados',
+    rotulo: 'Cancelados',
+    janela: 'últimas 2h',
+    icone: 'x' as const,
+    gravidade: 'atencao' as const,
+    valor: (a: AlertasDaUnidade) => a.canceladosDuasHoras,
+    descricao: (n: number) =>
+      `${n === 1 ? 'cancelamento' : 'cancelamentos'} nas últimas 2 horas`,
+    um: 'cancelamento recente',
+    varios: 'cancelamentos recentes',
+  },
+  {
+    chave: 'pausados',
+    rotulo: 'Itens pausados',
+    janela: 'agora',
+    icone: 'sacola' as const,
+    gravidade: 'atencao' as const,
+    valor: (a: AlertasDaUnidade) => a.itensPausados,
+    descricao: (n: number) => `${n === 1 ? 'item pausado' : 'itens pausados'} no cardápio`,
+    um: 'item pausado',
+    varios: 'itens pausados',
+  },
+]
+
+/** Todos os alertas das lojas, silenciados incluídos. */
+export function listarAlertas(porLoja: AlertasPorLoja[]): AlertaDaOperacao[] {
+  const lista: AlertaDaOperacao[] = []
+
+  for (const loja of porLoja) {
+    if (!loja.alertas) continue
+
+    for (const c of CATEGORIAS) {
+      const n = c.valor(loja.alertas)
+      if (n === 0) continue
+
+      lista.push({
+        chave: `${loja.unityId}:${c.chave}`,
+        unityId: loja.unityId,
+        loja: loja.nome,
+        contagem: n,
+        gravidade: c.gravidade,
+        icone: c.icone,
+        descricao: c.descricao(n),
+        um: c.um,
+        varios: c.varios,
+      })
+    }
+
+    if (paradaComPedido(loja)) {
+      lista.push({
+        chave: `${loja.unityId}:parada`,
+        unityId: loja.unityId,
+        loja: loja.nome,
+        contagem: 1,
+        gravidade: 'critico',
+        icone: 'alerta',
+        descricao: `Loja ${ROTULO_DO_ESTADO[loja.alertas.estado]} com pedido em aberto`,
+        um: 'loja parada com pedido',
+        varios: 'lojas paradas com pedido',
+      })
+    }
+  }
+
+  return lista
+}
+
+/**
  * O texto do chip âmbar na pílula do cabeçalho.
  *
  * Com uma categoria só, ela é nomeada — "3 atrasos" diz o que fazer, "3
  * alertas" só diz que existe algo. Com mais de uma, o número agregado é
  * honesto: qualquer nome escolhido esconderia as outras. É o que a referência
  * faz ao escrever "1 alerta de logística" em vez de "1 alerta".
+ *
+ * Recebe a lista **já filtrada**: o que está silenciado não conta aqui, e é
+ * assim que a pílula volta ao verde de `farol.png`.
  */
 export function rotuloDoAlerta(
-  porLoja: AlertasPorLoja[],
+  alertas: AlertaDaOperacao[],
   doDispositivo: number
 ): string | null {
-  const soma = (f: (a: AlertasDaUnidade) => number) =>
-    porLoja.reduce((t, l) => t + (l.alertas ? f(l.alertas) : 0), 0)
+  const porCategoria = new Map<string, { n: number; um: string; varios: string }>()
 
-  const categorias: Array<{ n: number; um: string; varios: string }> = [
-    { n: soma((a) => a.atrasados), um: 'atraso', varios: 'atrasos' },
-    {
-      n: soma((a) => a.canceladosDuasHoras),
-      um: 'cancelamento recente',
-      varios: 'cancelamentos recentes',
-    },
-    { n: soma((a) => a.itensPausados), um: 'item pausado', varios: 'itens pausados' },
-    {
-      n: porLoja.filter(paradaComPedido).length,
-      um: 'loja parada com pedido',
-      varios: 'lojas paradas com pedido',
-    },
-    { n: doDispositivo, um: 'alerta neste tablet', varios: 'alertas neste tablet' },
-  ]
+  for (const a of alertas) {
+    const tipo = a.chave.split(':')[1]!
+    const atual = porCategoria.get(tipo)
+    if (atual) atual.n += a.contagem
+    else porCategoria.set(tipo, { n: a.contagem, um: a.um, varios: a.varios })
+  }
 
-  const presentes = categorias.filter((c) => c.n > 0)
+  if (doDispositivo > 0) {
+    porCategoria.set('tablet', {
+      n: doDispositivo,
+      um: 'alerta neste tablet',
+      varios: 'alertas neste tablet',
+    })
+  }
+
+  const presentes = [...porCategoria.values()].filter((c) => c.n > 0)
   if (presentes.length === 0) return null
 
   if (presentes.length === 1) {
@@ -331,56 +436,16 @@ function useExpansaoDaAncora(
   }, [painel, veu, recorteDoBotao])
 }
 
-/**
- * As categorias do farol, com o que cada linha precisa para se desenhar.
- *
- * `descricao` não repete o número de propósito: ele é desenhado grande, ao
- * lado, e ler "5" seguido de "5 fora do prazo" faz o olho conferir se são a
- * mesma coisa. O ícone existe pelo mesmo motivo que a cor não basta — três
- * linhas âmbar empilhadas só se distinguem pelo texto, e o texto é o que se lê
- * por último quando a cozinha está cheia.
- */
-const CATEGORIAS = [
-  {
-    chave: 'atrasados',
-    rotulo: 'Atrasados',
-    janela: 'agora',
-    icone: 'relogio' as const,
-    gravidade: 'critico' as const,
-    valor: (a: AlertasDaUnidade) => a.atrasados,
-    descricao: (n: number) =>
-      n === 1 ? 'pedido fora do prazo de aceite ou preparo' : 'fora do prazo de aceite ou preparo',
-  },
-  {
-    chave: 'cancelados',
-    rotulo: 'Cancelados',
-    janela: 'últimas 2h',
-    icone: 'x' as const,
-    gravidade: 'atencao' as const,
-    valor: (a: AlertasDaUnidade) => a.canceladosDuasHoras,
-    descricao: (n: number) =>
-      `${n === 1 ? 'cancelamento' : 'cancelamentos'} nas últimas 2 horas`,
-  },
-  {
-    chave: 'pausados',
-    rotulo: 'Itens pausados',
-    janela: 'agora',
-    icone: 'sacola' as const,
-    gravidade: 'atencao' as const,
-    valor: (a: AlertasDaUnidade) => a.itensPausados,
-    descricao: (n: number) =>
-      `${n === 1 ? 'item pausado' : 'itens pausados'} no cardápio`,
-  },
-]
-
 export function Farol({
   porLoja,
   alertasDoDispositivo,
+  silenciados,
   ancora,
   aoFechar,
 }: {
   porLoja: AlertasPorLoja[]
   alertasDoDispositivo: AlertaDoDispositivo[]
+  silenciados: Silenciados
   /** O botão que abriu o painel — a animação sai exatamente dele. */
   ancora: RefObject<HTMLElement | null>
   aoFechar: () => void
@@ -422,7 +487,18 @@ export function Farol({
   const [ajudaAberta, definirAjudaAberta] = useState(false)
   const [recolhidos, definirRecolhidos] = useState<ReadonlySet<string>>(new Set())
 
-  const total = porLoja.reduce((s, l) => s + totalDaLoja(l), 0) + alertasDoDispositivo.length
+  const todos = useMemo(() => listarAlertas(porLoja), [porLoja])
+  const ativos = todos.filter((a) => !silenciados.esta(a.chave, a.contagem))
+  const calados = todos.filter((a) => silenciados.esta(a.chave, a.contagem))
+
+  const total = ativos.reduce((s, a) => s + a.contagem, 0) + alertasDoDispositivo.length
+
+  /** Quantos alertas ativos cada loja tem — alimenta a lista da esquerda. */
+  const porUnidade = useMemo(() => {
+    const mapa = new Map<number, number>()
+    for (const a of ativos) mapa.set(a.unityId, (mapa.get(a.unityId) ?? 0) + a.contagem)
+    return mapa
+  }, [ativos])
 
   const filtradas = useMemo(() => {
     const termo = busca.trim().toLowerCase()
@@ -433,8 +509,19 @@ export function Farol({
   // Com uma loja em foco, o painel da direita fala só dela. Sem foco, fala de
   // todas — que é o estado em que o painel abre, porque a primeira pergunta é
   // "tem algo errado em algum lugar?" e não "e a loja X?".
-  const visiveis = foco === null ? porLoja : porLoja.filter((l) => l.unityId === foco)
-  const comAlerta = visiveis.filter((l) => totalDaLoja(l) > 0)
+  const visiveis = foco === null ? ativos : ativos.filter((a) => a.unityId === foco)
+  const caladosVisiveis = foco === null ? calados : calados.filter((a) => a.unityId === foco)
+
+  /** Alertas ativos agrupados por loja, que é como o painel os apresenta. */
+  const grupos = useMemo(() => {
+    const mapa = new Map<number, { loja: string; itens: AlertaDaOperacao[] }>()
+    for (const a of visiveis) {
+      const g = mapa.get(a.unityId) ?? { loja: a.loja, itens: [] }
+      g.itens.push(a)
+      mapa.set(a.unityId, g)
+    }
+    return [...mapa.entries()]
+  }, [visiveis])
 
   const alternarGrupo = (chave: string) =>
     definirRecolhidos((atuais) => {
@@ -444,8 +531,11 @@ export function Farol({
       return proximo
     })
 
-  const somaDaCategoria = (valor: (a: AlertasDaUnidade) => number) =>
-    visiveis.reduce((s, l) => s + (l.alertas ? valor(l.alertas) : 0), 0)
+  /** Total ativo de uma categoria, somando as lojas em foco. */
+  const somaDaCategoria = (chaveDaCategoria: string) =>
+    visiveis
+      .filter((a) => a.chave.endsWith(`:${chaveDaCategoria}`))
+      .reduce((s, a) => s + a.contagem, 0)
 
   return (
     <div
@@ -487,6 +577,20 @@ export function Farol({
             >
               ?
             </button>
+            {ativos.length > 0 && (
+              <button
+                type="button"
+                className="farol__quadrado farol__quadrado--largo"
+                onClick={() => silenciados.silenciarVarios(ativos)}
+                data-dica="Silencia o que está na tela; volta se piorar"
+                data-dica-lado="abaixo"
+                data-dica-alinhar="fim"
+              >
+                <Icone nome="check" tamanho={16} />
+                Dar tudo por visto
+              </button>
+            )}
+
             <button
               type="button"
               className="farol__quadrado"
@@ -536,7 +640,7 @@ export function Farol({
 
             <ul>
               {filtradas.map((loja) => {
-                const n = totalDaLoja(loja)
+                const n = porUnidade.get(loja.unityId) ?? 0
                 return (
                   <li key={loja.unityId}>
                     <button
@@ -589,7 +693,7 @@ export function Farol({
 
             <div className="farol__cartoes">
               {CATEGORIAS.map((c) => {
-                const n = somaDaCategoria(c.valor)
+                const n = somaDaCategoria(c.chave)
                 return (
                   <article
                     key={c.chave}
@@ -608,7 +712,7 @@ export function Farol({
               })}
             </div>
 
-            {comAlerta.length === 0 && alertasDoDispositivo.length === 0 ? (
+            {visiveis.length === 0 && alertasDoDispositivo.length === 0 ? (
               <div className="farol__tudo-bem">
                 <Icone nome="check" tamanho={28} />
                 <p>
@@ -617,56 +721,73 @@ export function Farol({
                     : 'Esta loja está funcionando normalmente'}
                 </p>
                 <small>
-                  Nenhum pedido fora do prazo, nenhum cancelamento recente e nenhum item
-                  pausado.
+                  {caladosVisiveis.length > 0
+                    ? 'Nada de novo. Há alertas silenciados abaixo.'
+                    : 'Nenhum pedido fora do prazo, nenhum cancelamento recente e nenhum item pausado.'}
                 </small>
               </div>
             ) : (
               <>
-                {comAlerta.map((loja) => {
-                  const chave = `loja-${loja.unityId}`
+                {grupos.map(([unityId, grupo]) => {
+                  const chave = `loja-${unityId}`
                   const aberto = !recolhidos.has(chave)
                   return (
                     <article key={chave} className="farol__grupo">
-                      <button
-                        type="button"
-                        className="farol__grupo-topo"
-                        aria-expanded={aberto}
-                        onClick={() => alternarGrupo(chave)}
-                      >
-                        <span className="farol__ponto" data-estado="alerta" aria-hidden="true" />
-                        {loja.nome}
-                        <span className="farol__grupo-seta" data-aberto={aberto || undefined}>
-                          <Icone nome="cima-baixo" tamanho={16} />
-                        </span>
-                      </button>
+                      <div className="farol__grupo-topo-linha">
+                        <button
+                          type="button"
+                          className="farol__grupo-topo"
+                          aria-expanded={aberto}
+                          onClick={() => alternarGrupo(chave)}
+                        >
+                          <span
+                            className="farol__ponto"
+                            data-estado="alerta"
+                            aria-hidden="true"
+                          />
+                          {grupo.loja}
+                          <span className="farol__grupo-seta" data-aberto={aberto || undefined}>
+                            <Icone nome="cima-baixo" tamanho={16} />
+                          </span>
+                        </button>
+
+                        {/*
+                          Silenciar a loja inteira, e não cada linha: quem abre
+                          o farol depois de resolver alguma coisa quer dar por
+                          visto o que aquela loja está reportando, não conferir
+                          categoria por categoria.
+                        */}
+                        <button
+                          type="button"
+                          className="farol__silenciar"
+                          onClick={() => silenciados.silenciarVarios(grupo.itens)}
+                        >
+                          <Icone nome="check" tamanho={14} />
+                          Dar por visto
+                        </button>
+                      </div>
 
                       {aberto && (
                         <ul>
-                          {CATEGORIAS.map((c) => {
-                            const n = loja.alertas ? c.valor(loja.alertas) : 0
-                            if (n === 0) return null
-                            return (
-                              <li key={c.chave} data-gravidade={c.gravidade}>
-                                <span className="farol__item-icone" aria-hidden="true">
-                                  <Icone nome={c.icone} tamanho={16} />
-                                </span>
-                                <strong className="farol__item-numero num">{n}</strong>
-                                <span className="farol__item-texto">{c.descricao(n)}</span>
-                              </li>
-                            )
-                          })}
-                          {paradaComPedido(loja) && (
-                            <li data-gravidade="critico">
+                          {grupo.itens.map((a) => (
+                            <li key={a.chave} data-gravidade={a.gravidade}>
                               <span className="farol__item-icone" aria-hidden="true">
-                                <Icone nome="alerta" tamanho={16} />
+                                <Icone nome={a.icone} tamanho={16} />
                               </span>
-                              <span className="farol__item-texto farol__item-texto--sozinho">
-                                Loja {ROTULO_DO_ESTADO[loja.alertas!.estado]} com pedido em
-                                aberto
-                              </span>
+                              {a.chave.endsWith(':parada') ? (
+                                <span className="farol__item-texto farol__item-texto--sozinho">
+                                  {a.descricao}
+                                </span>
+                              ) : (
+                                <>
+                                  <strong className="farol__item-numero num">
+                                    {a.contagem}
+                                  </strong>
+                                  <span className="farol__item-texto">{a.descricao}</span>
+                                </>
+                              )}
                             </li>
-                          )}
+                          ))}
                         </ul>
                       )}
                     </article>
@@ -716,6 +837,75 @@ export function Farol({
                   </article>
                 )}
               </>
+            )}
+
+            {/*
+              Silenciado continua aqui, num grupo próprio.
+
+              É o que separa "dar por visto" de "apagar": o farol para de
+              chamar, mas o fato continua na tela para quem for procurar.
+              Escondê-lo de vez transformaria o botão num jeito de fazer o
+              problema sumir, que é exatamente o que ele não pode ser.
+            */}
+            {caladosVisiveis.length > 0 && (
+              <article className="farol__grupo farol__grupo--calado">
+                <div className="farol__grupo-topo-linha">
+                  <button
+                    type="button"
+                    className="farol__grupo-topo"
+                    aria-expanded={!recolhidos.has('calados')}
+                    onClick={() => alternarGrupo('calados')}
+                  >
+                    <span className="farol__ponto" data-estado="calado" aria-hidden="true" />
+                    {caladosVisiveis.length === 1
+                      ? '1 alerta dado por visto'
+                      : `${caladosVisiveis.length} alertas dados por visto`}
+                    <span
+                      className="farol__grupo-seta"
+                      data-aberto={!recolhidos.has('calados') || undefined}
+                    >
+                      <Icone nome="cima-baixo" tamanho={16} />
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="farol__silenciar"
+                    onClick={silenciados.reativarTudo}
+                  >
+                    <Icone nome="atualizar" tamanho={14} />
+                    Mostrar de novo
+                  </button>
+                </div>
+
+                {!recolhidos.has('calados') && (
+                  <>
+                    <p className="farol__nota">
+                      Voltam sozinhos se piorarem, e em até 4 horas de qualquer forma.
+                    </p>
+                    <ul>
+                      {caladosVisiveis.map((a) => (
+                        <li key={a.chave} data-gravidade="calado">
+                          <span className="farol__item-icone" aria-hidden="true">
+                            <Icone nome={a.icone} tamanho={16} />
+                          </span>
+                          <strong className="farol__item-numero num">{a.contagem}</strong>
+                          <span className="farol__item-texto">
+                            {a.descricao} — {a.loja}
+                          </span>
+                          <button
+                            type="button"
+                            className="farol__reativar"
+                            onClick={() => silenciados.reativar(a.chave)}
+                          >
+                            Mostrar
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </article>
             )}
           </section>
         </div>

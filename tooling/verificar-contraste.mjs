@@ -134,6 +134,11 @@ const PARES = [
   // escuro sobre o cabeçalho claro, o claro ao lado do menu.
   ['dica do cabeçalho', 'dica-escura-texto', 'dica-escura-fundo', 4.5],
   ['dica do menu lateral', 'dica-clara-texto', 'dica-clara-fundo', 4.5],
+
+  // O ponto verde do farol em repouso, sobre a pílula clara. Elemento
+  // gráfico, 3:1 — e é o par que impede o verde de clarear até sumir na
+  // tentativa de imitar o da referência, que reprova em 1,98:1.
+  ['ponto do farol em repouso', 'farol-ok-ponto', 'superficie-3', 3],
 ]
 
 let falhas = 0

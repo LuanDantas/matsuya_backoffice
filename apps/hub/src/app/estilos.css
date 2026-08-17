@@ -2353,7 +2353,11 @@
   min-height: 0;
   height: 40px;
   padding: 0 var(--e-3);
-  border: 1px solid var(--borda-forte);
+  /* Borda transparente, e não ausente: o estado de alerta a colore, e a
+     geometria não pode mudar de um estado para o outro. Na referência a
+     pílula em repouso não tem contorno — o cinza claro sozinho a separa da
+     barra branca. */
+  border: 1px solid transparent;
   /* Cantos de 12 px em vez da pílula cheia: a 40 px de altura, o raio total
      arredondava tanto que o chip âmbar interno encostava na curva. */
   border-radius: 12px;
@@ -2365,11 +2369,48 @@
   cursor: pointer;
 }
 
+/*
+ * O ponto em repouso pulsa — devagar, e é a única coisa da pílula clara que
+ * se move.
+ *
+ * Isto contradiz uma decisão anterior deste arquivo, que dizia que o farol não
+ * pulsa para não competir com o distintivo das colunas. A regra continua
+ * valendo para o **alerta**: lá a pílula inverte para preta e nada nela se
+ * mexe, porque quem chama a ação é o distintivo da coluna. Aqui é o oposto —
+ * não há nada para fazer, e o pulso é sinal de vida, não de urgência: diz que
+ * o farol está observando, e não que algo aconteceu. Um farol imóvel e um
+ * farol quebrado são indistinguíveis.
+ */
 .barra__farol-ponto {
+  position: relative;
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--marca);
+  background: var(--farol-ok-ponto);
+}
+
+.barra__farol[data-estado='ok'] .barra__farol-ponto::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--farol-ok-ponto);
+  animation: farol-pulsar 2.4s ease-out infinite;
+}
+
+/*
+ * 2,4 s, bem mais lento que o distintivo de atraso (1,8 s) e sem sobressalto.
+ * A diferença de ritmo é o que separa "estou aqui" de "olhe para mim" quando
+ * os dois estão na mesma tela.
+ */
+@keyframes farol-pulsar {
+  0% { transform: scale(1); opacity: 0.55; }
+  70% { transform: scale(2.6); opacity: 0; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barra__farol[data-estado='ok'] .barra__farol-ponto::after { animation: none; content: none; }
 }
 
 .barra__farol-setas {
@@ -2829,6 +2870,105 @@
   border-radius: 12px;
   overflow: hidden;
 }
+
+/* Cabeçalho do grupo: título à esquerda, "dar por visto" à direita. */
+.farol__grupo-topo-linha {
+  display: flex;
+  align-items: stretch;
+  gap: var(--e-2);
+}
+
+.farol__grupo-topo-linha .farol__grupo-topo {
+  flex: 1;
+  min-width: 0;
+}
+
+.farol__silenciar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  flex-shrink: 0;
+  padding: 0 var(--e-3);
+  border: 1px solid var(--painel-borda);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--f-fraco);
+  font: inherit;
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-medio);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 120ms ease-out, border-color 120ms ease-out;
+}
+
+.farol__silenciar:hover {
+  color: var(--f-texto);
+  border-color: var(--f-fraco);
+}
+
+.farol__silenciar:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+}
+
+/*
+ * O grupo dos silenciados fica visualmente abaixo dos ativos.
+ *
+ * Sem cor de gravidade e com o ponto vazado: continua legível, mas para de
+ * disputar atenção com o que ainda não foi visto. É a diferença entre "está
+ * aqui se você procurar" e "olhe para mim".
+ */
+.farol__grupo--calado {
+  opacity: 0.72;
+}
+
+.farol__grupo--calado:hover,
+.farol__grupo--calado:focus-within {
+  opacity: 1;
+}
+
+.farol__ponto[data-estado='calado'] {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--f-fraco);
+}
+
+.farol__grupo li[data-gravidade='calado'] {
+  color: var(--f-fraco);
+  border-color: var(--painel-borda);
+}
+
+.farol__reativar {
+  margin-left: auto;
+  padding: 2px var(--e-2);
+  border: 0;
+  border-radius: 8px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.farol__reativar:hover { color: var(--f-texto); }
+
+.farol__reativar:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+}
+
+/* "Dar tudo por visto" mora entre os quadrados do cabeçalho, mas carrega
+   texto — o quadrado vira retângulo, mantendo a altura da fileira. */
+.farol__quadrado--largo {
+  width: auto;
+  gap: var(--e-2);
+  padding: 0 var(--e-3);
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  color: var(--f-fraco);
+}
+
+.farol__quadrado--largo:hover { color: var(--f-texto); }
 
 .farol__grupo-topo {
   display: flex;
