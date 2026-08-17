@@ -1021,7 +1021,10 @@
 
 .entrada__titulo h1 {
   margin: 0;
-  font-size: var(--texto-2xl);
+  /* 30px: o `text-3xl` do Waluia. A escala do sistema para em 28 (`--texto-2xl`),
+     e os 2px a mais só existem aqui — em tela de operação, título grande rouba
+     espaço de pedido. */
+  font-size: 30px;
   /* 700, e não o teto de 600 do sistema: o Waluia usa `font-bold` no título da
      entrada, e é ele que dá o tom de "chegou em casa". */
   font-weight: 700;
@@ -1049,6 +1052,11 @@
  * mantém doze cartões lado a lado sem parecerem bolhas; na entrada há um
  * formulário só, e o arredondado é o que faz a tela parecer atual.
  */
+.entrada .ui-campo {
+  /* 6px entre rótulo e campo, como o `space-y-1.5` do Waluia. */
+  gap: 6px;
+}
+
 .entrada .ui-campo__rotulo {
   font-size: var(--texto-sm);
   font-weight: 500;
@@ -1056,13 +1064,30 @@
 }
 
 .entrada .ui-campo input {
-  border-radius: 10px;
+  border-radius: 8px;
+  padding: 0 var(--e-3);
+  font-weight: 400;
+  /*
+   * 16px aqui e 14px a partir de 768px — é o `text-base md:text-sm` do Waluia,
+   * e a razão é a mesma: abaixo de 16px o iOS dá zoom ao focar o campo e
+   * desloca a tela do quiosque. No desktop não há esse risco, e 14px é o que
+   * dá a proporção certa ao lado do rótulo.
+   */
+  font-size: var(--texto-base);
+}
+
+@media (min-width: 768px) {
+  .entrada .ui-campo input {
+    font-size: var(--texto-sm);
+  }
 }
 
 .entrada .ui-botao {
   border-radius: 12px;
-  font-size: var(--texto-base);
-  font-weight: 600;
+  /* 14px/500, como o botão `size="lg"` do Waluia — não 16px/600. O peso menor
+     é o que tira do botão o ar de aviso e o deixa com ar de ação. */
+  font-size: var(--texto-sm);
+  font-weight: 500;
   letter-spacing: 0;
 }
 
@@ -1110,14 +1135,14 @@
 }
 
 /*
- * "Esqueci minha senha" acima do botão e alinhado à direita.
+ * "Esqueci minha senha" centralizado, acima do botão.
  *
- * Acima porque é onde a pessoa já está olhando quando percebe que não lembra —
- * logo depois do campo de senha. Abaixo do "Entrar" ela só o encontra depois de
- * errar uma vez.
+ * Centralizado como no Waluia. Acima porque é onde a pessoa já está olhando
+ * quando percebe que não lembra — logo depois do campo de senha; abaixo do
+ * "Entrar" ela só o encontra depois de errar uma vez.
  */
 .entrada__link {
-  align-self: flex-end;
+  align-self: center;
   min-height: var(--alvo);
   padding: 0;
   border: 0;
@@ -1125,7 +1150,7 @@
   color: var(--marca);
   font: inherit;
   font-size: var(--texto-sm);
-  font-weight: var(--peso-medio);
+  font-weight: 500;
   cursor: pointer;
   transition: color var(--duracao-rapida) var(--curva);
 }
@@ -1210,69 +1235,6 @@
   font-weight: 700;
   line-height: var(--linha-apertada);
   color: var(--texto);
-}
-
-/* Barra empilhada: a proporção do turno em uma linha, sem eixo nem legenda de
-   gráfico — é um resumo, não um relatório. */
-.turno__barra {
-  display: flex;
-  height: 8px;
-  overflow: hidden;
-  border-radius: var(--raio-total);
-  background: var(--superficie-2);
-}
-
-.turno__fatia {
-  display: block;
-  height: 100%;
-}
-
-.turno__fatia--pronto {
-  background: var(--acao);
-}
-.turno__fatia--preparo {
-  background: var(--preparo-fundo-aperto);
-}
-.turno__fatia--atraso {
-  background: var(--alarme-fundo);
-}
-
-.turno__legenda {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--e-1) var(--e-3);
-  margin: 0;
-  font-size: var(--texto-xs);
-  color: var(--texto-fraco);
-}
-
-/* O par ponto+rótulo não se separa: soltos, o navegador quebrava a linha entre
-   o ponto e a palavra que ele nomeia. */
-.turno__item {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  white-space: nowrap;
-}
-
-/* O ponto faz o trabalho que a cor sozinha não faria para quem não a distingue:
-   cada fatia tem também o seu nome escrito ao lado. */
-.turno__ponto {
-  width: 8px;
-  height: 8px;
-  flex-shrink: 0;
-  border-radius: var(--raio-total);
-}
-
-.turno__ponto--pronto {
-  background: var(--acao);
-}
-.turno__ponto--preparo {
-  background: var(--preparo-fundo-aperto);
-}
-.turno__ponto--atraso {
-  background: var(--alarme-fundo);
 }
 
 /* ── Painel decorativo ──────────────────────────────────────────────────── */
@@ -1368,31 +1330,46 @@
  * empilhadas numa mesa em vez de dois retângulos alinhados — e passar por baixo,
  * e não por cima, mantém o pedido (que é o herói) inteiro e legível.
  */
+/*
+ * A pilha: resumo do turno em cima e à direita, pedido embaixo cobrindo parte
+ * dele.
+ *
+ * O turno vem primeiro porque é a leitura de relance — "como a loja está indo"
+ * cabe em dois números. O pedido vem por cima porque é o objeto concreto, e é
+ * ele que a pessoa reconhece.
+ *
+ * A sobreposição deixa só uma faixa do turno visível: o suficiente para os dois
+ * lerem como uma pilha, sem esconder os números, que ficam na metade de cima
+ * dele.
+ */
 .entrada__pilha {
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
+}
+
+.entrada__pilha .turno {
+  /* Encostado à direita: é o que dá a diagonal com o pedido, que fica à
+     esquerda. */
+  align-self: flex-end;
+  margin-right: var(--e-4);
+  transform: rotate(2.5deg);
 }
 
 .entrada__pilha .amostra {
   position: relative;
   z-index: 1;
+  align-self: flex-start;
+  /*
+   * Sobe só o bastante para os dois cartões se tocarem.
+   *
+   * A sobreposição para no `padding` inferior do turno: 46px cortavam os
+   * números pela metade, e número cortado não é composição, é defeito. Aqui o
+   * que fica coberto é espaço vazio, e a rotação dos dois faz o canto entrar de
+   * verdade.
+   */
+  margin-top: -14px;
   transform: rotate(-1.5deg);
-}
-
-/*
- * A sobreposição é **de canto**, não de topo.
- *
- * A primeira tentativa puxava o segundo cartão 32px para cima, centralizado — e
- * enterrava o próprio título dele atrás do primeiro. Deslocado para a esquerda,
- * o que fica coberto é o canto superior direito, que é espaço vazio; o título
- * mora no canto oposto e continua legível.
- */
-.entrada__pilha .turno {
-  margin-top: -22px;
-  margin-right: 132px;
-  transform: rotate(2.5deg);
 }
 
 /* ── A amostra do quadro ────────────────────────────────────────────────── */

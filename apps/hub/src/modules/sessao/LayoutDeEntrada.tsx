@@ -66,9 +66,11 @@ export function LayoutDeEntrada({
         <span className="entrada__forma entrada__forma--tres" />
         <span className="entrada__forma entrada__forma--quatro" />
 
+        {/* Turno primeiro: é a leitura de relance. O pedido vem depois e por
+            cima, porque é o objeto concreto que a pessoa reconhece. */}
         <div className="entrada__pilha">
-          <CartaoDeAmostra />
           <CartaoDeTurno />
+          <CartaoDeAmostra />
         </div>
 
         <p className="entrada__rodape">
@@ -161,16 +163,18 @@ function CartaoDeAmostra() {
 }
 
 /**
- * O segundo cartão: o resumo do turno.
+ * O cartão do turno — o resumo de relance.
  *
- * Diagonal ao primeiro e passando por baixo dele, com uma sobreposição
- * pequena. A profundidade é o que faz os dois lerem como uma pilha de coisas
- * reais em cima de uma mesa, e não como dois retângulos alinhados.
+ * Fica atrás do pedido, com só a faixa de cima aparecendo, e por isso ele é
+ * **exatamente** o que cabe nessa faixa: título e dois números. Uma primeira
+ * versão trazia também uma barra empilhada e uma legenda de três cores, e as
+ * duas ficavam inteiramente cobertas pelo cartão da frente. Construir o que
+ * ninguém vê é pior do que não construir: fica esperando alguém mexer no
+ * layout e descobrir elementos órfãos.
  *
- * Traz números, e não outro pedido, de propósito: dois cartões iguais só
- * dobrariam a mesma informação. O primeiro mostra **o que a loja faz** — um
- * pedido concreto, com fotos; este mostra **como ela está indo** — que é a
- * outra metade do que o Hub entrega, e a que justifica abri-lo de manhã.
+ * Números e não outro pedido: dois cartões iguais dobrariam a mesma
+ * informação. O de baixo mostra **o que a loja faz**; este, **como ela está
+ * indo** — que é a outra metade do que o Hub entrega.
  */
 function CartaoDeTurno() {
   return (
@@ -187,29 +191,6 @@ function CartaoDeTurno() {
           aceite médio
         </span>
       </div>
-
-      <div className="turno__barra" aria-hidden="true">
-        <span className="turno__fatia turno__fatia--pronto" style={{ width: '62%' }} />
-        <span className="turno__fatia turno__fatia--preparo" style={{ width: '28%' }} />
-        <span className="turno__fatia turno__fatia--atraso" style={{ width: '10%' }} />
-      </div>
-
-      {/* Cada par ponto+rótulo é um grupo próprio: soltos, o navegador quebrava
-          a linha entre o ponto e a palavra dele. */}
-      <p className="turno__legenda">
-        <span className="turno__item">
-          <i className="turno__ponto turno__ponto--pronto" />
-          entregues
-        </span>
-        <span className="turno__item">
-          <i className="turno__ponto turno__ponto--preparo" />
-          preparo
-        </span>
-        <span className="turno__item">
-          <i className="turno__ponto turno__ponto--atraso" />
-          atrasados
-        </span>
-      </p>
     </div>
   )
 }
