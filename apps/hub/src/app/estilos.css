@@ -502,8 +502,23 @@
   color: var(--alarme-texto);
 }
 
-/* Entregue: o único verde do chip. Vale a cor por ser o estado sobre o qual
-   não há mais nada a fazer — é informação de encerramento, não de ação. */
+/*
+ * O ícone gira enquanto a corrida está em `buscando`.
+ *
+ * Buscar entregador é a única coisa do cartão que está acontecendo **agora e
+ * fora daqui**, sem prazo nem contagem. Sem movimento, "Buscando" parado por
+ * dois minutos é indistinguível de um chip esquecido na tela.
+ */
+.cartao__contexto[data-buscando] svg {
+  animation: ui-girar 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cartao__contexto[data-buscando] svg { animation: none; }
+}
+
+/* Entregue e "chegou na loja": o verde do chip. Vale a cor nos dois casos por
+   serem informação de encerramento de uma etapa, não de ação pendente. */
 .cartao__contexto[data-tom='sucesso'] {
   background: var(--marca-suave);
   color: var(--marca);

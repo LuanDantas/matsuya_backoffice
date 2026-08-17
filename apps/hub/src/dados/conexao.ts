@@ -130,6 +130,17 @@ export class Conexao {
       this.sincronizadores.get(unityId)?.aoReceberEvento(evento)
     })
 
+    /*
+     * A corrida anda sem o status do pedido mudar — o entregador chega na loja
+     * e o pedido segue em `ready`. Evento próprio por isso, e roteado para o
+     * mesmo sincronizador: ele carrega `seq` como os outros, então a detecção
+     * de lacuna continua valendo e o cursor não fica para trás.
+     */
+    this.socket.on('order.delivery_changed', (evento: unknown) => {
+      const unityId = Number((evento as { unityId?: number } | null)?.unityId)
+      this.sincronizadores.get(unityId)?.aoReceberEvento(evento)
+    })
+
     this.socket.on('store.operation_changed', (evento: unknown) => {
       const unityId = Number((evento as { unityId?: number } | null)?.unityId)
       if (Number.isInteger(unityId)) this.opcoes.aoMudarOperacao?.(unityId)

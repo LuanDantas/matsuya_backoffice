@@ -14,6 +14,36 @@ import type { ApiClient } from './cliente'
  * vez de virar `undefined` numa célula da tabela.
  */
 
+/** Os estados da corrida. Espelha `modules/entregas/maquina.ts` na API. */
+export type EstadoDaCorrida =
+  | 'buscando'
+  | 'a_caminho'
+  | 'na_loja'
+  | 'em_rota'
+  | 'entregue'
+  | 'falhou'
+
+export interface EntregaDoQuadro {
+  estado: EstadoDaCorrida
+  /**
+   * Nome do entregador — **só a partir da chegada na loja**.
+   *
+   * A API decide isso, e não o cartão: enquanto ele está na rua o nome não muda
+   * decisão nenhuma; quando há alguém parado no balcão, saber chamar pelo nome
+   * muda. Deixar a regra no servidor mantém as telas que existirem de acordo.
+   */
+  entregador: string | null
+  /**
+   * Minutos até ele chegar na loja, como informado por quem atribuiu.
+   *
+   * Nunca calculado por nós — não há posição de entregador em lugar nenhum.
+   * Nulo é legítimo, e o chip diz "a caminho" sem minuto.
+   */
+  etaLojaMinutos: number | null
+  /** Quando chegou. É daqui que sai o "aguardando há X min". */
+  chegouLojaEm: string | null
+}
+
 export interface PedidoDoQuadro {
   id: number
   code: string | null
@@ -43,14 +73,17 @@ export interface PedidoDoQuadro {
   /**
    * Previsão de entrega ao cliente, do prazo da zona congelado no checkout.
    *
-   * **Não é o ETA do entregador** — esse não existe na API. Nulo em retirada e
-   * em pedido anterior à coluna, e aí a tela mostra tempo decorrido em vez de
-   * um horário que ninguém pode cumprir.
+   * **Não é o ETA do entregador** — esse vem em `entrega.etaLojaMinutos`, e
+   * mede outra coisa: o tempo até ele chegar na **loja**. Nulo em retirada e em
+   * pedido anterior à coluna, e aí a tela mostra tempo decorrido em vez de um
+   * horário que ninguém pode cumprir.
    */
   estimatedDeliveryAt: string | null
   deliveryEtaMinutes: number | null
   /** Carimbo do aceite. É o fato que diz se a comanda deste pedido já saiu. */
   acceptedAt: string | null
+  /** Quando ficou pronto — o cartão conta o tempo parado a partir daqui. */
+  readyAt: string | null
   dispatchedAt: string | null
   deliveredAt: string | null
   /** Prazo derivado pela API — ver `modules/orders/prazos.ts` lá. */
@@ -58,6 +91,15 @@ export interface PedidoDoQuadro {
   deadlineKind: 'aceite' | 'preparo' | null
   /** Janela cheia do prazo, para a barra do cartão de aceite saber o 100%. */
   deadlineTotalMinutes: number | null
+  /**
+   * A corrida — o trecho do pedido que acontece na rua.
+   *
+   * `null` significa **não tem corrida**: retirada no balcão, ou pedido ainda
+   * não aceito. `undefined` significa que a API não a consultou nesta
+   * mensagem, e aí o cartão mantém o que já sabia em vez de apagar o
+   * entregador da tela a cada mudança de status do pedido.
+   */
+  entrega?: EntregaDoQuadro | null
   items?: Array<{
     id: number
     productName: string

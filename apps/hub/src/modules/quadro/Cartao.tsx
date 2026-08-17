@@ -144,10 +144,14 @@ function estado(
   }
 
   if (pedido.status === 'ready') {
+    // "Pronto Há Xmin", como `pronto2.png` — e não "Pronto para sair". O tempo
+    // parado importa: um pedido pronto há 12 minutos esfriando é informação, e
+    // um rótulo fixo não a carrega.
+    const parado = pedido.readyAt ? decorrido(pedido.readyAt, agora) : null
     return {
       tom: 'sucesso',
       icone: 'check',
-      texto: denso ? 'Pronto' : 'Pronto para sair',
+      texto: parado ? `Pronto há ${parado}` : 'Pronto para sair',
     }
   }
 
@@ -161,7 +165,76 @@ function estado(
 }
 
 type TomDoChip = Urgencia | 'sucesso'
-type IconeDoChip = 'capacete' | 'sacola' | 'relogio' | 'check' | 'x'
+type IconeDoChip = 'capacete' | 'sacola' | 'relogio' | 'check' | 'x' | 'atualizar'
+
+/**
+ * A partir de quantos minutos parado o entregador vira problema.
+ *
+ * Ele chega e o chip fica verde; passados estes minutos, vermelho. É a mesma
+ * mecânica de degraus do prazo de preparo, e não dois estados no servidor — o
+ * relógio já responde a diferença.
+ *
+ * Três minutos porque entregador parado no balcão é custo que corre em duas
+ * pontas: a corrida dele e a fila da loja. É a única coisa da tela que fica
+ * vermelha por causa de alguém que está esperando a cozinha.
+ */
+const MINUTOS_ATE_ESPERA_VIRAR_PROBLEMA = 3
+
+/**
+ * O chip quando existe corrida.
+ *
+ * Vem **antes** da previsão de entrega ao cliente na ordem de decisão: com
+ * entregador atribuído, quem ele é e onde está é o assunto mais concreto que o
+ * cartão tem para contar. A previsão volta a aparecer quando ele sai com o
+ * pedido, porque aí a pergunta muda de "quando ele chega aqui" para "quando o
+ * cliente recebe".
+ */
+function chipDaCorrida(
+  entrega: NonNullable<PedidoDoQuadro['entrega']>,
+  agora: number
+): { texto: string; icone: IconeDoChip; tom: TomDoChip } | null {
+  switch (entrega.estado) {
+    case 'buscando':
+      return { texto: 'Buscando', icone: 'atualizar', tom: 'tranquilo' }
+
+    case 'a_caminho':
+      return {
+        // Anônimo de propósito: na rua, o nome não muda decisão nenhuma e
+        // ocuparia a única linha de contexto do cartão.
+        texto: entrega.etaLojaMinutos
+          ? `Entregador(a) chega em ${entrega.etaLojaMinutos} min`
+          : 'Entregador(a) a caminho',
+        icone: 'capacete',
+        tom: 'tranquilo',
+      }
+
+    case 'na_loja': {
+      const quem = entrega.entregador ?? 'Entregador(a)'
+      const minutos = entrega.chegouLojaEm
+        ? Math.max(0, Math.floor((agora - new Date(entrega.chegouLojaEm).getTime()) / 60_000))
+        : 0
+
+      return minutos >= MINUTOS_ATE_ESPERA_VIRAR_PROBLEMA
+        ? {
+            texto: `${quem} aguardando há ${minutos} min`,
+            icone: 'capacete',
+            tom: 'estourado',
+          }
+        : { texto: `${quem} chegou na loja`, icone: 'capacete', tom: 'sucesso' }
+    }
+
+    // Saiu com o pedido: o chip volta a falar da entrega ao cliente, que é a
+    // pergunta que passa a valer. `null` devolve a decisão a quem chamou.
+    case 'em_rota':
+      return null
+
+    case 'falhou':
+      return { texto: 'Sem entregador', icone: 'x', tom: 'estourado' }
+
+    case 'entregue':
+      return null
+  }
+}
 
 /**
  * O status de entrega, no topo do cartão.
@@ -221,7 +294,13 @@ function statusDaEntrega(
     return { texto: 'Retirada no balcão', icone: 'sacola', tom: 'tranquilo' }
   }
 
-  // 2. Na rua. A previsão vencida é aviso, não erro: o pedido está a caminho,
+  // 2. A corrida, quando existe e tem o que dizer.
+  if (pedido.entrega) {
+    const daCorrida = chipDaCorrida(pedido.entrega, agora)
+    if (daCorrida) return daCorrida
+  }
+
+  // 3. Na rua. A previsão vencida é aviso, não erro: o pedido está a caminho,
   //    só passou da conta — quem decide o que fazer é quem lê.
   const previsao = pedido.estimatedDeliveryAt ? new Date(pedido.estimatedDeliveryAt) : null
 
@@ -253,7 +332,7 @@ function statusDaEntrega(
     return { texto: 'Aguardando o entregador', icone: 'capacete', tom: 'tranquilo' }
   }
 
-  // 3. Ainda na loja — em preparo e pronto. O que interessa aqui é a hora que
+  // 4. Ainda na loja — em preparo e pronto. O que interessa aqui é a hora que
   //    a comida chega no cliente, que é o que ele pergunta ao telefone.
   if (previsao) {
     return {
@@ -326,7 +405,11 @@ export function Cartao({
         aria-label={`Abrir o pedido ${pedido.code ?? pedido.id}${pedido.customerLabel ? ` de ${pedido.customerLabel}` : ''}`}
       >
         <span className="cartao__topo">
-          <span className="cartao__contexto" data-tom={topo.tom}>
+          <span
+            className="cartao__contexto"
+            data-tom={topo.tom}
+            data-buscando={pedido.entrega?.estado === 'buscando' || undefined}
+          >
             <Icone nome={topo.icone} tamanho={13} />
             {topo.texto}
           </span>
