@@ -1,6 +1,26 @@
 import { Botao, PainelDeSecao, Selo } from '@matsuya/ui'
+import type { TomDoSelo } from '@matsuya/ui'
 import { config } from '../../app/config'
 import type { EstadoDoSom } from '../../som/alertas'
+import type { SaudeDoAgente } from '../../impressao/saudeDoAgente'
+import { Dispositivos } from './Dispositivos'
+import type { DispositivoDeImpressao, DispositivoRegistrado } from '@matsuya/api-client'
+
+/**
+ * O que o selo do agente diz, e por que ele deixou de olhar só a configuração.
+ *
+ * A versão anterior lia `Boolean(urlDoAgente)` e mostrava "Ativo" só porque
+ * havia uma URL escrita no `config.json` — com o agente desligado, com o PC do
+ * balcão reiniciando ou com o serviço morto, a tela continuava verde. Um
+ * indicador que não pode ficar vermelho não é indicador; é decoração que ensina
+ * a confiar no que ninguém verificou.
+ */
+const SELO_DO_AGENTE: Record<SaudeDoAgente['estado'], { tom: TomDoSelo; texto: string }> = {
+  verificando: { tom: 'neutro', texto: 'Verificando' },
+  ativo: { tom: 'sucesso', texto: 'Ativo' },
+  ausente: { tom: 'perigo', texto: 'Sem resposta' },
+  nao_configurado: { tom: 'atencao', texto: 'Não configurado' },
+}
 
 /**
  * Ajustes deste dispositivo.
@@ -16,6 +36,9 @@ import type { EstadoDoSom } from '../../som/alertas'
 export function Ajustes({
   som,
   impressao,
+  saudeDoAgente,
+  unityId,
+  apiDeImpressao,
   conexao,
   cursores,
   nomesDasUnidades,
@@ -26,6 +49,13 @@ export function Ajustes({
     automatica: boolean
     pendentes: number
     tentarDeNovo: () => void
+  }
+  saudeDoAgente: SaudeDoAgente
+  unityId: number
+  apiDeImpressao: {
+    dispositivos: (unityId: number, signal?: AbortSignal) => Promise<DispositivoDeImpressao[]>
+    registrar: (unityId: number, nome: string) => Promise<DispositivoRegistrado>
+    revogar: (unityId: number, deviceId: string) => Promise<{ revogado: boolean }>
   }
   conexao: string
   /** Cursor por loja: cada uma tem o seu, porque `seq` é por unidade. */
@@ -66,14 +96,37 @@ export function Ajustes({
           <div>
             <strong>Agente local</strong>
             <p>
-              {impressao.temAgente
-                ? 'Configurado. A comanda sai sem diálogo.'
-                : 'Não configurado. A comanda abre o diálogo do navegador e alguém precisa confirmar.'}
+              {saudeDoAgente.estado === 'ativo'
+                ? 'Respondendo. A comanda sai sem diálogo.'
+                : saudeDoAgente.estado === 'ausente'
+                  ? 'Configurado, mas não respondeu. Confira se o serviço está rodando na loja — a comanda vai cair no diálogo do navegador.'
+                  : saudeDoAgente.estado === 'verificando'
+                    ? 'Perguntando ao agente…'
+                    : 'Não configurado. A comanda abre o diálogo do navegador e alguém precisa confirmar.'}
             </p>
+            {saudeDoAgente.impressoras.length > 0 && (
+              <ul className="ajustes__impressoras">
+                {saudeDoAgente.impressoras.map((i) => (
+                  <li key={i.nome}>
+                    <Selo tom={i.online ? 'sucesso' : 'perigo'}>
+                      {i.online ? 'ok' : 'sem resposta'}
+                    </Selo>
+                    {i.nome} <span className="ajustes__papel">({i.papel})</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-          <Selo tom={impressao.temAgente ? 'sucesso' : 'atencao'}>
-            {impressao.temAgente ? 'Ativo' : 'Ausente'}
-          </Selo>
+          <div className="ajustes__acoes">
+            <Selo tom={SELO_DO_AGENTE[saudeDoAgente.estado].tom}>
+              {SELO_DO_AGENTE[saudeDoAgente.estado].texto}
+            </Selo>
+            {saudeDoAgente.estado !== 'nao_configurado' && (
+              <Botao enfase="secundaria" onClick={saudeDoAgente.verificar}>
+                Verificar
+              </Botao>
+            )}
+          </div>
         </div>
 
         <div className="ajustes__linha">
@@ -110,6 +163,8 @@ export function Ajustes({
           </div>
         )}
       </PainelDeSecao>
+
+      <Dispositivos api={apiDeImpressao} unityId={unityId} />
 
       <PainelDeSecao titulo="Conexão">
         <div className="ajustes__linha">

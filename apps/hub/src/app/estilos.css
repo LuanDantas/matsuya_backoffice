@@ -3322,3 +3322,68 @@
   justify-content: space-between;
   gap: var(--e-3);
 }
+
+/* ── Agentes de impressão (Ajustes) ─────────────────────────────────────── */
+
+.ajustes__acoes {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  flex-shrink: 0;
+}
+
+/*
+ * A lista de impressoras de um agente. Cada linha carrega um selo de estado à
+ * esquerda, porque é o estado que se procura ao olhar — o nome só confirma
+ * qual delas é.
+ */
+.ajustes__impressoras {
+  list-style: none;
+  margin: var(--e-2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ajustes__impressoras li {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  font-size: var(--texto-sm);
+}
+
+.ajustes__papel {
+  color: var(--texto-fraco);
+}
+
+.ajustes__registro {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--e-3);
+  padding: var(--e-3) var(--e-2);
+}
+
+.ajustes__registro .ui-campo {
+  flex: 1;
+}
+
+/*
+ * O token, para copiar.
+ *
+ * Monoespaçado e com quebra: um token de 43 caracteres numa fonte proporcional
+ * é fácil de copiar pela metade, e metade de um token falha na loja com uma
+ * mensagem que não diz que foi isso.
+ */
+.ajustes__token {
+  width: 100%;
+  font-family: var(--fonte-mono, ui-monospace, monospace);
+  font-size: var(--texto-sm);
+  word-break: break-all;
+  resize: none;
+  padding: var(--e-2);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-2);
+  background: var(--superficie-2);
+  color: var(--texto);
+}

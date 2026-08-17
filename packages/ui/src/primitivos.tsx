@@ -1,4 +1,4 @@
-import type { ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
+import type { ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes, InputHTMLAttributes } from 'react'
 import { Icone, type NomeDoIcone } from './Icone'
 
 /**
@@ -120,6 +120,54 @@ export function CampoTexto({ id, rotulo, ajuda, erro, obrigatorio, ...resto }: P
       </Rotulo>
       <textarea
         id={id}
+        aria-invalid={erro ? true : undefined}
+        aria-describedby={[idDoErro, idDaAjuda].filter(Boolean).join(' ') || undefined}
+        aria-required={obrigatorio || undefined}
+        {...resto}
+      />
+      {erro && (
+        <p id={idDoErro} className="ui-campo__erro" role="alert">
+          <Icone nome="alerta" tamanho={14} />
+          {erro}
+        </p>
+      )}
+      {ajuda && (
+        <p id={idDaAjuda} className="ui-campo__ajuda">
+          {ajuda}
+        </p>
+      )}
+    </div>
+  )
+}
+
+export interface PropsDaLinhaDeTexto extends InputHTMLAttributes<HTMLInputElement> {
+  id: string
+  rotulo: string
+  ajuda?: string
+  erro?: string
+  obrigatorio?: boolean
+}
+
+/**
+ * Entrada de uma linha.
+ *
+ * Existe ao lado de `CampoTexto` (que é `textarea`) porque a diferença importa
+ * para quem usa teclado e leitor de tela: num `textarea`, Enter quebra linha em
+ * vez de enviar o formulário, e um campo de nome que não envia com Enter é o
+ * tipo de atrito que ninguém reporta e todo mundo sente.
+ */
+export function CampoLinha({ id, rotulo, ajuda, erro, obrigatorio, ...resto }: PropsDaLinhaDeTexto) {
+  const idDaAjuda = ajuda ? `${id}-ajuda` : undefined
+  const idDoErro = erro ? `${id}-erro` : undefined
+
+  return (
+    <div className="ui-campo">
+      <Rotulo htmlFor={id} obrigatorio={obrigatorio}>
+        {rotulo}
+      </Rotulo>
+      <input
+        id={id}
+        type="text"
         aria-invalid={erro ? true : undefined}
         aria-describedby={[idDoErro, idDaAjuda].filter(Boolean).join(' ') || undefined}
         aria-required={obrigatorio || undefined}

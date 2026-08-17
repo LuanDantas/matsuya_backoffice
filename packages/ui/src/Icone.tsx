@@ -43,6 +43,7 @@ export type NomeDoIcone =
   | 'capacete'
   | 'som'
   | 'som-cortado'
+  | 'impressora'
 
 const CAMINHOS: Record<NomeDoIcone, string> = {
   check: 'M20 6 9 17l-5-5',
@@ -86,6 +87,8 @@ const CAMINHOS: Record<NomeDoIcone, string> = {
      como volume baixo. */
   som: 'M11 5 6 9H3v6h3l5 4V5ZM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13',
   'som-cortado': 'M11 5 6 9H3v6h3l5 4V5ZM16 9.5l5 5M21 9.5l-5 5',
+  // Térmica de balcão: corpo, bandeja de saída e a fenda do papel.
+  impressora: 'M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M6 14h12v7H6z',
 }
 
 export interface PropsDoIcone extends Omit<SVGProps<SVGSVGElement>, 'children'> {

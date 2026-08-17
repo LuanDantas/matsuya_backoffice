@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Botao, Drawer, Faixa, Icone, Selo } from '@matsuya/ui'
-import { createApiClient, criarApiDePedidos, type PedidoDoQuadro } from '@matsuya/api-client'
+import {
+  createApiClient,
+  criarApiDeImpressao,
+  criarApiDePedidos,
+  type PedidoDoQuadro,
+} from '@matsuya/api-client'
 import { ORDER_ACTION_INFO, type OrderAction } from '@matsuya/contracts'
 import type { useSessao } from '../dados/useSessao'
 import { useQuadro } from '../dados/useQuadro'
@@ -9,6 +14,7 @@ import { useAlertas } from '../som/useAlertas'
 import type { EstadoDoSom } from '../som/alertas'
 import { useFilaOffline } from '../offline/useFilaOffline'
 import { useImpressao } from '../impressao/useImpressao'
+import { contarProblemas, useSaudeDoAgente } from '../impressao/saudeDoAgente'
 import { Reconciliacao } from '../offline/Reconciliacao'
 import { MenuLateral } from './MenuLateral'
 import { SeletorDeLojas } from './SeletorDeLojas'
@@ -119,13 +125,18 @@ export function Casca({
     localStorage.setItem(CHAVE_MODO, modo)
   }, [modo])
 
-  const api = useMemo(() => {
-    const cliente = createApiClient({
-      baseUrl: config.apiBaseUrl,
-      obterToken: () => sessao.token,
-    })
-    return criarApiDePedidos(cliente)
-  }, [sessao.token])
+  const clienteDaApi = useMemo(
+    () =>
+      createApiClient({
+        baseUrl: config.apiBaseUrl,
+        obterToken: () => sessao.token,
+      }),
+    [sessao.token]
+  )
+
+  const api = useMemo(() => criarApiDePedidos(clienteDaApi), [clienteDaApi])
+
+  const apiDeImpressao = useMemo(() => criarApiDeImpressao(clienteDaApi), [clienteDaApi])
 
   const nomesDasUnidades = useMemo(() => {
     const mapa = new Map<number, string>()
@@ -160,6 +171,9 @@ export function Casca({
     if (som.estado === 'bloqueado') await som.destravar()
   }, [som])
   const impressao = useImpressao(nomeDaUnidade)
+  const saudeDoAgente = useSaudeDoAgente()
+
+  const problemasDeImpressao = contarProblemas(saudeDoAgente)
   const fila = useFilaOffline(unidadeFoco, api, quadro.recarregar)
   const acoes = useAcoesDoPedido({
     api,
@@ -412,6 +426,34 @@ export function Casca({
             />
 
             {/*
+              O indicador de impressão, que o ADR-0017 §7.3 pede: vermelho com
+              contagem quando há falha.
+
+              O ponto dele é acender **antes** do primeiro pedido falhar. Sem
+              ele, a loja descobre a impressora morta pelo papel que não saiu —
+              já com o pedido pronto e o entregador esperando. Só aparece quando
+              há agente configurado: numa loja que imprime pelo navegador, um
+              indicador permanentemente vermelho vira ruído que se aprende a
+              ignorar.
+            */}
+            {saudeDoAgente.estado !== 'nao_configurado' && (
+              <BotaoComContador
+                icone="impressora"
+                rotulo="Impressão"
+                dica={
+                  saudeDoAgente.estado === 'ausente'
+                    ? 'Agente de impressão sem resposta'
+                    : problemasDeImpressao > 0
+                      ? 'Há comanda que não saiu'
+                      : 'Impressão em dia'
+                }
+                contagem={problemasDeImpressao}
+                ativo={saudeDoAgente.estado === 'ausente' || problemasDeImpressao > 0}
+                aoClicar={() => definirTela('ajustes')}
+              />
+            )}
+
+            {/*
               O som virou o terceiro quadrado, ao lado dos outros dois.
               Antes era um botão de texto que só existia quando havia algo
               errado — e sumia quando o som estava bom, deixando o operador sem
@@ -614,6 +656,9 @@ export function Casca({
               pendentes: impressao.fila.length,
               tentarDeNovo: impressao.tentarDeNovo,
             }}
+            saudeDoAgente={saudeDoAgente}
+            unityId={unidadeFoco}
+            apiDeImpressao={apiDeImpressao}
             conexao={ROTULO_DA_CONEXAO[quadro.conexao] ?? quadro.conexao}
             cursores={quadro.cursores}
             nomesDasUnidades={nomesDasUnidades}
