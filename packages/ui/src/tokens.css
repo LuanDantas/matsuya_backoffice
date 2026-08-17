@@ -210,17 +210,25 @@
   --aceite-trilho: #f7d3d6;
 
   /*
-   * O verde da ação primária do cartão.
+   * A ação primária do cartão.
    *
-   * Mais vivo que `--marca`, e é de propósito: o botão do cartão é o alvo que
-   * o operador acerta sem olhar, dezenas de vezes por turno, e precisa saltar
-   * da coluna. A referência usa #52A870, que dá 2.92:1 com texto branco e não
-   * sobrevive ao reflexo de janela num tablet de cozinha. #27864E é o verde
-   * mais claro que ainda passa em AA com branco (4.56:1) — a olho nu, a mesma
-   * cor; ao sol, a diferença entre ler e adivinhar.
+   * Era verde enquanto a marca era esmeralda, e a razão registrada aqui era
+   * "mais vivo que `--marca`" — ou seja, ele **sempre foi da família da
+   * marca**, só um degrau acima. Com a marca vermelha, essa razão se inverteu:
+   * o verde deixou de ser um tom mais vivo do mesmo e virou uma cor órfã, que
+   * é o que se vê num cartão hoje.
+   *
+   * Continua um degrau acima da marca, agora em vermelho. O botão do cartão é
+   * o alvo que o operador acerta sem olhar, dezenas de vezes por turno, e
+   * precisa saltar da coluna.
+   *
+   * Não se confunde com o alarme pela mesma regra que separa a marca dele:
+   * **valor**. O alarme é vinho quase preto num chip pequeno; a ação é vermelho
+   * claro num retângulo grande. Forma e luminosidade diferentes, no mesmo
+   * cartão.
    */
-  --acao: #27864e;
-  --acao-hover: #206b3f;
+  --acao: #d81f2a;
+  --acao-hover: #b8151f;
   --acao-texto: #ffffff;
 
   /*
@@ -346,9 +354,10 @@
    * fica claro e o texto escuro — 8.41:1, e a pílula continua sendo a coisa
    * mais viva da coluna, que é o que ela precisa ser.
    */
-  --acao: #34d399;
-  --acao-hover: #6ee7b7;
-  --acao-texto: #05261a;
+  /* No escuro inverte, como a marca: cor clara com texto escuro. */
+  --acao: #ff8a94;
+  --acao-hover: #ffb0b7;
+  --acao-texto: #3d0a0f;
 
   /* Idênticos ao tema claro de propósito — ver a nota lá em cima. */
   --painel-fundo: #0b0b0d;
