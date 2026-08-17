@@ -88,6 +88,20 @@
   --marca-forte: #9a0e19;
   --marca-suave: #fdecee;
 
+  /*
+   * "Deu certo" — verde, e agora com token próprio.
+   *
+   * O tom `sucesso` sempre apontou para `--marca`, e funcionava enquanto a
+   * marca era esmeralda. Com a marca vermelha, o selo "Ao vivo" do cabeçalho
+   * passou a ser vermelho — dizendo "atenção" onde queria dizer "está tudo
+   * certo". Verde é convenção forte demais para conexão saudável; a marca é que
+   * estava emprestando cor a um significado que não é dela.
+   *
+   * Os valores são os do antigo par de marca, que já passavam no verificador.
+   */
+  --sucesso: #036147;
+  --sucesso-suave: #e6f6ef;
+
   --info: #1d4ed8;
   --info-suave: #e6edfd;
 
@@ -109,7 +123,7 @@
    * não precisa competir com nada para ser vista. Espalhar esse peso por outros
    * estados destruiria justamente o que faz este funcionar.
    */
-  --atraso-fundo: #4a0d10;
+  --atraso-fundo: #c1121f;
   --atraso-texto: #ffffff;
 
   /*
@@ -123,7 +137,7 @@
    * vermelho claro, dava **2.77:1** — e passou despercebido justamente por a
    * cor do texto estar fora dos tokens, fora do alcance do verificador.
    */
-  --alarme-fundo: #8e0b14;
+  --alarme-fundo: #c1121f;
   --alarme-texto: #ffffff;
 
   /*
@@ -296,6 +310,9 @@
   --marca-forte: #d63b4a;
   --marca-suave: #3a1216;
 
+  --sucesso: #10b981;
+  --sucesso-suave: #06301f;
+
   --info: #60a5fa;
   --info-suave: #0e2438;
 
@@ -309,13 +326,13 @@
   --urgente: #ff9fb0;
   --urgente-suave: #3d1622;
 
-  --atraso-fundo: #3d0c0c;
+  --atraso-fundo: #c1121f;
   --atraso-texto: #ffffff;
 
   /* Mesma inversão do verde de ação: no escuro o vermelho sobe e o texto
      desce. 6.60:1, contra os 2.77:1 do branco cravado que havia antes. */
-  --alarme-fundo: #ffa8a8;
-  --alarme-texto: #2b0a0a;
+  --alarme-fundo: #c1121f;
+  --alarme-texto: #ffffff;
 
   /* A dica escura nao muda: preta ja e a cor certa nos dois temas. A clara
      sobe para a superficie do tema, senao vira um bloco branco no escuro. */

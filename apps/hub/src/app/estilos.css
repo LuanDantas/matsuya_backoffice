@@ -2980,6 +2980,13 @@
   background: var(--farol-ok-ponto);
 }
 
+/*
+ * O ponto pulsa nos **dois** estados.
+ *
+ * Só o verde pulsava, e isso invertia a hierarquia: o farol em repouso chamava
+ * atenção e o farol com alerta ficava parado. Agora os dois pulsam, e o que os
+ * separa é ritmo e cor — o alerta é mais rápido, como o distintivo de atraso.
+ */
 .barra__farol[data-estado='ok'] .barra__farol-ponto::after {
   content: '';
   position: absolute;
@@ -2987,6 +2994,17 @@
   border-radius: 50%;
   background: var(--farol-ok-ponto);
   animation: farol-pulsar 2.4s ease-out infinite;
+}
+
+.barra__farol[data-estado='alerta'] .barra__farol-ponto::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--farol-chip-fundo);
+  /* 1,8 s: o mesmo ritmo do distintivo de atraso. Mais rápido que o repouso,
+     porque aqui é "olhe para mim" e não "estou aqui". */
+  animation: farol-pulsar 1.8s ease-out infinite;
 }
 
 /*
@@ -3001,7 +3019,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .barra__farol[data-estado='ok'] .barra__farol-ponto::after { animation: none; content: none; }
+  .barra__farol .barra__farol-ponto::after { animation: none; content: none; }
+  .farol__ponto-titulo::after { animation: none; content: none; }
 }
 
 .barra__farol-setas {
@@ -3087,7 +3106,15 @@
   transition: border-color var(--duracao-rapida) var(--curva);
 }
 
-.contador:hover { border-color: var(--marca); color: var(--texto); }
+/*
+ * Cinza mais escuro, e não a cor de marca.
+ *
+ * Estes botões ficam ao lado do farol e dos contadores de alerta, e no
+ * cabeçalho a marca virou vermelho — hover vermelho ali diz "algo aconteceu"
+ * quando só diz "o ponteiro está em cima". Um degrau de cinza basta para
+ * responder ao ponteiro sem competir com o que é sinal.
+ */
+.contador:hover { border-color: var(--texto-apagado); color: var(--texto); }
 
 .contador__distintivo {
   position: absolute;
@@ -3185,6 +3212,7 @@
 }
 
 .farol__ponto-titulo {
+  position: relative;
   width: 22px;
   height: 22px;
   border-radius: 50%;
@@ -3193,6 +3221,31 @@
 }
 
 .farol__ponto-titulo[data-estado='alerta'] { background: var(--f-alerta); }
+
+/*
+ * Com o painel aberto, o ponto do título continua pulsando.
+ *
+ * Abrir o farol não resolve o alerta — resolve a dúvida sobre qual é. Parar o
+ * pulso ao expandir daria a impressão contrária, de que a leitura já bastou.
+ *
+ * Sem `z-index`, como o ponto do cabeçalho: a onda é desenhada por cima e se
+ * apaga ao crescer. Mandá-la para trás com `z-index: -1` a esconderia — o
+ * painel é `position: fixed` e cria contexto de empilhamento, então o negativo
+ * a levaria para trás do fundo do próprio painel.
+ */
+.farol__ponto-titulo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--f-ok);
+  animation: farol-pulsar 2.4s ease-out infinite;
+}
+
+.farol__ponto-titulo[data-estado='alerta']::after {
+  background: var(--f-alerta);
+  animation-duration: 1.8s;
+}
 
 .farol__titulo {
   display: flex;

@@ -67,7 +67,7 @@ const PARES = [
   ['botão primário em hover', 'texto-inverso', 'marca-hover', 4.5],
   ['botão destrutivo (texto sobre superfície 2)', 'perigo', 'superficie-2', 4.5],
   ['botão destrutivo em hover', 'perigo', 'perigo-suave', 4.5],
-  ['selo sucesso', 'marca', 'marca-suave', 4.5],
+  ['selo sucesso', 'sucesso', 'sucesso-suave', 4.5],
   ['selo informativo', 'info', 'info-suave', 4.5],
   ['selo atenção', 'atencao', 'atencao-suave', 4.5],
   ['selo perigo', 'perigo', 'perigo-suave', 4.5],

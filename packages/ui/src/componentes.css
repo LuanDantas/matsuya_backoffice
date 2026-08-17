@@ -155,7 +155,7 @@
 }
 
 .ui-selo[data-tom='informativo'] { color: var(--info); border-color: var(--info); background: var(--info-suave); }
-.ui-selo[data-tom='sucesso']     { color: var(--marca); border-color: var(--marca); background: var(--marca-suave); }
+.ui-selo[data-tom='sucesso']     { color: var(--sucesso); border-color: var(--sucesso); background: var(--sucesso-suave); }
 .ui-selo[data-tom='atencao']     { color: var(--atencao); border-color: var(--atencao); background: var(--atencao-suave); }
 .ui-selo[data-tom='perigo']      { color: var(--perigo); border-color: var(--perigo); background: var(--perigo-suave); }
 .ui-selo[data-tom='urgente']     { color: var(--urgente); border-color: var(--urgente); background: var(--urgente-suave); }
@@ -283,7 +283,7 @@
 
 .ui-faixa[data-tom='informativo'] { border-left-color: var(--info); background: var(--info-suave); }
 .ui-faixa[data-tom='atencao']     { border-left-color: var(--atencao); background: var(--atencao-suave); }
-.ui-faixa[data-tom='sucesso']     { border-left-color: var(--marca); background: var(--marca-suave); }
+.ui-faixa[data-tom='sucesso']     { border-left-color: var(--sucesso); background: var(--sucesso-suave); }
 .ui-faixa[data-tom='perigo']      { border-left-color: var(--perigo); background: var(--perigo-suave); }
 .ui-faixa[data-tom='urgente']     { border-left-color: var(--urgente); background: var(--urgente-suave); }
 
@@ -479,7 +479,7 @@
   .ui-pilula[data-contando]::after { animation: none; content: none; }
 }
 
-.ui-pilula[data-tom='sucesso'] { color: var(--marca); }
+.ui-pilula[data-tom='sucesso'] { color: var(--sucesso); }
 .ui-pilula[data-tom='perigo'] { color: var(--perigo); }
 
 /*
@@ -692,16 +692,28 @@ button.ui-painel__alerta[aria-pressed='true'] {
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
+  /*
+   * Entrada lenta e suave: 220ms de fade, e o atraso mora na regra de hover.
+   *
+   * O balão aparecendo depressa vira ruído para quem só está atravessando a
+   * barra com o ponteiro a caminho de outro botão — e são cinco botões
+   * seguidos ali.
+   */
   transition:
-    opacity 120ms ease-out,
-    visibility 120ms;
+    opacity 220ms ease-out,
+    visibility 220ms;
 }
 
 [data-dica]:hover::after,
 [data-dica]:focus-visible::after {
   opacity: 1;
   visibility: visible;
-  transition-delay: 250ms;
+  /*
+   * 600ms de espera. O intervalo é o que distingue "parei aqui para entender"
+   * de "passei por cima": abaixo disso, atravessar a barra acende um balão
+   * atrás do outro.
+   */
+  transition-delay: 600ms;
 }
 
 /*
