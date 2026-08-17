@@ -1,4 +1,10 @@
-import type { ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes, InputHTMLAttributes } from 'react'
+import type {
+  InputHTMLAttributes,
+  ReactNode,
+  Ref,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from 'react'
 import { Icone, type NomeDoIcone } from './Icone'
 
 /**
@@ -146,6 +152,13 @@ export interface PropsDaLinhaDeTexto extends InputHTMLAttributes<HTMLInputElemen
   ajuda?: string
   erro?: string
   obrigatorio?: boolean
+  /**
+   * Declarada porque `InputHTMLAttributes` não a inclui, embora o React 19 já
+   * trate `ref` como prop comum de componente de função. Sem ela, levar o foco
+   * ao primeiro campo inválido — que é o que transforma a mensagem de erro em
+   * instrução — não compila.
+   */
+  ref?: Ref<HTMLInputElement>
 }
 
 /**

@@ -179,6 +179,19 @@
   margin-left: 2px;
 }
 
+/*
+ * `input` entrou junto com `CampoLinha`.
+ *
+ * Antes a regra cobria só `select` e `textarea`, e quem precisava de entrada de
+ * uma linha estilizava por fora — a tela de entrada tinha uma `.entrada__campo`
+ * própria só para isto. Um componente compartilhado que não se estiliza sozinho
+ * é uma armadilha: funciona na primeira tela, e na segunda alguém descobre o
+ * campo sem borda depois de subir.
+ *
+ * Os 16 px não são estética: abaixo disso o iOS dá zoom ao focar o campo e
+ * desloca a tela do quiosque, e alguém precisa perceber para arrumar.
+ */
+.ui-campo input,
 .ui-campo select,
 .ui-campo textarea {
   min-height: var(--alvo);
@@ -192,10 +205,17 @@
   line-height: var(--linha-normal);
 }
 
+/* Placeholder em tom apagado — o par `texto-apagado`/`superficie-base` está
+   no verificador de contraste com mínimo de elemento gráfico. */
+.ui-campo input::placeholder {
+  color: var(--texto-apagado);
+}
+
 .ui-campo textarea {
   resize: vertical;
 }
 
+.ui-campo input[aria-invalid='true'],
 .ui-campo select[aria-invalid='true'],
 .ui-campo textarea[aria-invalid='true'] {
   border-color: var(--perigo);

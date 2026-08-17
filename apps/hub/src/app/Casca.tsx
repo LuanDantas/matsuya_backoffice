@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Botao, Drawer, Faixa, Icone, Selo } from '@matsuya/ui'
 import {
-  createApiClient,
   criarApiDeImpressao,
   criarApiDePedidos,
   type PedidoDoQuadro,
 } from '@matsuya/api-client'
+import { criarCliente } from '../dados/cliente'
 import { ORDER_ACTION_INFO, type OrderAction } from '@matsuya/contracts'
 import type { useSessao } from '../dados/useSessao'
 import { useQuadro } from '../dados/useQuadro'
@@ -127,10 +127,7 @@ export function Casca({
 
   const clienteDaApi = useMemo(
     () =>
-      createApiClient({
-        baseUrl: config.apiBaseUrl,
-        obterToken: () => sessao.token,
-      }),
+      criarCliente(() => sessao.token),
     [sessao.token]
   )
 

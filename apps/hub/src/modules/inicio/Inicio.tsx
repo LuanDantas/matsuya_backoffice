@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Botao, EstadoVazio, Faixa, Icone, PainelDeSecao } from '@matsuya/ui'
 import {
-  createApiClient,
   criarApiDePainel,
   FalhaDaApi,
   type PainelDaUnidade,
 } from '@matsuya/api-client'
+import { criarCliente } from '../../dados/cliente'
 import { config } from '../../app/config'
 import { decorrido } from '../../app/formato'
 
@@ -49,11 +49,7 @@ export function Inicio({
   const [erro, definirErro] = useState<string | null>(null)
 
   const api = useMemo(() => {
-    const cliente = createApiClient({
-      baseUrl: config.apiBaseUrl,
-      obterToken: () => token,
-    })
-    return criarApiDePainel(cliente)
+    return criarApiDePainel(criarCliente(() => token))
   }, [token])
 
   useEffect(() => {

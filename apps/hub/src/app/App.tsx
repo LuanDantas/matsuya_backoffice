@@ -3,6 +3,7 @@ import { Botao, Faixa } from '@matsuya/ui'
 import { useSessao } from '../dados/useSessao'
 import { Casca } from './Casca'
 import { Entrada } from '../modules/sessao/Entrada'
+import { RecuperarSenha } from '../modules/sessao/RecuperarSenha'
 import { EscolhaDeUnidade } from '../modules/sessao/EscolhaDeUnidade'
 
 /**
@@ -35,6 +36,7 @@ function useTique(): number {
 export function App() {
   const sessao = useSessao()
   const agora = useTique()
+  const [recuperando, definirRecuperando] = useState(false)
 
   if (sessao.estado === 'verificando') {
     return (
@@ -46,7 +48,17 @@ export function App() {
   }
 
   if (sessao.estado === 'anonima' || !sessao.identidade) {
-    return <Entrada aoEntrar={sessao.entrar} erro={sessao.erro} />
+    // Estado local e não rota: quem troca a senha às onze da noite não precisa
+    // de histórico do navegador nem de link compartilhável.
+    return recuperando ? (
+      <RecuperarSenha aoVoltar={() => definirRecuperando(false)} />
+    ) : (
+      <Entrada
+        aoEntrar={sessao.entrar}
+        aoEsquecerSenha={() => definirRecuperando(true)}
+        erro={sessao.erro}
+      />
+    )
   }
 
   if (sessao.estado === 'falha') {

@@ -44,6 +44,8 @@ export type NomeDoIcone =
   | 'som'
   | 'som-cortado'
   | 'impressora'
+  | 'olho'
+  | 'olho-cortado'
 
 const CAMINHOS: Record<NomeDoIcone, string> = {
   check: 'M20 6 9 17l-5-5',
@@ -87,6 +89,13 @@ const CAMINHOS: Record<NomeDoIcone, string> = {
      como volume baixo. */
   som: 'M11 5 6 9H3v6h3l5 4V5ZM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13',
   'som-cortado': 'M11 5 6 9H3v6h3l5 4V5ZM16 9.5l5 5M21 9.5l-5 5',
+  // Ver e ocultar senha. O cortado repete o traço do `wifi-cortado`: a mesma
+  // diagonal significa "desligado" em todo o conjunto, e quem já viu uma
+  // entende a outra sem legenda.
+  olho: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
+  'olho-cortado':
+    'M9.9 5.2A10.5 10.5 0 0 1 12 5c6.4 0 10 7 10 7a18 18 0 0 1-3.1 4M6.2 6.7A18 18 0 0 0 2 12s3.6 7 10 7a10.4 10.4 0 0 0 4-.8M10 10a3 3 0 0 0 4 4M2 2l20 20',
+
   // Térmica de balcão: corpo, bandeja de saída e a fenda do papel.
   impressora: 'M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M6 14h12v7H6z',
 }

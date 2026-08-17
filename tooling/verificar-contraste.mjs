@@ -58,6 +58,12 @@ const PARES = [
   ['texto fraco sobre superfície 1', 'texto-fraco', 'superficie-1', 4.5],
   ['texto fraco sobre superfície 2', 'texto-fraco', 'superficie-2', 4.5],
   ['botão primário (texto sobre marca)', 'texto-inverso', 'marca', 4.5],
+  // Painel da marca na entrada. Conferido nas duas paradas do gradiente,
+  // porque um texto que passa no topo pode reprovar no rodapé.
+  ['entrada: título sobre o topo do painel', 'entrada-painel-texto', 'entrada-painel-de', 4.5],
+  ['entrada: título sobre a base do painel', 'entrada-painel-texto', 'entrada-painel-ate', 4.5],
+  ['entrada: apoio sobre o topo do painel', 'entrada-painel-fraco', 'entrada-painel-de', 4.5],
+  ['entrada: apoio sobre a base do painel', 'entrada-painel-fraco', 'entrada-painel-ate', 4.5],
   ['botão primário em hover', 'texto-inverso', 'marca-hover', 4.5],
   ['botão destrutivo (texto sobre superfície 2)', 'perigo', 'superficie-2', 4.5],
   ['botão destrutivo em hover', 'perigo', 'perigo-suave', 4.5],

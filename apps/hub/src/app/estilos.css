@@ -920,79 +920,215 @@
 /* ── Entrada e escolha de unidade ───────────────────────────────────────── */
 
 .entrada {
+  display: grid;
+  /*
+   * O painel da marca fica em fração menor que o formulário: ele é presença,
+   * não conteúdo. Metade a metade faria a marca competir com a única coisa que
+   * a pessoa veio fazer aqui.
+   */
+  grid-template-columns: 5fr 7fr;
+  min-height: 100dvh;
+}
+
+/*
+ * O painel da marca — a única superfície com gradiente do sistema.
+ *
+ * A exceção é deliberada e está documentada nos tokens: em toda outra tela a
+ * cor tem significado operacional (vermelho é atraso, âmbar é aperto), e um
+ * painel decorativo competiria com um pedido estourando. Esta é a única tela em
+ * que não há pedido nenhum.
+ */
+.entrada__marca {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-8);
+  justify-content: center;
+  padding: var(--e-10) var(--e-8);
+  padding-top: max(var(--e-10), env(safe-area-inset-top));
+  padding-left: max(var(--e-8), env(safe-area-inset-left));
+  background: linear-gradient(
+    160deg,
+    var(--entrada-painel-de) 0%,
+    var(--entrada-painel-ate) 100%
+  );
+  color: var(--entrada-painel-texto);
+}
+
+.entrada__marca-topo {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+}
+
+.entrada__marca-nome {
+  margin: 0;
+  font-size: var(--texto-xl);
+  font-weight: var(--peso-forte);
+  line-height: var(--linha-apertada);
+}
+
+.entrada__marca-rede {
+  margin: 0;
+  font-size: var(--texto-sm);
+  color: var(--entrada-painel-fraco);
+}
+
+.entrada__marca-frase {
+  margin: 0;
+  max-width: 12ch;
+  font-size: var(--texto-2xl);
+  font-weight: var(--peso-forte);
+  line-height: var(--linha-apertada);
+}
+
+.entrada__marca-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  font-size: var(--texto-base);
+  color: var(--entrada-painel-fraco);
+}
+
+/* Marcador desenhado, e não `list-style`: o disco padrão herda a cor do texto
+   e some no gradiente escuro em alguns navegadores. */
+.entrada__marca-lista li {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+}
+
+.entrada__marca-lista li::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: var(--raio-total);
+  background: currentColor;
+}
+
+.entrada__area {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100dvh;
-  padding: var(--e-4);
+  padding: var(--e-6) var(--e-4);
+  padding-bottom: max(var(--e-6), env(safe-area-inset-bottom));
+  background: var(--superficie-base);
 }
 
-.entrada__cartao {
+.entrada__forma {
   width: 100%;
   max-width: 380px;
   display: flex;
   flex-direction: column;
   gap: var(--e-4);
-  padding: var(--e-6);
-  background: var(--superficie-1);
-  border: 1px solid var(--borda);
-  border-radius: var(--raio-3);
 }
 
-.entrada__marca {
-  display: flex;
-  align-items: center;
-  gap: var(--e-3);
-  color: var(--marca);
-}
-
-.entrada__marca h1 {
+.entrada__cabecalho h1 {
   margin: 0;
-  font-size: var(--texto-xl);
+  font-size: var(--texto-2xl);
   line-height: var(--linha-apertada);
-  color: var(--texto);
 }
 
-.entrada__marca p {
-  margin: 0;
+.entrada__cabecalho p {
+  margin: var(--e-1) 0 0;
   font-size: var(--texto-sm);
   color: var(--texto-fraco);
 }
 
 /*
- * Atalho de desenvolvimento, separado do formulário por uma linha.
- *
- * A separação é o ponto: ele não é uma segunda forma de entrar, é uma muleta
- * de bancada. Colado no botão real, viraria a opção padrão e alguém acabaria
- * usando o admin para testar o que devia ser testado com outro papel.
+ * O botão de ver a senha fica dentro do campo, e o campo ganha espaço à direita
+ * para ele. Colocá-lo ao lado empurraria o input e quebraria o alinhamento com
+ * o campo de e-mail logo acima.
  */
-.entrada__atalho {
+.entrada__senha {
+  position: relative;
+}
+
+.entrada__senha input {
+  padding-right: calc(var(--alvo) + var(--e-2));
+}
+
+.entrada__olho {
+  position: absolute;
+  /*
+   * Ancorado no topo do input, e não centralizado no bloco: o campo cresce para
+   * baixo quando aparece mensagem de erro ou de ajuda, e centralizar faria o
+   * botão descer junto, saindo de dentro do input.
+   *
+   * A conta é a altura do rótulo mais o gap do `.ui-campo`, e vem dos tokens em
+   * vez de um número cravado — se a escala de tipo mudar, o botão acompanha em
+   * vez de sair do lugar sem ninguém notar.
+   */
+  top: calc(var(--texto-sm) * var(--linha-normal) + var(--e-2));
+  right: 0;
+  width: var(--alvo);
+  height: var(--alvo);
   display: flex;
-  flex-direction: column;
-  gap: var(--e-2);
-  margin-top: var(--e-2);
-  padding-top: var(--e-4);
-  border-top: 1px dashed var(--borda-forte);
-}
-
-.entrada__aviso {
-  margin: 0;
-  font-size: var(--texto-xs);
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: none;
   color: var(--texto-fraco);
-  text-align: center;
+  cursor: pointer;
+  border-radius: var(--raio-1);
+  transition: color var(--duracao-rapida) var(--curva);
 }
 
-.entrada__campo {
-  min-height: var(--alvo);
-  padding: var(--e-3);
-  border: 1px solid var(--borda-forte);
-  border-radius: var(--raio-1);
-  background: var(--superficie-base);
+.entrada__olho:hover {
   color: var(--texto);
-  font-family: inherit;
-  /* 16 px evita o zoom automático do iOS ao focar o campo — que num quiosque
-     deixa a tela deslocada até alguém perceber. */
-  font-size: var(--texto-base);
+}
+
+/*
+ * Ação secundária como texto, não como botão.
+ *
+ * "Esqueci minha senha" concorrendo visualmente com "Entrar" faria a tela ter
+ * duas chamadas de mesmo peso — e a que interessa noventa e nove vezes em cem é
+ * a primeira. Mantém os 44 px de alvo mesmo parecendo um link.
+ */
+.entrada__link {
+  min-height: var(--alvo);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--texto-fraco);
+  font: inherit;
+  font-size: var(--texto-sm);
+  text-align: center;
+  cursor: pointer;
+  transition: color var(--duracao-rapida) var(--curva);
+}
+
+.entrada__link:hover {
+  color: var(--marca);
+  text-decoration: underline;
+}
+
+/*
+ * Abaixo de 860 px o painel vira uma faixa no topo, com o essencial.
+ *
+ * Some a lista de recursos, não o formulário: num tablet em retrato o que
+ * importa é o campo estar acima da dobra, e a lista é a parte que a pessoa não
+ * veio ler.
+ */
+@media (max-width: 860px) {
+  .entrada {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .entrada__marca {
+    gap: var(--e-4);
+    padding: var(--e-6) var(--e-4);
+    padding-top: max(var(--e-6), env(safe-area-inset-top));
+  }
+
+  .entrada__marca-frase,
+  .entrada__marca-lista {
+    display: none;
+  }
 }
 
 .escolha {

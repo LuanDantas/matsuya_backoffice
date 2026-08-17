@@ -142,6 +142,30 @@
   --farol-ok-ponto: #0f9d58;
 
   /*
+   * O painel da marca na tela de entrada.
+   *
+   * É a **única** superfície com gradiente em todo o sistema, e a exceção é
+   * deliberada: o Hub não usa gradiente nem sombra em lugar nenhum porque
+   * elevação aqui se faz com borda e degrau de superfície. A tela de entrada é
+   * a única que não está a serviço de uma tarefa em andamento — é onde a marca
+   * pode ocupar espaço sem competir com um pedido atrasado na tela.
+   *
+   * Idênticos nos dois temas, pelo mesmo motivo de `--painel-*`: é uma
+   * superfície pintada, como papel de marca. Inverter no escuro criaria um
+   * terceiro estado para manter e faria a marca mudar de cor conforme a hora
+   * do dia.
+   *
+   * Branco sobre a parada clara dá 7,49:1; sobre a escura, 14,66:1. O texto
+   * secundário é verde-claro em vez de branco esmaecido: opacidade sobre
+   * gradiente muda de contraste conforme a posição, e o que passa em cima
+   * reprova embaixo.
+   */
+  --entrada-painel-de: #036147;
+  --entrada-painel-ate: #012f23;
+  --entrada-painel-texto: #ffffff;
+  --entrada-painel-fraco: #a7f3d0;
+
+  /*
    * O "você está aqui" do menu lateral.
    *
    * Par próprio, e não `--perigo` reaproveitado, apesar de a cor ser vizinha.
@@ -281,6 +305,12 @@
 
   /* No escuro a pílula é escura, então o ponto pode subir: 6,96:1. */
   --farol-ok-ponto: #34d399;
+
+  /* Idênticos ao claro — ver a nota no bloco claro. */
+  --entrada-painel-de: #036147;
+  --entrada-painel-ate: #012f23;
+  --entrada-painel-texto: #ffffff;
+  --entrada-painel-fraco: #a7f3d0;
 
   --nav-ativo: #f87171;
   --nav-ativo-suave: #3a1414;

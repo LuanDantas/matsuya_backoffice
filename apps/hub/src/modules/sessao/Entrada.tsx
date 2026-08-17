@@ -1,159 +1,183 @@
-import { useState } from 'react'
-import { Botao, Faixa, Icone } from '@matsuya/ui'
-import { config } from '../../app/config'
+import { useRef, useState } from 'react'
+import { Botao, CampoLinha, Faixa, Icone } from '@matsuya/ui'
+import {
+  mensagemDeFalha,
+  primeiroCampoInvalido,
+  validarCredenciais,
+  type ErrosDoFormulario,
+} from './credenciais'
 
 /**
- * Entrada no Hub.
+ * A entrada do Hub.
  *
- * Provisória por natureza — a API ainda não tem fluxo de login próprio —, e o
- * texto na tela diz isso. Uma tela provisória que se disfarça de definitiva é
- * como uma gambiarra sobrevive por dois anos.
- */
-
-/**
- * Credenciais do seed local, para o atalho de desenvolvimento.
+ * ## O que ela substitui
  *
- * Ficam aqui sem cerimônia porque é o que são: o usuário semeado no banco de
- * desenvolvimento, com senha que está no seeder versionado. Não há segredo a
- * proteger — o que precisa de proteção é isto **não existir em produção**, e
- * quem garante isso é o `import.meta.env.DEV` abaixo, não o sigilo da senha.
+ * Um campo onde se colava um JWT, com um atalho de desenvolvimento que entrava
+ * como admin usando credenciais escritas no arquivo. Os dois saíram — inclusive
+ * o atalho, inclusive em desenvolvimento. Um token colado não expira à vista de
+ * ninguém, não é revogável por pessoa, e termina anotado em papel no monitor do
+ * balcão.
+ *
+ * ## O painel da esquerda
+ *
+ * É a única superfície com gradiente do sistema inteiro, e a exceção é
+ * deliberada: esta é a única tela que não está a serviço de uma tarefa em
+ * andamento. Em todas as outras, cor tem significado operacional — vermelho é
+ * atraso, âmbar é aperto — e um painel decorativo competiria com um pedido
+ * estourando. Aqui não há pedido nenhum.
+ *
+ * Não há imagem nem logotipo porque não existe nenhum no repositório: a marca é
+ * tipográfica. É também o que mantém a tela abrindo com a internet da loja
+ * ruim, que é quando alguém mais precisa entrar.
+ *
+ * ## Acessibilidade que a tela anterior não tinha
+ *
+ * Rótulo visível em cada campo (não placeholder, que some ao digitar e leva
+ * junto a única indicação do que era aquilo), erro anunciado com `role="alert"`
+ * junto do campo, `autocomplete` correto para o gerenciador de senhas do tablet
+ * funcionar, e foco levado ao primeiro campo com problema depois de um erro —
+ * senão quem usa teclado precisa procurar onde foi.
  */
-const ATALHO_DE_DEV = {
-  email: 'admin@matsuya.com.br',
-  senha: 'admin123',
-}
-
 export function Entrada({
   aoEntrar,
+  aoEsquecerSenha,
   erro,
 }: {
-  aoEntrar: (token: string) => void
+  aoEntrar: (email: string, senha: string) => Promise<void>
+  aoEsquecerSenha: () => void
+  /** Erro vindo da sessão, ex.: "Sua sessão expirou." */
   erro: string | null
 }) {
-  const [token, definirToken] = useState('')
-  const [entrandoDireto, definirEntrandoDireto] = useState(false)
-  const [erroDoAtalho, definirErroDoAtalho] = useState<string | null>(null)
+  const [email, definirEmail] = useState('')
+  const [senha, definirSenha] = useState('')
+  const [mostrarSenha, definirMostrarSenha] = useState(false)
+  const [errosDoCampo, definirErrosDoCampo] = useState<ErrosDoFormulario>({})
+  const [erroDoServidor, definirErroDoServidor] = useState<string | null>(null)
+  const [entrando, definirEntrando] = useState(false)
 
-  function enviar(evento: React.FormEvent) {
+  const campoDeEmail = useRef<HTMLInputElement>(null)
+  const campoDeSenha = useRef<HTMLInputElement>(null)
+
+  const enviar = async (evento: React.FormEvent) => {
     evento.preventDefault()
-    if (token.trim()) aoEntrar(token.trim())
-  }
+    if (entrando) return
 
-  /**
-   * Busca um token com as credenciais do seed e entra.
-   *
-   * Bate em `/auth/login`, que mora na raiz e não sob `/api/v1` — é rota do
-   * roteador antigo, congelado. Daí a URL sair de `socketUrl`, que é a origem
-   * da API, em vez de `apiBaseUrl`.
-   */
-  async function entrarComoAdmin() {
-    definirEntrandoDireto(true)
-    definirErroDoAtalho(null)
+    const erros = validarCredenciais({ email, senha })
+    definirErrosDoCampo(erros)
+    definirErroDoServidor(null)
 
+    const invalido = primeiroCampoInvalido(erros)
+    if (invalido) {
+      // Levar o foco é o que transforma a mensagem em instrução. Sem isso, quem
+      // usa teclado lê o erro e precisa procurar onde ele é.
+      ;(invalido === 'email' ? campoDeEmail : campoDeSenha).current?.focus()
+      return
+    }
+
+    definirEntrando(true)
     try {
-      const resposta = await fetch(`${config.socketUrl}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: ATALHO_DE_DEV.email,
-          password: ATALHO_DE_DEV.senha,
-        }),
-      })
-
-      const corpo = (await resposta.json().catch(() => null)) as
-        | { token?: string; message?: string }
-        | null
-
-      if (!resposta.ok || !corpo?.token) {
-        definirErroDoAtalho(
-          corpo?.message ?? 'A API respondeu, mas sem token. O seed já rodou?'
-        )
-        return
-      }
-
-      aoEntrar(corpo.token)
-    } catch {
-      definirErroDoAtalho(`Sem resposta da API em ${config.socketUrl}. Ela está de pé?`)
+      await aoEntrar(email.trim(), senha)
+    } catch (falha) {
+      definirErroDoServidor(mensagemDeFalha(falha))
+      // A senha é o campo que a pessoa vai corrigir; o e-mail ela costuma
+      // acertar. Selecionar o conteúdo poupa o apagar caractere a caractere.
+      campoDeSenha.current?.focus()
+      campoDeSenha.current?.select()
     } finally {
-      definirEntrandoDireto(false)
+      definirEntrando(false)
     }
   }
 
+  const aviso = erroDoServidor ?? erro
+
   return (
     <main className="entrada">
-      <form className="entrada__cartao" onSubmit={enviar}>
-        <div className="entrada__marca">
-          <Icone nome="loja" tamanho={26} />
+      <section className="entrada__marca" aria-hidden="true">
+        <div className="entrada__marca-topo">
+          <Icone nome="loja" tamanho={28} />
           <div>
-            <h1>Order Hub</h1>
-            <p>Matsuya</p>
+            <p className="entrada__marca-nome">Order Hub</p>
+            <p className="entrada__marca-rede">Matsuya</p>
           </div>
         </div>
 
-        {erro && (
-          <Faixa tom="perigo" icone="alerta">
-            {erro}
-          </Faixa>
-        )}
+        <p className="entrada__marca-frase">Sua operação em uma tela.</p>
 
-        <div className="ui-campo">
-          <label className="ui-campo__rotulo" htmlFor="token">
-            Token de acesso
-          </label>
-          <input
-            id="token"
-            className="entrada__campo"
-            type="password"
-            value={token}
-            onChange={(e) => definirToken(e.target.value)}
-            placeholder="Cole o JWT"
-            autoComplete="off"
-            // O teclado de senha evita corretor automático estragando um JWT.
-            aria-describedby="token-ajuda"
+        <ul className="entrada__marca-lista">
+          <li>Pedidos ao vivo, sem recarregar</li>
+          <li>Entregas e comandas no mesmo lugar</li>
+          <li>Prazos que cobram sozinhos</li>
+        </ul>
+      </section>
+
+      <section className="entrada__area">
+        <form className="entrada__forma" onSubmit={enviar} noValidate>
+          {/* Repetido para leitor de tela: o painel da marca é aria-hidden. */}
+          <header className="entrada__cabecalho">
+            <h1>Entrar</h1>
+            <p>Acesso da operação · Order Hub Matsuya</p>
+          </header>
+
+          {aviso && (
+            <Faixa tom="perigo" icone="alerta">
+              {aviso}
+            </Faixa>
+          )}
+
+          <CampoLinha
+            id="email"
+            rotulo="E-mail"
+            type="email"
+            inputMode="email"
+            /* Sem isto o gerenciador de senhas do tablet não preenche, e o
+               operador digita o e-mail inteiro em toda troca de turno. */
+            autoComplete="email"
+            autoCapitalize="none"
+            spellCheck={false}
+            autoFocus
+            ref={campoDeEmail}
+            value={email}
+            erro={errosDoCampo.email}
+            onChange={(e) => definirEmail(e.target.value)}
           />
-          <p id="token-ajuda" className="ui-campo__ajuda">
-            Acesso provisório enquanto o login definitivo não existe na API.
-          </p>
-        </div>
 
-        <Botao type="submit" enfase="primaria" largo disabled={!token.trim()}>
-          Entrar
-        </Botao>
-
-        {/*
-          Atalho de desenvolvimento.
-
-          `import.meta.env.DEV` é substituído por `false` no build de produção,
-          e o bloco inteiro — incluindo as credenciais — sai do bundle na
-          eliminação de código morto. É a razão de a checagem estar aqui, em
-          volta do JSX, e não dentro do `onClick`: uma condição em tempo de
-          execução deixaria a senha no arquivo publicado.
-        */}
-        {import.meta.env.DEV && (
-          <div className="entrada__atalho">
-            {erroDoAtalho && (
-              <Faixa tom="perigo" icone="alerta">
-                {erroDoAtalho}
-              </Faixa>
-            )}
-
-            <Botao
+          <div className="entrada__senha">
+            <CampoLinha
+              id="senha"
+              rotulo="Senha"
+              type={mostrarSenha ? 'text' : 'password'}
+              autoComplete="current-password"
+              ref={campoDeSenha}
+              value={senha}
+              erro={errosDoCampo.senha}
+              onChange={(e) => definirSenha(e.target.value)}
+            />
+            {/*
+              Ver a senha existe porque teclado de tablet erra, e a alternativa
+              é a pessoa apagar tudo e digitar de novo às cegas. O rótulo muda
+              junto com o ícone: quem usa leitor de tela precisa saber o estado,
+              não só a ação.
+            */}
+            <button
               type="button"
-              enfase="secundaria"
-              largo
-              icone="pessoa"
-              carregando={entrandoDireto}
-              onClick={() => void entrarComoAdmin()}
+              className="entrada__olho"
+              onClick={() => definirMostrarSenha((v) => !v)}
+              aria-label={mostrarSenha ? 'Ocultar a senha' : 'Mostrar a senha'}
+              aria-pressed={mostrarSenha}
             >
-              Entrar como admin
-            </Botao>
-
-            <p className="entrada__aviso">
-              Atalho de desenvolvimento — some no build de produção.
-            </p>
+              <Icone nome={mostrarSenha ? 'olho-cortado' : 'olho'} tamanho={20} />
+            </button>
           </div>
-        )}
-      </form>
+
+          <Botao type="submit" enfase="primaria" largo carregando={entrando}>
+            Entrar
+          </Botao>
+
+          <button type="button" className="entrada__link" onClick={aoEsquecerSenha}>
+            Esqueci minha senha
+          </button>
+        </form>
+      </section>
     </main>
   )
 }

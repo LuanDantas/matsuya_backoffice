@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Botao, EstadoVazio, Icone } from '@matsuya/ui'
 import {
-  createApiClient,
   criarApiDeChat,
   FalhaDaApi,
   type MensagemDoChat,
 } from '@matsuya/api-client'
+import { criarCliente } from '../../dados/cliente'
 import { config } from '../../app/config'
 import { horario } from '../../app/formato'
 
@@ -52,11 +52,7 @@ export function Chat({
   tokenRef.current = token
 
   const api = useMemo(() => {
-    const cliente = createApiClient({
-      baseUrl: config.apiBaseUrl,
-      obterToken: () => tokenRef.current,
-    })
-    return criarApiDeChat(cliente)
+    return criarApiDeChat(criarCliente(() => tokenRef.current))
   }, [])
 
   useEffect(() => {

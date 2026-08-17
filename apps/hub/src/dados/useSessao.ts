@@ -1,22 +1,30 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  createApiClient,
   criarApiDeIdentidade,
+  criarApiDeSessao,
   FalhaDaApi,
   type Identidade,
 } from '@matsuya/api-client'
 import { config } from '../app/config'
+import { criarCliente, registrarExpiracaoDeSessao } from './cliente'
 
 /**
  * Sessão do Hub.
  *
- * O token continua vindo de um campo porque a API ainda não tem fluxo de login
- * próprio — mas tudo o mais agora vem de `/auth/me`: nome, permissões, escopo e
- * as unidades que a pessoa pode abrir.
+ * Entra com e-mail e senha; identidade, permissões, escopo e unidades vêm de
+ * `/auth/me`. Antes o Hub assumia permissões amplas e deixava a API recusar, o
+ * que produz o pior tipo de interface: aquela em que o botão existe, o operador
+ * aperta, e recebe um erro que não tinha como prever.
  *
- * A diferença prática é grande. Antes o Hub assumia permissões amplas e deixava
- * a API recusar, o que produz o pior tipo de interface: aquela em que o botão
- * existe, o operador aperta, e recebe um erro que não tinha como prever.
+ * ## Expiração
+ *
+ * A API não tem refresh token — o de login vale um dia e acabou. Então o que
+ * importa é o que acontece **quando ele vence com o app aberto**, que antes era
+ * nada: o 401 só era tratado na verificação de boot, e todas as telas passavam
+ * a mostrar erro genérico até alguém recarregar a página.
+ *
+ * Agora `registrarExpiracaoDeSessao` liga o gancho que já existia no cliente
+ * HTTP e nunca fora usado. Qualquer 401, de qualquer tela, desloga com aviso.
  */
 
 const CHAVE_TOKEN = 'matsuya.hub.token'
@@ -38,7 +46,8 @@ export interface Sessao {
   unidadesAtuais: number[]
   erro: string | null
   token: string | null
-  entrar: (token: string) => void
+  /** Lança `FalhaDaApi` com a mensagem do servidor quando as credenciais falham. */
+  entrar: (email: string, senha: string) => Promise<void>
   sair: () => void
   escolherUnidades: (unityIds: number[]) => void
   pode: (permissao: string) => boolean
@@ -65,13 +74,16 @@ export function useSessao(): Sessao {
   const tokenRef = useRef(token)
   tokenRef.current = token
 
-  const api = useMemo(() => {
-    const cliente = createApiClient({
-      baseUrl: config.apiBaseUrl,
-      obterToken: () => tokenRef.current,
-    })
-    return criarApiDeIdentidade(cliente)
-  }, [])
+  const api = useMemo(
+    () => criarApiDeIdentidade(criarCliente(() => tokenRef.current)),
+    []
+  )
+
+  /*
+   * `socketUrl` e não `apiBaseUrl`: as rotas de login vivem na raiz da API, no
+   * roteador legado, e `socketUrl` é justamente a origem.
+   */
+  const apiDeSessao = useMemo(() => criarApiDeSessao({ origem: config.socketUrl }), [])
 
   useEffect(() => {
     if (!token) {
@@ -136,10 +148,18 @@ export function useSessao(): Sessao {
     [identidade]
   )
 
-  const entrar = useCallback((novoToken: string) => {
-    localStorage.setItem(CHAVE_TOKEN, novoToken)
-    definirToken(novoToken)
-  }, [])
+  const entrar = useCallback(
+    async (email: string, senha: string) => {
+      // Sem `try/catch`: quem chamou precisa da mensagem do servidor para
+      // mostrar no campo certo. Engolir aqui deixaria a tela sem o que dizer.
+      const autenticado = await apiDeSessao.entrar(email, senha)
+
+      localStorage.setItem(CHAVE_TOKEN, autenticado.token)
+      definirErro(null)
+      definirToken(autenticado.token)
+    },
+    [apiDeSessao]
+  )
 
   const sair = useCallback(() => {
     localStorage.removeItem(CHAVE_TOKEN)
@@ -148,6 +168,27 @@ export function useSessao(): Sessao {
     definirUnidadesAtuais([])
     definirIdentidade(null)
     definirErro(null)
+  }, [])
+
+  /*
+   * Registrado uma vez, e depois do `sair` existir. O gancho fica no módulo do
+   * cliente porque os oito pontos que criam cliente HTTP no Hub não conhecem a
+   * sessão — e três deles são hooks que não têm como recebê-la.
+   */
+  useEffect(() => {
+    registrarExpiracaoDeSessao(() => {
+      // Só avisa quem estava dentro. Um 401 com a sessão já anônima é o eco de
+      // uma requisição em voo, e trocar a mensagem da tela por "sua sessão
+      // expirou" confundiria quem acabou de errar a senha.
+      if (!localStorage.getItem(CHAVE_TOKEN)) return
+
+      localStorage.removeItem(CHAVE_TOKEN)
+      localStorage.removeItem(CHAVE_UNIDADES)
+      definirToken(null)
+      definirUnidadesAtuais([])
+      definirIdentidade(null)
+      definirErro('Sua sessão expirou. Entre novamente.')
+    })
   }, [])
 
   const pode = useCallback((permissao: string) => permissoes.has(permissao), [permissoes])

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Mudanca } from '@matsuya/contracts'
-import { createApiClient, criarApiDePedidos, type PedidoDoQuadro } from '@matsuya/api-client'
+import { criarApiDePedidos, type PedidoDoQuadro } from '@matsuya/api-client'
+import { criarCliente } from './cliente'
 import type { EstadoDeSincronia } from '@matsuya/realtime'
 import { Conexao, type EstadoDaConexao } from './conexao'
 import { config } from '../app/config'
@@ -85,11 +86,7 @@ export function useQuadro(unityIds: number[], token: string | null): EstadoDoQua
   )
 
   const api = useMemo(() => {
-    const cliente = createApiClient({
-      baseUrl: config.apiBaseUrl,
-      obterToken: () => tokenRef.current,
-    })
-    return criarApiDePedidos(cliente)
+    return criarApiDePedidos(criarCliente(() => tokenRef.current))
   }, [])
 
   /**

@@ -9,11 +9,11 @@ import {
 } from 'react'
 import { Icone, useCamadaModal, type NomeDoIcone } from '@matsuya/ui'
 import {
-  createApiClient,
   criarApiDeAlertas,
   type AlertasDaUnidade,
   type EstadoDaLoja,
 } from '@matsuya/api-client'
+import { criarCliente } from '../dados/cliente'
 import { config } from './config'
 import type { Silenciados } from './silenciados'
 
@@ -235,8 +235,7 @@ export function useFarol(
   const emCurso = useRef(false)
 
   const api = useMemo(() => {
-    const cliente = createApiClient({ baseUrl: config.apiBaseUrl, obterToken: () => token })
-    return criarApiDeAlertas(cliente)
+    return criarApiDeAlertas(criarCliente(() => token))
   }, [token])
 
   useEffect(() => {

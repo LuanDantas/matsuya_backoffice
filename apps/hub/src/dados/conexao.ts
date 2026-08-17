@@ -1,6 +1,7 @@
 import { io, type Socket } from 'socket.io-client'
 import { Sincronizador, type EstadoDeSincronia } from '@matsuya/realtime'
 import type { Mudanca, RespostaDeMudancas } from '@matsuya/contracts'
+import { expirarSessao } from './cliente'
 
 /**
  * Liga o socket aos sincronizadores de cursor.
@@ -155,7 +156,20 @@ export class Conexao {
       this.agendarCarencia()
     })
 
-    this.socket.on('connect_error', () => {
+    this.socket.on('connect_error', (erro: Error) => {
+      /*
+       * Token recusado é outra coisa que rede ruim, e tratá-los igual é o que
+       * fazia o Hub reconectar para sempre com um token vencido — parecendo
+       * oscilação de sinal enquanto na verdade ninguém mais entrava.
+       *
+       * O servidor emite exatamente `UNAUTHENTICATED` no handshake do `/ops`.
+       */
+      if (erro?.message === 'UNAUTHENTICATED') {
+        this.mudarEstado('desconectado')
+        expirarSessao()
+        return
+      }
+
       this.mudarEstado('desconectado')
       this.agendarCarencia()
     })

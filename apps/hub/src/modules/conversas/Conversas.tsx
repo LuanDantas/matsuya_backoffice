@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { EstadoVazio, Faixa, PainelDeSecao, Selo } from '@matsuya/ui'
-import { createApiClient, criarApiDeChat } from '@matsuya/api-client'
+import { criarApiDeChat } from '@matsuya/api-client'
+import { criarCliente } from '../../dados/cliente'
 import type { PedidoDoQuadro } from '@matsuya/api-client'
 import { config } from '../../app/config'
 import { decorrido } from '../../app/formato'
@@ -34,11 +35,7 @@ export function Conversas({
   const [erro, definirErro] = useState<string | null>(null)
 
   const api = useMemo(() => {
-    const cliente = createApiClient({
-      baseUrl: config.apiBaseUrl,
-      obterToken: () => token,
-    })
-    return criarApiDeChat(cliente)
+    return criarApiDeChat(criarCliente(() => token))
   }, [token])
 
   useEffect(() => {

@@ -59,24 +59,41 @@ uma checagem virar decoração.
 | Pacote | Situação |
 |---|---|
 | `contracts` | estados, motivos, ações, permissões geradas |
-| `api-client` | pedidos, painel, alertas, operação da loja, entrega |
+| `api-client` | sessão, pedidos, painel, alertas, operação da loja, entrega, impressão |
 | `realtime` | sincronizador de cursor — 12 testes |
 | `ui` | design system: ~15 componentes, tokens, verificador de contraste |
-| `printing` | ESC/POS + caminho pelo navegador |
+| `printing` | modelo da comanda + caminho pelo navegador (o ESC/POS mudou para o agente) |
 | `utils`, `config` | geo e configuração compartilhada |
-| `apps/hub` | telas completas; sessão provisória |
+| `apps/hub` | telas completas; login por e-mail e senha |
+| `apps/agente-de-impressao` | agente local da loja: ESC/POS, fila própria, socket e heartbeat — 36 testes |
 | `apps/console` | **não iniciado** — `src/` vazio |
 | `queries`, `auth`, `observability` | **não iniciados** — diretórios vazios |
 
 O Hub tem quadro, drawers, chat, exceções, conversas, rota com mapa, cardápio,
-ajustes, som, impressão pelo navegador, modo offline e o entregador em tempo
-real.
+ajustes, som, impressão, modo offline, o entregador em tempo real, o painel de
+agentes de impressão e o login por e-mail e senha.
 
-Falta, e **todo o resto depende da mesma coisa**: SLA com escalada e push ao
-cliente, que exigem a fila (Redis + BullMQ + outbox) da trilha de plataforma da
-Fase 0 — ainda não construída. Falta também o agente local de impressão
-([ADR-0017](./docs/adr/ADR-0017-agente-de-impressao.md)) e o Storybook, que é
-portão de saída da Fase 0.
+A trilha de plataforma da Fase 0 **foi construída**: Redis, BullMQ, outbox e
+relay, com os três consumidores que faltavam — SLA com escalada e auto-recusa,
+push de status ao cliente e comanda para o agente da loja. O agente local de
+impressão ([ADR-0017](./docs/adr/ADR-0017-agente-de-impressao.md)) existe em
+`apps/agente-de-impressao`; falta empacotá-lo por sistema operacional.
 
-A sessão ainda é um campo de token. `/auth/me` **já existe** na API e alimenta
-identidade, permissões e escopo; o que falta é um fluxo de login próprio.
+Falta o **Storybook**, que é portão de saída da Fase 0, e os pacotes `queries`,
+`auth` e `observability` seguem vazios.
+
+## Entrar em desenvolvimento
+
+O login é por e-mail e senha — não há mais campo de token nem atalho de admin.
+O seeder cria `admin@matsuya.com.br` / `admin123`.
+
+Para testar como **atendente**, e não como administrador da rede, é preciso
+conceder o papel à mão: o seeder de RBAC mapeia só `admin` e `manager` do enum
+legado, e ninguém recebe `store_operator` automaticamente. Sem isso a pessoa
+entra, mas chega ao quadro com zero permissões.
+
+```sql
+INSERT INTO user_roles (user_id, role_id, scope_kind, scope_id, created_at, updated_at)
+SELECT :userId, r.id, 'unit', :unityId, now(), now()
+  FROM roles r WHERE r.key = 'store_operator';
+```

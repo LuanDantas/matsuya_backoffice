@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { EstadoVazio, Faixa, PainelDeSecao, Selo } from '@matsuya/ui'
-import { createApiClient, criarApiDeCardapio, type ItemDoCardapio } from '@matsuya/api-client'
+import { criarApiDeCardapio, type ItemDoCardapio } from '@matsuya/api-client'
+import { criarCliente } from '../../dados/cliente'
 import { config } from '../../app/config'
 import { moeda } from '../../app/formato'
 
@@ -21,8 +22,7 @@ export function Cardapio({ unityId, token }: { unityId: number; token: string | 
   const [erro, definirErro] = useState<string | null>(null)
 
   const api = useMemo(() => {
-    const cliente = createApiClient({ baseUrl: config.apiBaseUrl, obterToken: () => token })
-    return criarApiDeCardapio(cliente)
+    return criarApiDeCardapio(criarCliente(() => token))
   }, [token])
 
   useEffect(() => {
