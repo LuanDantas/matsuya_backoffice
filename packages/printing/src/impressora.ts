@@ -33,7 +33,15 @@ export interface TrabalhoDeImpressao {
 }
 
 export interface OpcoesDaImpressora {
-  /** URL do agente local, ex.: `http://localhost:9100`. Ausente ⇒ só navegador. */
+  /**
+   * URL do agente local, ex.: `http://localhost:9110`. Ausente ⇒ só navegador.
+   *
+   * 9110 e não 9100: a 9100 é a porta do protocolo de impressão bruta
+   * (JetDirect), que é o que as próprias impressoras de rede escutam. Um agente
+   * anunciado nessa porta colide com qualquer serviço de impressão na mesma
+   * máquina e confunde quem for diagnosticar. É a porta que o ADR-0017 escolhe
+   * e a que `@matsuya/agente-de-impressao` abre por padrão.
+   */
   urlDoAgente?: string
   largura?: LarguraDoPapel
   /** Chamada a cada mudança na fila, para a interface mostrar o que falta. */
