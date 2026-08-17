@@ -59,12 +59,24 @@ uma checagem virar decoração.
 | Pacote | Situação |
 |---|---|
 | `contracts` | estados, motivos, ações, permissões geradas |
-| `api-client` | pedidos: quadro, mudanças, transições |
+| `api-client` | pedidos, painel, alertas, operação da loja, entrega |
 | `realtime` | sincronizador de cursor — 12 testes |
-| `apps/hub` | quadro funcional; sessão provisória |
-| `apps/console` | não iniciado |
-| `ui`, `queries`, `auth`, `printing`, `observability` | não iniciados |
+| `ui` | design system: ~15 componentes, tokens, verificador de contraste |
+| `printing` | ESC/POS + caminho pelo navegador |
+| `utils`, `config` | geo e configuração compartilhada |
+| `apps/hub` | telas completas; sessão provisória |
+| `apps/console` | **não iniciado** — `src/` vazio |
+| `queries`, `auth`, `observability` | **não iniciados** — diretórios vazios |
 
-O Hub ainda não tem: som, impressão, modo offline, chat, e as demais telas do
-inventário de [16](./docs/16-telas.md). A sessão é um campo de token, porque o
-módulo de identidade da API ainda não expõe `/auth/me`.
+O Hub tem quadro, drawers, chat, exceções, conversas, rota com mapa, cardápio,
+ajustes, som, impressão pelo navegador, modo offline e o entregador em tempo
+real.
+
+Falta, e **todo o resto depende da mesma coisa**: SLA com escalada e push ao
+cliente, que exigem a fila (Redis + BullMQ + outbox) da trilha de plataforma da
+Fase 0 — ainda não construída. Falta também o agente local de impressão
+([ADR-0017](./docs/adr/ADR-0017-agente-de-impressao.md)) e o Storybook, que é
+portão de saída da Fase 0.
+
+A sessão ainda é um campo de token. `/auth/me` **já existe** na API e alimenta
+identidade, permissões e escopo; o que falta é um fluxo de login próprio.

@@ -46,14 +46,22 @@ As fases 1 e 2 correm em **paralelo** após a Fase 0: o Order Hub não depende d
 
 ## Fase 1 — Order Hub MVP · ~6 semanas *(paralela à Fase 2)*
 
-> **Andamento.** A fundação de backend está construída no branch
-> `feature/phase-1-order-hub` e **não implantada** — nada de Fase 0 nem de Fase 1
-> foi a produção; a decisão é implantar tudo junto, mais adiante. Feito: máquina
-> de 13 estados, `store_change_log` com resync por cursor, lock otimista e
-> pessimista, RBAC com escopo por unidade, Socket.IO `/ops` e o serializador que
-> protege o app. Falta: SLA e escalada (dependem de BullMQ), impressão, modo
-> offline, notificações e as 12 telas — que dependem do monorepo, ainda não
-> iniciado. Detalhe em [09 §7](./09-pedidos.md) e [15 §8](./15-rbac.md).
+> **Andamento.** Backend em `feature/phase-1-order-hub` e Hub em
+> `matsuya_backoffice`, **nada implantado** — nada de Fase 0 nem de Fase 1 foi a
+> produção; a decisão é implantar tudo junto, mais adiante.
+>
+> Feito: máquina de 13 estados, `store_change_log` com resync por cursor, lock
+> otimista e pessimista, RBAC com escopo por unidade, Socket.IO `/ops`, o
+> serializador que protege o app, e — no monorepo, que **saiu do papel** — o Hub
+> com todas as telas, chat, som, impressão pelo navegador, modo offline, farol
+> da operação, estado de operação da loja e entregador em tempo real.
+>
+> **O bloqueio mudou de lugar.** Não é mais o front. Falta SLA com escalada e
+> push ao cliente, e os dois dependem da fila — Redis, BullMQ e outbox, a
+> **trilha de plataforma da Fase 0 que ficou para trás**. Falta também o agente
+> local de impressão ([ADR-0017](./adr/ADR-0017-agente-de-impressao.md)); hoje
+> há só o caminho pelo navegador. Detalhe em [09 §7](./09-pedidos.md) e
+> [15 §8](./15-rbac.md).
 >
 > **Pré-requisito descoberto:** o delivery vivia em `feature/delivery-backend`,
 > um branch nunca implantado, enquanto o endurecimento da Fase 0 saiu de
