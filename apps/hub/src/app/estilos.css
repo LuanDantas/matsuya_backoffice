@@ -2772,25 +2772,23 @@
  *
  * ## O que ficou
  *
- * Tinta, e não cor semântica: um fio nítido de 2 px (borda + anel) com um halo
- * translúcido de 4 px em volta. É o único lugar da interface que usa `--texto`
- * como contorno, então não se confunde com nada — nem com o alarme, nem com o
- * verde de conclusão, nem com o azul de `--foco`, que é foco de teclado e
- * precisa continuar distinguível da seleção.
+ * Tinta, e não cor semântica: a mesma borda de 1 px que o cartão já tem, só
+ * que escura. É o único lugar da interface que usa `--texto` como contorno,
+ * então não se confunde com nada — nem com o alarme, nem com o verde de
+ * conclusão, nem com o azul de `--foco`, que é foco de teclado e precisa
+ * continuar distinguível da seleção.
  *
- * Sem sombra e sem deslocamento, de propósito: `--sombra-cartao` é `none` no
- * sistema inteiro, e levantar o cartão selecionado abriria a exceção para
- * todos os outros. O halo dá a mesma leitura de "este está em primeiro plano"
- * sem sair do plano.
+ * A 55% ela é nitidamente mais escura que `--borda` sem virar um traço duro
+ * em volta do cartão. Nada de anel, halo ou sombra: a geometria do cartão não
+ * muda entre selecionado e não selecionado, e a coluna continua uma pilha de
+ * retângulos iguais com um deles marcado.
  *
- * O halo cabe: são 5 px para fora da borda, dentro dos 8 px de respiro da
- * coluna e da distância entre cartões.
+ * O custo é conhecido e aceito: 1 px é um sinal discreto, e num quadro cheio
+ * exige olhar em vez de bater o olho. `aria-current` continua carregando o
+ * mesmo fato pelo canal que não depende de enxergar a diferença.
  */
 .cartao[data-selecionado] {
-  border-color: var(--texto);
-  box-shadow:
-    0 0 0 1px var(--texto),
-    0 0 0 5px color-mix(in srgb, var(--texto) 10%, transparent);
+  border-color: color-mix(in srgb, var(--texto) 55%, transparent);
 }
 
 /* ── Seletor de lojas ───────────────────────────────────────────────────── */
