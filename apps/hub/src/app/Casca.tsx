@@ -715,6 +715,7 @@ export function Casca({
           porLoja={farol.porLoja}
           alertasDoDispositivo={alertasDoDispositivo}
           silenciados={silenciados}
+          carregando={farol.carregando}
           ancora={botaoDoFarol}
           aoFechar={() => definirFarolAberto(false)}
         />

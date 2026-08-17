@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type RefObject,
 } from 'react'
 import { Icone, useCamadaModal, type NomeDoIcone } from '@matsuya/ui'
@@ -252,10 +253,32 @@ export function useFarol(
 ) {
   const [porLoja, definirPorLoja] = useState<AlertasPorLoja[]>([])
   const emCurso = useRef(false)
+  /*
+   * A seleção a que os dados em mãos pertencem — e não um "está buscando".
+   *
+   * O farol reconsulta a cada mudança do quadro, o que inclui a atualização de
+   * rotina. Um sinalizador de busca em curso apagaria o painel aberto a cada
+   * ciclo, o que é pior do que o problema: em vez de a informação mudar sob o
+   * olho, ela sumiria sozinha de tempos em tempos.
+   *
+   * O que precisa ser dito é outra coisa: **estes dados são de outra seleção
+   * de lojas**. Comparar a seleção carregada com a atual responde exatamente
+   * isso — o esqueleto aparece ao trocar de loja e some quando os dados novos
+   * chegam, e não se mexe durante as atualizações de rotina.
+   */
+  const [selecaoCarregada, definirSelecaoCarregada] = useState<string | null>(null)
 
   const api = useMemo(() => {
     return criarApiDeAlertas(criarCliente(() => token))
   }, [token])
+
+  /* Ordenada: a mesma seleção precisa dar a mesma chave, venha na ordem que vier. */
+  const chaveDaSelecao = useMemo(
+    () => [...observadas].sort((a, b) => a - b).join(','),
+    [observadas]
+  )
+
+  const carregando = selecaoCarregada !== chaveDaSelecao
 
   useEffect(() => {
     if (unidades.length === 0 || emCurso.current) return
@@ -278,11 +301,26 @@ export function useFarol(
       })
       .finally(() => {
         emCurso.current = false
+        if (!controle.signal.aborted) definirSelecaoCarregada(chaveDaSelecao)
       })
 
-    return () => controle.abort()
-    // `gatilho` entra de propósito: o farol reconsulta quando o quadro muda.
-  }, [api, unidades, comPedidos, gatilho])
+    return () => {
+      controle.abort()
+      /*
+       * Soltar a tranca junto com o aborto.
+       *
+       * `emCurso` existe para duas buscas não correrem juntas, mas ele só era
+       * solto no `finally` — que é assíncrono. Ao trocar de seleção, o efeito
+       * novo rodava antes disso e desistia na guarda, e a busca que valia
+       * nunca saía. O `finally` da anterior confere `signal.aborted` antes de
+       * gravar, então soltar aqui não deixa resposta velha entrar.
+       */
+      emCurso.current = false
+    }
+    /* `gatilho` entra de propósito: o farol reconsulta quando o quadro muda.
+       `chaveDaSelecao` também: trocar de loja precisa buscar de novo, e não
+       depender de o quadro recarregar por tabela. */
+  }, [api, unidades, comPedidos, gatilho, chaveDaSelecao])
 
   /* O painel e os contadores falam só do que está no quadro. */
   const noQuadro = useMemo(
@@ -321,7 +359,7 @@ export function useFarol(
     return mapa
   }, [porLoja])
 
-  return { porLoja: noQuadro, totalDaOperacao, atrasados, estados }
+  return { porLoja: noQuadro, totalDaOperacao, atrasados, estados, carregando }
 }
 
 
@@ -481,12 +519,15 @@ export function Farol({
   porLoja,
   alertasDoDispositivo,
   silenciados,
+  carregando,
   ancora,
   aoFechar,
 }: {
   porLoja: AlertasPorLoja[]
   alertasDoDispositivo: AlertaDoDispositivo[]
   silenciados: Silenciados
+  /** Enquanto recarrega, o painel mostra esqueleto em vez de dados velhos. */
+  carregando: boolean
   /** O botão que abriu o painel — a animação sai exatamente dele. */
   ancora: RefObject<HTMLElement | null>
   aoFechar: () => void
@@ -753,7 +794,30 @@ export function Farol({
               })}
             </div>
 
-            {visiveis.length === 0 && alertasDoDispositivo.length === 0 ? (
+            {carregando ? (
+              /*
+               * Esqueleto enquanto refaz a leitura.
+               *
+               * Trocar de loja recarrega o quadro, e o farol vai junto. Sem
+               * isto, o painel mostrava os alertas da seleção anterior e os
+               * trocava de uma vez quando a resposta chegava — a informação
+               * mudava debaixo do olho de quem estava lendo, sem nada dizendo
+               * que ela ia mudar.
+               */
+              <div className="farol__esqueleto" aria-live="polite" aria-busy="true">
+                <span className="ui-visualmente-oculto">Atualizando os alertas</span>
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="esqueleto farol__esqueleto-item"
+                    style={{ '--atraso': `${i * 60}ms` } as CSSProperties}
+                  >
+                    <span className="esqueleto__bloco esqueleto__chip" />
+                    <span className="esqueleto__bloco esqueleto__faixa" />
+                  </div>
+                ))}
+              </div>
+            ) : visiveis.length === 0 && alertasDoDispositivo.length === 0 ? (
               <div className="farol__tudo-bem">
                 <Icone nome="check" tamanho={28} />
                 <p>

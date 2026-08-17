@@ -387,6 +387,24 @@
 
 .esqueleto__chip { width: 55%; height: 18px; border-radius: 999px; }
 .esqueleto__heroi { width: 70%; height: 26px; }
+/*
+ * O esqueleto do farol.
+ *
+ * Reaproveita `.esqueleto` inteiro — mesma entrada, mesmo brilho, mesmo atraso
+ * escalonado dos cartões do quadro. É a mesma espera, e uma segunda linguagem
+ * de carregamento só ensinaria à pessoa que existem dois tipos de espera.
+ */
+.farol__esqueleto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  padding: var(--e-3);
+}
+
+.farol__esqueleto-item {
+  gap: var(--e-2);
+}
+
 .esqueleto__faixa { width: 100%; height: 28px; border-radius: 999px; }
 
 .esqueleto__rodape {
@@ -2827,6 +2845,12 @@
   outline: none;
 }
 
+/* Quando são todas, o apoio deixa de ser nota de rodapé e vira informação. */
+.seletor__apoio[data-completo] {
+  color: var(--texto);
+  font-weight: var(--peso-medio);
+}
+
 .seletor__acoes {
   display: flex;
   align-items: center;
@@ -2891,15 +2915,12 @@
 }
 
 /*
- * Selecionada: cinza, com o check em verde.
+ * Selecionada: cinza, com o check na cor da marca.
  *
- * O fundo tingido de marca deixava a lista inteira vermelha — e vermelho neste
- * sistema é alarme, então seis lojas selecionadas pareciam seis problemas.
- * Cinza carrega o "está ligada" sem alarmar.
- *
- * O check é verde e não vermelho pela mesma razão: ele diz "esta está no seu
- * quadro", que é confirmação e não aviso. Verde já é o que marca loja aberta e
- * conexão viva no resto da tela — a leitura fica consistente.
+ * O **fundo** tingido de marca é que deixava a lista inteira vermelha — seis
+ * lojas selecionadas pareciam seis problemas. Concentrado num quadrado de
+ * 22px, o mesmo vermelho deixa de alarmar e passa a marcar: é o único ponto
+ * colorido da linha, e é o que a pessoa procura ao varrer a lista.
  */
 .seletor__opcao[aria-pressed='true'] {
   background: var(--superficie-2);
@@ -2922,8 +2943,8 @@
 }
 
 .seletor__opcao[aria-pressed='true'] .seletor__marca {
-  background: var(--sucesso);
-  border-color: var(--sucesso);
+  background: var(--marca);
+  border-color: var(--marca);
 }
 
 .seletor__nome {

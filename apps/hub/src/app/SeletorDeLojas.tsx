@@ -222,7 +222,16 @@ export function SeletorDeLojas({
             >
               {todasMarcadas ? 'Manter só a primeira' : 'Selecionar todas'}
             </Botao>
-            <span className="seletor__apoio">{marcadas.length} selecionadas</span>
+            {/*
+              "Todas as 9" e não "9 selecionadas" quando são todas: o número
+              sozinho obriga a lembrar quantas lojas existem para saber se
+              sobrou alguma de fora. A palavra responde sem a conta.
+            */}
+            <span className="seletor__apoio" data-completo={todasMarcadas || undefined}>
+              {todasMarcadas
+                ? `Todas as ${marcadas.length} selecionadas`
+                : `${marcadas.length} de ${identidade.units.length} selecionadas`}
+            </span>
           </div>
 
           <ul className="seletor__lista">
