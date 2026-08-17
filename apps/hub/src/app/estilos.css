@@ -1205,7 +1205,15 @@
   padding: var(--e-4);
   border-radius: var(--raio-3);
   background: var(--superficie-1);
-  box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.4);
+  /*
+   * Duas camadas: a larga dá a flutuação, a curta desenha a emenda.
+   *
+   * Só a larga não bastaria — ela começa longe da borda, e é justamente na
+   * borda que os dois brancos precisam se distinguir.
+   */
+  box-shadow:
+    0 30px 70px -30px rgb(0 0 0 / 0.4),
+    0 6px 16px -4px rgb(0 0 0 / 0.16);
   animation: amostra-flutuar 5s ease-in-out infinite;
   /* Meio segundo atrás do primeiro: os dois subindo juntos pareceriam um bloco
      só; defasados, pareceriam dois objetos. */
@@ -1358,6 +1366,15 @@
 }
 
 .entrada__pilha .turno {
+  /*
+   * O turno fica **por cima**, e é a sombra dele que separa os dois.
+   *
+   * Os dois cartões são brancos sobre um painel claro; sem uma sombra caindo de
+   * um no outro, a emenda vira uma linha reta entre duas superfícies iguais e
+   * some. Com o turno na frente, a sombra dele desenha a borda e o olho lê duas
+   * folhas empilhadas em vez de um recorte.
+   */
+  z-index: 2;
   align-self: flex-end;
   /*
    * Margem **negativa**: o turno precisa ultrapassar a borda direita do pedido.
@@ -1376,6 +1393,7 @@
 
 .entrada__pilha .amostra {
   position: relative;
+  z-index: 1;
   z-index: 1;
   align-self: flex-start;
   /*
