@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Icone } from '@matsuya/ui'
+import { useFonteDaEntrada } from './fonteDaEntrada'
 
 /**
  * O layout das telas de autenticação — entrada e recuperação de senha.
@@ -30,6 +31,8 @@ export function LayoutDeEntrada({
   subtitulo: string
   children: ReactNode
 }) {
+  useFonteDaEntrada()
+
   return (
     <div className="entrada">
       <div className="entrada__coluna">
@@ -63,7 +66,10 @@ export function LayoutDeEntrada({
         <span className="entrada__forma entrada__forma--tres" />
         <span className="entrada__forma entrada__forma--quatro" />
 
-        <CartaoDeAmostra />
+        <div className="entrada__pilha">
+          <CartaoDeAmostra />
+          <CartaoDeTurno />
+        </div>
 
         <p className="entrada__rodape">
           O quadro que a loja opera: pedidos ao vivo, entregas e comandas no
@@ -150,6 +156,60 @@ function CartaoDeAmostra() {
         </span>
         <span className="amostra__acao">Pronto</span>
       </div>
+    </div>
+  )
+}
+
+/**
+ * O segundo cartão: o resumo do turno.
+ *
+ * Diagonal ao primeiro e passando por baixo dele, com uma sobreposição
+ * pequena. A profundidade é o que faz os dois lerem como uma pilha de coisas
+ * reais em cima de uma mesa, e não como dois retângulos alinhados.
+ *
+ * Traz números, e não outro pedido, de propósito: dois cartões iguais só
+ * dobrariam a mesma informação. O primeiro mostra **o que a loja faz** — um
+ * pedido concreto, com fotos; este mostra **como ela está indo** — que é a
+ * outra metade do que o Hub entrega, e a que justifica abri-lo de manhã.
+ */
+function CartaoDeTurno() {
+  return (
+    <div className="turno">
+      <p className="turno__titulo">Hoje até agora</p>
+
+      <div className="turno__numeros">
+        <span>
+          <strong className="num">38</strong>
+          pedidos
+        </span>
+        <span>
+          <strong className="num">4min</strong>
+          aceite médio
+        </span>
+      </div>
+
+      <div className="turno__barra" aria-hidden="true">
+        <span className="turno__fatia turno__fatia--pronto" style={{ width: '62%' }} />
+        <span className="turno__fatia turno__fatia--preparo" style={{ width: '28%' }} />
+        <span className="turno__fatia turno__fatia--atraso" style={{ width: '10%' }} />
+      </div>
+
+      {/* Cada par ponto+rótulo é um grupo próprio: soltos, o navegador quebrava
+          a linha entre o ponto e a palavra dele. */}
+      <p className="turno__legenda">
+        <span className="turno__item">
+          <i className="turno__ponto turno__ponto--pronto" />
+          entregues
+        </span>
+        <span className="turno__item">
+          <i className="turno__ponto turno__ponto--preparo" />
+          preparo
+        </span>
+        <span className="turno__item">
+          <i className="turno__ponto turno__ponto--atraso" />
+          atrasados
+        </span>
+      </p>
     </div>
   )
 }

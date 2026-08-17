@@ -16,10 +16,18 @@
  * 1. **O Hub nunca segue a preferência do sistema.** Um tablet que troca de
  *    tema ao entardecer é uma tela que muda embaixo da mão de quem trabalha.
  *
- * 2. **A cor de marca é o esmeralda do Matclub**, e não o vermelho do iFood.
- *    Copiamos a estrutura que faz a ferramenta funcionar, não a identidade de
- *    outra empresa — e dois sistemas visualmente intercambiáveis na bancada
- *    são um convite a agir no lugar errado.
+ * 2. **A cor de marca é o vermelho da casa.** Vermelho é a cor de comida — ele
+ *    abre apetite e é o que o setor inteiro usa —, e a marca passou a ocupá-lo.
+ *
+ *    Isso custou uma coisa, e o custo foi pago de propósito: **vermelho deixou
+ *    de significar só alarme**. Atraso, falha e cancelamento continuam
+ *    vermelhos, mas agora se separam da marca por **valor**, não por matiz — a
+ *    marca é um vermelho claro e quente, o alarme é um vinho quase preto. Um
+ *    cartão atrasado precisa ser visto do outro lado da cozinha, e é a
+ *    diferença de luminosidade que garante isso quando a matiz já não garante.
+ *
+ *    O botão destrutivo continua distinguível do primário porque a diferença
+ *    ali nunca foi de cor: primário é preenchido, destrutivo é contornado.
  *
  * 3. **Sem fonte de rede.** A pilha do sistema (SF Pro no iPad, Roboto no
  *    Android) substitui qualquer webfont: o Hub precisa abrir com a internet
@@ -75,10 +83,10 @@
   --texto-inverso: #ffffff;
 
   /* Marca. Escuro o bastante para sustentar texto branco no botão primário. */
-  --marca: #036147;
-  --marca-hover: #024e39;
-  --marca-forte: #024e39;
-  --marca-suave: #e6f6ef;
+  --marca: #c1121f;
+  --marca-hover: #9a0e19;
+  --marca-forte: #9a0e19;
+  --marca-suave: #fdecee;
 
   --info: #1d4ed8;
   --info-suave: #e6edfd;
@@ -86,11 +94,11 @@
   --atencao: #a35208;
   --atencao-suave: #fdf3e2;
 
-  --perigo: #b91c1c;
-  --perigo-forte: #991b1b;
+  --perigo: #8e0b14;
+  --perigo-forte: #6d060d;
   --perigo-suave: #fdeaea;
 
-  --urgente: #a8102f;
+  --urgente: #7a0a22;
   --urgente-suave: #fdeaef;
 
   /*
@@ -101,7 +109,7 @@
    * não precisa competir com nada para ser vista. Espalhar esse peso por outros
    * estados destruiria justamente o que faz este funcionar.
    */
-  --atraso-fundo: #7a1114;
+  --atraso-fundo: #4a0d10;
   --atraso-texto: #ffffff;
 
   /*
@@ -115,7 +123,7 @@
    * vermelho claro, dava **2.77:1** — e passou despercebido justamente por a
    * cor do texto estar fora dos tokens, fora do alcance do verificador.
    */
-  --alarme-fundo: #b91c1c;
+  --alarme-fundo: #8e0b14;
   --alarme-texto: #ffffff;
 
   /*
@@ -155,8 +163,8 @@
    * própria amostra. As formas geométricas carregam a cor da marca; o fundo só
    * as sustenta.
    */
-  --entrada-painel-de: #eef7f2;
-  --entrada-painel-ate: #e4edf4;
+  --entrada-painel-de: #fdf1f1;
+  --entrada-painel-ate: #f3e9ea;
   --entrada-painel-texto: #1f1f1f;
   --entrada-painel-fraco: #5f5f5f;
 
@@ -165,9 +173,10 @@
    * isso não entram no verificador de contraste; o que entra é o texto sobre o
    * fundo do painel.
    */
-  --entrada-forma-1: #036147;
-  --entrada-forma-2: #0f9d58;
-  --entrada-forma-3: #c7e6d7;
+  /* Três tons: o vermelho da marca, um mais quente e um pálido de apoio. */
+  --entrada-forma-1: #8e0b14;
+  --entrada-forma-2: #c1121f;
+  --entrada-forma-3: #f6cfd2;
 
   /*
    * O "você está aqui" do menu lateral.
@@ -180,8 +189,8 @@
    * #D61324 em vez do #EA1D2C da referência: o original dá 4,04:1 sobre o
    * fundo suave e reprova AA no rótulo do item ativo.
    */
-  --nav-ativo: #d61324;
-  --nav-ativo-suave: #fdeaec;
+  --nav-ativo: #c1121f;
+  --nav-ativo-suave: #fdecee;
 
   /*
    * A faixa de contagem do preparo: âmbar **sólido** com texto escuro, como na
@@ -274,10 +283,10 @@
 
   /* No escuro o botão primário inverte: texto ESCURO sobre esmeralda claro.
      Branco sobre esmeralda escuro dá 3,77:1 e reprova o mínimo de 4,5:1. */
-  --marca: #10b981;
-  --marca-hover: #34d399;
-  --marca-forte: #059669;
-  --marca-suave: #06301f;
+  --marca: #f2626f;
+  --marca-hover: #f88b95;
+  --marca-forte: #d63b4a;
+  --marca-suave: #3a1216;
 
   --info: #60a5fa;
   --info-suave: #0e2438;
@@ -285,19 +294,19 @@
   --atencao: #fbbf24;
   --atencao-suave: #33270a;
 
-  --perigo: #f87171;
-  --perigo-forte: #dc2626;
+  --perigo: #ffa8a8;
+  --perigo-forte: #e02424;
   --perigo-suave: #3a1414;
 
-  --urgente: #fb7185;
+  --urgente: #ff9fb0;
   --urgente-suave: #3d1622;
 
-  --atraso-fundo: #7f1d1d;
+  --atraso-fundo: #3d0c0c;
   --atraso-texto: #ffffff;
 
   /* Mesma inversão do verde de ação: no escuro o vermelho sobe e o texto
      desce. 6.60:1, contra os 2.77:1 do branco cravado que havia antes. */
-  --alarme-fundo: #f87171;
+  --alarme-fundo: #ffa8a8;
   --alarme-texto: #2b0a0a;
 
   /* A dica escura nao muda: preta ja e a cor certa nos dois temas. A clara
@@ -311,16 +320,16 @@
   --farol-ok-ponto: #34d399;
 
   /* No escuro o painel acompanha o tema em vez de virar uma janela acesa. */
-  --entrada-painel-de: #141d1a;
-  --entrada-painel-ate: #101820;
+  --entrada-painel-de: #1d1416;
+  --entrada-painel-ate: #171013;
   --entrada-painel-texto: #e6edf3;
   --entrada-painel-fraco: #9fb0c0;
 
-  --entrada-forma-1: #10b981;
-  --entrada-forma-2: #34d399;
-  --entrada-forma-3: #1d3b30;
+  --entrada-forma-1: #d63b4a;
+  --entrada-forma-2: #f2626f;
+  --entrada-forma-3: #3a1216;
 
-  --nav-ativo: #f87171;
+  --nav-ativo: #f2626f;
   --nav-ativo-suave: #3a1414;
 
   /* Idênticos ao claro: âmbar claro com texto quase preto já funciona nos dois
