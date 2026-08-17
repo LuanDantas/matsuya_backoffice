@@ -223,13 +223,32 @@ export function rotuloDoAlerta(
   return `${total} alertas`
 }
 
+/**
+ * Consulta **todas** as unidades do acesso, e não só as que estão no quadro.
+ *
+ * Duas necessidades diferentes bebem da mesma fonte, e antes só uma era
+ * atendida:
+ *
+ * - o **farol** fala da operação que a pessoa está acompanhando — as lojas
+ *   selecionadas;
+ * - o **seletor** precisa do estado de todas, inclusive as que não estão
+ *   selecionadas. É o único lugar onde se descobre que uma loja fora do quadro
+ *   está fechada com pedido em aberto — que é justamente o que ninguém percebe.
+ *
+ * Por isso `unidades` traz todas e `observadas` recorta: `estados` sai completo
+ * para o seletor, enquanto `porLoja`, `totalDaOperacao` e `atrasados` ficam
+ * restritos ao que está no quadro. Sem esse recorte, o contador do cabeçalho
+ * passaria a somar alertas de lojas que a pessoa escolheu não acompanhar.
+ */
 export function useFarol(
   unidades: ReadonlyArray<{ id: number; name: string }>,
   token: string | null,
   /** Lojas com pedido em aberto — para saber se uma loja parada é problema. */
   comPedidos: ReadonlySet<number>,
   /** Recalcula quando o quadro muda, para não ficar velho na tela. */
-  gatilho: unknown
+  gatilho: unknown,
+  /** As que estão no quadro. O farol fala destas; o seletor, de todas. */
+  observadas: ReadonlySet<number>
 ) {
   const [porLoja, definirPorLoja] = useState<AlertasPorLoja[]>([])
   const emCurso = useRef(false)
@@ -265,10 +284,21 @@ export function useFarol(
     // `gatilho` entra de propósito: o farol reconsulta quando o quadro muda.
   }, [api, unidades, comPedidos, gatilho])
 
-  const totalDaOperacao = porLoja.reduce((soma, l) => soma + totalDaLoja(l), 0)
-  const atrasados = porLoja.reduce((soma, l) => soma + (l.alertas?.atrasados ?? 0), 0)
+  /* O painel e os contadores falam só do que está no quadro. */
+  const noQuadro = useMemo(
+    () => porLoja.filter((l) => observadas.has(l.unityId)),
+    [porLoja, observadas]
+  )
 
-  /** Estado de operação por loja, para o seletor de lojas rotular cada linha. */
+  const totalDaOperacao = noQuadro.reduce((soma, l) => soma + totalDaLoja(l), 0)
+  const atrasados = noQuadro.reduce((soma, l) => soma + (l.alertas?.atrasados ?? 0), 0)
+
+  /**
+   * Estado de operação por loja, para o seletor rotular cada linha.
+   *
+   * Sai de `porLoja` e não de `noQuadro`: é o único mapa que precisa cobrir as
+   * lojas fora do quadro.
+   */
   const estados = useMemo(() => {
     const mapa = new Map<number, { estado: EstadoDaLoja; pausadaAte: string | null }>()
     for (const l of porLoja) {
@@ -279,7 +309,7 @@ export function useFarol(
     return mapa
   }, [porLoja])
 
-  return { porLoja, totalDaOperacao, atrasados, estados }
+  return { porLoja: noQuadro, totalDaOperacao, atrasados, estados }
 }
 
 

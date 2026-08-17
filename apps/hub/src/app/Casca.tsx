@@ -252,10 +252,20 @@ export function Casca({
     if (quadro.conexao === 'ao-vivo') void fila.reenviar()
   }, [quadro.conexao, fila])
 
+  /*
+   * Todas as unidades do acesso, e não só as do quadro.
+   *
+   * `nomesDasUnidades` já vem filtrado pelas lojas selecionadas — é o que o
+   * cabeçalho e os cursores precisam. O seletor precisa do oposto: o estado das
+   * que **não** estão selecionadas, porque é ali que se descobre uma loja
+   * fechada com pedido em aberto. O recorte volta dentro do `useFarol`.
+   */
   const unidadesDoFarol = useMemo(
-    () => [...nomesDasUnidades].map(([id, name]) => ({ id, name })),
-    [nomesDasUnidades]
+    () => (sessao.identidade?.units ?? []).map((u) => ({ id: u.id, name: u.name })),
+    [sessao.identidade]
   )
+
+  const lojasObservadas = useMemo(() => new Set(lojas), [lojas])
   // O gatilho junta as duas razões de o farol ficar velho: o quadro mudou, ou
   // uma loja abriu/fechou/pausou. A segunda não passa pelo quadro — uma loja
   // pode pausar sem que nenhum pedido se mexa.
@@ -263,7 +273,13 @@ export function Casca({
     () => ({ pedidos: quadro.pedidos, lojas: quadro.versaoDasLojas }),
     [quadro.pedidos, quadro.versaoDasLojas]
   )
-  const farol = useFarol(unidadesDoFarol, sessao.token, lojasComPedidos, gatilhoDoFarol)
+  const farol = useFarol(
+    unidadesDoFarol,
+    sessao.token,
+    lojasComPedidos,
+    gatilhoDoFarol,
+    lojasObservadas
+  )
 
   /**
    * Alertas do próprio tablet, separados dos da loja.

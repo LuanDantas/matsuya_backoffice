@@ -113,6 +113,8 @@ export function SeletorDeLojas({
 
   const marcadas = identidade.units.filter((u) => selecionadas.has(u.id))
   const comMovimento = marcadas.filter((u) => comPedidos.has(u.id)).length
+  const todasMarcadas =
+    identidade.units.length > 0 && marcadas.length === identidade.units.length
 
   function alternar(id: number) {
     const proximo = new Set(selecionadas)
@@ -189,11 +191,24 @@ export function SeletorDeLojas({
           </div>
 
           <div className="seletor__acoes">
+            {/*
+              O mesmo botão alterna. Dois botões lado a lado obrigariam a ler
+              qual é qual toda vez; um só, que diz o que vai fazer agora, é uma
+              decisão a menos no meio do turno.
+
+              Sem seleção nenhuma o quadro fica vazio, então "remover todas" só
+              aparece quando há o que remover — e, com uma loja só, nem faz
+              sentido oferecer "selecionar todas".
+            */}
             <Botao
               enfase="fantasma"
-              onClick={() => aoSelecionar(identidade.units.map((u) => u.id))}
+              onClick={() =>
+                aoSelecionar(
+                  todasMarcadas ? [] : identidade.units.map((u) => u.id)
+                )
+              }
             >
-              Selecionar todas
+              {todasMarcadas ? 'Remover seleção de todas' : 'Selecionar todas'}
             </Botao>
             <span className="seletor__apoio">{marcadas.length} selecionadas</span>
           </div>
@@ -226,24 +241,21 @@ export function SeletorDeLojas({
 
                     <span className="seletor__nome">
                       {unidade.name}
-                      {/*
-                        A etiqueta de estado desceu para a segunda linha, junto
-                        com a de movimento. Na mesma linha do nome, ela disputava
-                        espaço com nomes longos e era a primeira a ser cortada —
-                        justamente a informação que ninguém tem de outro jeito.
-                      */}
-                      <small className="seletor__estado">
-                        {rotulo && (
-                          <span className="seletor__operacao" data-estado={op!.estado}>
-                            <span className="seletor__ponto" aria-hidden="true" />
-                            {rotulo}
-                          </span>
-                        )}
-                        {pedidos && (
-                          <span className="seletor__movimento">com pedido em aberto</span>
-                        )}
-                      </small>
+                      {pedidos && <small>com pedido em aberto</small>}
                     </span>
+
+                    {/*
+                      O estado fica à direita, alinhado em coluna própria: é a
+                      informação que se varre de cima a baixo quando a pergunta é
+                      "alguma loja minha está fechada?", e uma coluna se varre
+                      mais rápido que um texto solto no fim de cada nome.
+                    */}
+                    {rotulo && (
+                      <span className="seletor__operacao" data-estado={op!.estado}>
+                        <span className="seletor__ponto" aria-hidden="true" />
+                        {rotulo}
+                      </span>
+                    )}
                   </button>
                 </li>
               )

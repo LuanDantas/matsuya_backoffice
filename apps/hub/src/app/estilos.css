@@ -2880,15 +2880,17 @@
 }
 
 /*
- * Selecionada: fundo tingido e borda de marca.
+ * Selecionada: cinza claro, e a marca fica só no check.
  *
- * Antes só o quadradinho de check mudava — um alvo de 22px carregando sozinho
- * a resposta de "quais lojas estou vendo?", que é a pergunta que o painel
- * inteiro existe para responder.
+ * O fundo tingido de marca deixou a lista inteira vermelha — e vermelho neste
+ * sistema é alarme, então seis lojas selecionadas pareciam seis problemas.
+ * Cinza carrega o "está ligada" sem alarmar; a cor concentrada no check de
+ * 22px basta para dizer qual é a diferença, porque ela é a única coisa
+ * colorida da linha.
  */
 .seletor__opcao[aria-pressed='true'] {
-  background: var(--marca-suave);
-  border-color: var(--marca);
+  background: var(--superficie-2);
+  border-color: var(--borda-forte);
 }
 
 .seletor__marca {
@@ -2922,15 +2924,10 @@
   text-align: left;
 }
 
-/* A segunda linha carrega estado e movimento lado a lado, e quebra em vez de
-   cortar: nome de loja longo não pode empurrar o estado para fora. */
-.seletor__estado {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--e-2);
+.seletor__nome small {
   font-size: var(--texto-xs);
   font-weight: var(--peso-normal);
+  color: var(--texto-fraco);
 }
 
 /*
@@ -2981,11 +2978,7 @@
   background: var(--perigo-suave);
 }
 
-/* Movimento é rotina, e fica em tom neutro: loja fechada com fila é o que
-   ninguém percebe, e ela não pode competir com o estado. */
-.seletor__movimento {
-  color: var(--texto-fraco);
-}
+
 
 .seletor__vazio {
   padding: var(--e-4);
