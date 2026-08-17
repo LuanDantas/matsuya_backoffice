@@ -51,17 +51,13 @@ export interface EstadoDoQuadro {
  * tremor na tela — quem apertou "atualizar" não vê nada acontecer e aperta de
  * novo.
  *
- * O farol importa este mesmo número (`Farol.tsx`): os dois recarregam juntos
- * quando a seleção de lojas muda, e um piso diferente faria o cabeçalho
- * revelar o resultado antes das colunas — ou depois.
- *
  * Três segundos é escolha de produto, pedida para o carregamento ter presença.
  * Vale saber o que ela custa: é tempo em que o quadro mostra blocos cinzas
  * embora os dados já estejam em memória, e recarregar durante um pico atrasa
  * em três segundos a leitura de uma fila que mudou. Se um dia isso incomodar
  * no balcão, é este número que se mexe — nada mais depende dele.
  */
-export const PISO_DE_CARREGAMENTO_MS = 3000
+const PISO_DE_CARREGAMENTO_MS = 3000
 
 const espera = (ms: number) => new Promise((r) => setTimeout(r, ms))
 

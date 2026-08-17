@@ -278,7 +278,8 @@ export function Casca({
     sessao.token,
     lojasComPedidos,
     gatilhoDoFarol,
-    lojasObservadas
+    lojasObservadas,
+    quadro.carregando
   )
 
   /**

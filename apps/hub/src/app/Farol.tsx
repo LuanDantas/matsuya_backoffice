@@ -15,7 +15,6 @@ import {
   type EstadoDaLoja,
 } from '@matsuya/api-client'
 import { criarCliente } from '../dados/cliente'
-import { PISO_DE_CARREGAMENTO_MS } from '../dados/useQuadro'
 import { config } from './config'
 import type { Silenciados } from './silenciados'
 
@@ -250,7 +249,9 @@ export function useFarol(
   /** Recalcula quando o quadro muda, para não ficar velho na tela. */
   gatilho: unknown,
   /** As que estão no quadro. O farol fala destas; o seletor, de todas. */
-  observadas: ReadonlySet<number>
+  observadas: ReadonlySet<number>,
+  /** O quadro ainda está carregando. Ver `selecaoCarregada` para o porquê. */
+  quadroCarregando: boolean
 ) {
   const [porLoja, definirPorLoja] = useState<AlertasPorLoja[]>([])
   const emCurso = useRef(false)
@@ -281,29 +282,16 @@ export function useFarol(
 
   const carregando = selecaoCarregada !== chaveDaSelecao
 
-  /* Lido dentro do efeito sem entrar nas dependências: se `carregando` fosse
-     dependência, cair para false dispararia outra busca, que o poria em true. */
-  const carregandoRef = useRef(false)
-  carregandoRef.current = carregando
+  /* Lido no `finally`, e por isso um ref: o que importa é o estado do quadro
+     quando a resposta chega, não o de quando a busca saiu. */
+  const quadroCarregandoRef = useRef(quadroCarregando)
+  quadroCarregandoRef.current = quadroCarregando
 
   useEffect(() => {
     if (unidades.length === 0 || emCurso.current) return
 
     const controle = new AbortController()
     emCurso.current = true
-
-    /*
-     * O mesmo piso do quadro, e só quando a seleção mudou.
-     *
-     * Os dois recarregam juntos ao trocar de loja; sem o piso aqui, o farol
-     * revelava o resultado em ~400 ms enquanto as colunas ainda mostravam
-     * blocos cinzas por mais dois segundos e meio. Numa atualização de rotina
-     * não há piso — ali ninguém está esperando, e segurar a leitura por três
-     * segundos só atrasaria um alerta.
-     */
-    const piso = carregandoRef.current
-      ? new Promise((r) => setTimeout(r, PISO_DE_CARREGAMENTO_MS))
-      : Promise.resolve()
 
     Promise.all(
       unidades.map(async (u) => ({
@@ -315,13 +303,27 @@ export function useFarol(
         alertas: await api.daUnidade(u.id, controle.signal).catch(() => null),
       }))
     )
-      .then(async (resultado) => {
+      .then((resultado) => {
         if (!controle.signal.aborted) definirPorLoja(resultado)
-        await piso
       })
       .finally(() => {
         emCurso.current = false
-        if (!controle.signal.aborted) definirSelecaoCarregada(chaveDaSelecao)
+        /*
+         * Só revela com o quadro já parado.
+         *
+         * Esta busca pode ter saído antes de o quadro publicar os pedidos das
+         * lojas recém-selecionadas, e `temPedidos` sai dali — uma loja pausada
+         * com pedido em aberto só vira alerta depois que o quadro chega. Sem
+         * esta condição, o farol revelava "tudo bem" e trocava para o alerta
+         * meio segundo depois, que é a mudança que o esqueleto existe para
+         * evitar.
+         *
+         * Quando o quadro terminar, `quadroCarregando` cai e o efeito roda de
+         * novo — é aquela busca, já com tudo no lugar, que revela.
+         */
+        if (!controle.signal.aborted && !quadroCarregandoRef.current) {
+          definirSelecaoCarregada(chaveDaSelecao)
+        }
       })
 
     return () => {
@@ -337,10 +339,11 @@ export function useFarol(
        */
       emCurso.current = false
     }
-    /* `gatilho` entra de propósito: o farol reconsulta quando o quadro muda.
-       `chaveDaSelecao` também: trocar de loja precisa buscar de novo, e não
-       depender de o quadro recarregar por tabela. */
-  }, [api, unidades, comPedidos, gatilho, chaveDaSelecao])
+    /* `gatilho` e `quadroCarregando` entram de propósito: o farol reconsulta
+       quando o quadro muda e quando ele termina de carregar. `chaveDaSelecao`
+       também — trocar de loja precisa buscar de novo, e não depender de o
+       quadro recarregar por tabela. */
+  }, [api, unidades, comPedidos, gatilho, chaveDaSelecao, quadroCarregando])
 
   /* O painel e os contadores falam só do que está no quadro. */
   const noQuadro = useMemo(
