@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { Botao, CampoLinha, Faixa, Icone } from '@matsuya/ui'
+import { LayoutDeEntrada } from './LayoutDeEntrada'
 import {
   mensagemDeFalha,
   primeiroCampoInvalido,
@@ -18,17 +19,8 @@ import {
  * ninguém, não é revogável por pessoa, e termina anotado em papel no monitor do
  * balcão.
  *
- * ## O painel da esquerda
- *
- * É a única superfície com gradiente do sistema inteiro, e a exceção é
- * deliberada: esta é a única tela que não está a serviço de uma tarefa em
- * andamento. Em todas as outras, cor tem significado operacional — vermelho é
- * atraso, âmbar é aperto — e um painel decorativo competiria com um pedido
- * estourando. Aqui não há pedido nenhum.
- *
- * Não há imagem nem logotipo porque não existe nenhum no repositório: a marca é
- * tipográfica. É também o que mantém a tela abrindo com a internet da loja
- * ruim, que é quando alguém mais precisa entrar.
+ * O enquadramento (formulário à esquerda, painel à direita) vive em
+ * `LayoutDeEntrada`, compartilhado com a recuperação de senha.
  *
  * ## Acessibilidade que a tela anterior não tinha
  *
@@ -91,93 +83,71 @@ export function Entrada({
   const aviso = erroDoServidor ?? erro
 
   return (
-    <main className="entrada">
-      <section className="entrada__marca" aria-hidden="true">
-        <div className="entrada__marca-topo">
-          <Icone nome="loja" tamanho={28} />
-          <div>
-            <p className="entrada__marca-nome">Order Hub</p>
-            <p className="entrada__marca-rede">Matsuya</p>
-          </div>
+    <LayoutDeEntrada
+      titulo="Bem-vindo de volta"
+      subtitulo="Entre para abrir o quadro da sua loja."
+    >
+      <form className="entrada__forma-campos" onSubmit={enviar} noValidate>
+        {aviso && (
+          <Faixa tom="perigo" icone="alerta">
+            {aviso}
+          </Faixa>
+        )}
+
+        <CampoLinha
+          id="email"
+          rotulo="E-mail"
+          type="email"
+          inputMode="email"
+          /* Sem isto o gerenciador de senhas do tablet não preenche, e o
+             operador digita o e-mail inteiro em toda troca de turno. */
+          autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          autoFocus
+          placeholder="voce@matsuya.com.br"
+          ref={campoDeEmail}
+          value={email}
+          erro={errosDoCampo.email}
+          onChange={(e) => definirEmail(e.target.value)}
+        />
+
+        <div className="entrada__senha">
+          <CampoLinha
+            id="senha"
+            rotulo="Senha"
+            type={mostrarSenha ? 'text' : 'password'}
+            autoComplete="current-password"
+            placeholder="Digite sua senha"
+            ref={campoDeSenha}
+            value={senha}
+            erro={errosDoCampo.senha}
+            onChange={(e) => definirSenha(e.target.value)}
+          />
+          {/*
+            Ver a senha existe porque teclado de tablet erra, e a alternativa é
+            apagar tudo e digitar de novo às cegas. O rótulo muda junto com o
+            ícone: quem usa leitor de tela precisa saber o estado, não só a ação.
+          */}
+          <button
+            type="button"
+            className="entrada__olho"
+            onClick={() => definirMostrarSenha((v) => !v)}
+            aria-label={mostrarSenha ? 'Ocultar a senha' : 'Mostrar a senha'}
+            aria-pressed={mostrarSenha}
+          >
+            <Icone nome={mostrarSenha ? 'olho-cortado' : 'olho'} tamanho={20} />
+          </button>
         </div>
 
-        <p className="entrada__marca-frase">Sua operação em uma tela.</p>
+        <button type="button" className="entrada__link" onClick={aoEsquecerSenha}>
+          Esqueci minha senha
+        </button>
 
-        <ul className="entrada__marca-lista">
-          <li>Pedidos ao vivo, sem recarregar</li>
-          <li>Entregas e comandas no mesmo lugar</li>
-          <li>Prazos que cobram sozinhos</li>
-        </ul>
-      </section>
-
-      <section className="entrada__area">
-        <form className="entrada__forma" onSubmit={enviar} noValidate>
-          {/* Repetido para leitor de tela: o painel da marca é aria-hidden. */}
-          <header className="entrada__cabecalho">
-            <h1>Entrar</h1>
-            <p>Acesso da operação · Order Hub Matsuya</p>
-          </header>
-
-          {aviso && (
-            <Faixa tom="perigo" icone="alerta">
-              {aviso}
-            </Faixa>
-          )}
-
-          <CampoLinha
-            id="email"
-            rotulo="E-mail"
-            type="email"
-            inputMode="email"
-            /* Sem isto o gerenciador de senhas do tablet não preenche, e o
-               operador digita o e-mail inteiro em toda troca de turno. */
-            autoComplete="email"
-            autoCapitalize="none"
-            spellCheck={false}
-            autoFocus
-            ref={campoDeEmail}
-            value={email}
-            erro={errosDoCampo.email}
-            onChange={(e) => definirEmail(e.target.value)}
-          />
-
-          <div className="entrada__senha">
-            <CampoLinha
-              id="senha"
-              rotulo="Senha"
-              type={mostrarSenha ? 'text' : 'password'}
-              autoComplete="current-password"
-              ref={campoDeSenha}
-              value={senha}
-              erro={errosDoCampo.senha}
-              onChange={(e) => definirSenha(e.target.value)}
-            />
-            {/*
-              Ver a senha existe porque teclado de tablet erra, e a alternativa
-              é a pessoa apagar tudo e digitar de novo às cegas. O rótulo muda
-              junto com o ícone: quem usa leitor de tela precisa saber o estado,
-              não só a ação.
-            */}
-            <button
-              type="button"
-              className="entrada__olho"
-              onClick={() => definirMostrarSenha((v) => !v)}
-              aria-label={mostrarSenha ? 'Ocultar a senha' : 'Mostrar a senha'}
-              aria-pressed={mostrarSenha}
-            >
-              <Icone nome={mostrarSenha ? 'olho-cortado' : 'olho'} tamanho={20} />
-            </button>
-          </div>
-
-          <Botao type="submit" enfase="primaria" largo carregando={entrando}>
-            Entrar
-          </Botao>
-
-          <button type="button" className="entrada__link" onClick={aoEsquecerSenha}>
-            Esqueci minha senha
-          </button>
-        </form>
-      </section>
-    </main>
+        <Botao type="submit" enfase="primaria" largo carregando={entrando}>
+          Entrar
+        </Botao>
+      </form>
+    </LayoutDeEntrada>
   )
 }

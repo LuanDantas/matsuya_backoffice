@@ -920,128 +920,112 @@
 /* ── Entrada e escolha de unidade ───────────────────────────────────────── */
 
 .entrada {
-  display: grid;
-  /*
-   * O painel da marca fica em fração menor que o formulário: ele é presença,
-   * não conteúdo. Metade a metade faria a marca competir com a única coisa que
-   * a pessoa veio fazer aqui.
-   */
-  grid-template-columns: 5fr 7fr;
   min-height: 100dvh;
+  background: var(--superficie-1);
 }
 
 /*
- * O painel da marca — a única superfície com gradiente do sistema.
+ * O painel só aparece a partir de 1024 px, e some inteiro em vez de encolher.
  *
- * A exceção é deliberada e está documentada nos tokens: em toda outra tela a
- * cor tem significado operacional (vermelho é atraso, âmbar é aperto), e um
- * painel decorativo competiria com um pedido estourando. Esta é a única tela em
- * que não há pedido nenhum.
+ * Num tablet o espaço que sobra pertence ao formulário: uma faixa decorativa
+ * espremida não decora nada e ainda empurra os campos para baixo da dobra.
  */
-.entrada__marca {
+@media (min-width: 1024px) {
+  .entrada {
+    display: grid;
+    /* O formulário leva a fração maior. O painel é moldura, não conteúdo. */
+    grid-template-columns: 1.05fr 0.95fr;
+  }
+}
+
+.entrada__coluna {
   display: flex;
   flex-direction: column;
-  gap: var(--e-8);
-  justify-content: center;
-  padding: var(--e-10) var(--e-8);
-  padding-top: max(var(--e-10), env(safe-area-inset-top));
-  padding-left: max(var(--e-8), env(safe-area-inset-left));
-  background: linear-gradient(
-    160deg,
-    var(--entrada-painel-de) 0%,
-    var(--entrada-painel-ate) 100%
-  );
-  color: var(--entrada-painel-texto);
+  min-height: 100dvh;
 }
 
-.entrada__marca-topo {
-  display: flex;
+.entrada__barra {
+  padding: var(--e-5) var(--e-6);
+  padding-top: max(var(--e-5), env(safe-area-inset-top));
+  border-bottom: 1px solid var(--borda);
+}
+
+.entrada__marca {
+  display: inline-flex;
   align-items: center;
   gap: var(--e-3);
+  color: var(--marca);
 }
 
-.entrada__marca-nome {
-  margin: 0;
-  font-size: var(--texto-xl);
+.entrada__marca strong {
+  display: block;
+  font-size: var(--texto-lg);
   font-weight: var(--peso-forte);
   line-height: var(--linha-apertada);
+  color: var(--texto);
 }
 
-.entrada__marca-rede {
-  margin: 0;
+.entrada__marca small {
+  display: block;
   font-size: var(--texto-sm);
-  color: var(--entrada-painel-fraco);
+  color: var(--texto-fraco);
 }
 
-.entrada__marca-frase {
+.entrada__area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--e-8) var(--e-6);
+  padding-bottom: max(var(--e-8), env(safe-area-inset-bottom));
+}
+
+/*
+ * Sem o painel, o formulário sobe em vez de centralizar.
+ *
+ * Numa coluna de tablet em retrato o centro fica lá embaixo, e o formulário
+ * boiando no meio de um vazio parece tela que não terminou de carregar. Perto
+ * da barra da marca ele lê como a continuação dela — e sobra espaço para o
+ * teclado sem empurrar nada.
+ */
+@media (max-width: 1023px) {
+  .entrada__area {
+    align-items: flex-start;
+    padding-top: var(--e-10);
+  }
+}
+
+.entrada__conteudo {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-6);
+}
+
+.entrada__titulo h1 {
   margin: 0;
-  max-width: 12ch;
   font-size: var(--texto-2xl);
   font-weight: var(--peso-forte);
   line-height: var(--linha-apertada);
 }
 
-.entrada__marca-lista {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--e-3);
-  font-size: var(--texto-base);
-  color: var(--entrada-painel-fraco);
+.entrada__titulo p {
+  margin: var(--e-2) 0 0;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
 }
 
-/* Marcador desenhado, e não `list-style`: o disco padrão herda a cor do texto
-   e some no gradiente escuro em alguns navegadores. */
-.entrada__marca-lista li {
-  display: flex;
-  align-items: center;
-  gap: var(--e-3);
-}
-
-.entrada__marca-lista li::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  flex-shrink: 0;
-  border-radius: var(--raio-total);
-  background: currentColor;
-}
-
-.entrada__area {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--e-6) var(--e-4);
-  padding-bottom: max(var(--e-6), env(safe-area-inset-bottom));
-  background: var(--superficie-base);
-}
-
-.entrada__forma {
-  width: 100%;
-  max-width: 380px;
+.entrada__forma-campos {
   display: flex;
   flex-direction: column;
   gap: var(--e-4);
 }
 
-.entrada__cabecalho h1 {
-  margin: 0;
-  font-size: var(--texto-2xl);
-  line-height: var(--linha-apertada);
-}
-
-.entrada__cabecalho p {
-  margin: var(--e-1) 0 0;
-  font-size: var(--texto-sm);
-  color: var(--texto-fraco);
-}
-
 /*
- * O botão de ver a senha fica dentro do campo, e o campo ganha espaço à direita
- * para ele. Colocá-lo ao lado empurraria o input e quebraria o alinhamento com
- * o campo de e-mail logo acima.
+ * O botão de ver a senha fica dentro do campo, e o campo abre espaço à direita
+ * para ele. Ao lado, empurraria o input e quebraria o alinhamento com o campo
+ * de e-mail logo acima.
  */
 .entrada__senha {
   position: relative;
@@ -1071,7 +1055,7 @@
   justify-content: center;
   border: 0;
   background: none;
-  color: var(--texto-fraco);
+  color: var(--texto-apagado);
   cursor: pointer;
   border-radius: var(--raio-1);
   transition: color var(--duracao-rapida) var(--curva);
@@ -1082,13 +1066,34 @@
 }
 
 /*
- * Ação secundária como texto, não como botão.
+ * "Esqueci minha senha" acima do botão e alinhado à direita.
  *
- * "Esqueci minha senha" concorrendo visualmente com "Entrar" faria a tela ter
- * duas chamadas de mesmo peso — e a que interessa noventa e nove vezes em cem é
- * a primeira. Mantém os 44 px de alvo mesmo parecendo um link.
+ * Acima porque é onde a pessoa já está olhando quando percebe que não lembra —
+ * logo depois do campo de senha. Abaixo do "Entrar" ela só o encontra depois de
+ * errar uma vez.
  */
 .entrada__link {
+  align-self: flex-end;
+  min-height: var(--alvo);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--marca);
+  font: inherit;
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+  transition: color var(--duracao-rapida) var(--curva);
+}
+
+.entrada__link:hover {
+  color: var(--marca-hover);
+  text-decoration: underline;
+}
+
+/* Voltar é navegação, não ação: centralizado e discreto, longe do botão que
+   confirma o passo. */
+.entrada__voltar {
   min-height: var(--alvo);
   padding: 0;
   border: 0;
@@ -1096,39 +1101,213 @@
   color: var(--texto-fraco);
   font: inherit;
   font-size: var(--texto-sm);
-  text-align: center;
   cursor: pointer;
   transition: color var(--duracao-rapida) var(--curva);
 }
 
-.entrada__link:hover {
-  color: var(--marca);
+.entrada__voltar:hover {
+  color: var(--texto);
   text-decoration: underline;
 }
 
+/* ── Painel decorativo ──────────────────────────────────────────────────── */
+
+.entrada__painel {
+  display: none;
+  position: relative;
+  overflow: hidden;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-8);
+  padding: var(--e-10);
+  background: linear-gradient(
+    160deg,
+    var(--entrada-painel-de) 0%,
+    var(--entrada-painel-ate) 100%
+  );
+  color: var(--entrada-painel-texto);
+}
+
+@media (min-width: 1024px) {
+  .entrada__painel {
+    display: flex;
+  }
+}
+
 /*
- * Abaixo de 860 px o painel vira uma faixa no topo, com o essencial.
+ * Recortadas com clip-path e não desenhadas em SVG: mesma figura por muito
+ * menos, e nada aqui precisa escalar.
  *
- * Some a lista de recursos, não o formulário: num tablet em retrato o que
- * importa é o campo estar acima da dobra, e a lista é a parte que a pessoa não
- * veio ler.
+ * Encostadas nas quatro bordas e pequenas de propósito. A primeira versão
+ * usava blocos de 130 a 150 px no meio do painel, e eles competiam com o
+ * cartão — que é o que a tela tem para mostrar. Moldura emoldura; se ela puxa
+ * o olho, deixou de ser moldura.
  */
-@media (max-width: 860px) {
-  .entrada {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
-  }
+.entrada__forma {
+  position: absolute;
+  display: block;
+}
 
-  .entrada__marca {
-    gap: var(--e-4);
-    padding: var(--e-6) var(--e-4);
-    padding-top: max(var(--e-6), env(safe-area-inset-top));
-  }
+.entrada__forma--um {
+  top: 0;
+  left: 0;
+  width: 96px;
+  height: 96px;
+  background: var(--entrada-forma-1);
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
 
-  .entrada__marca-frase,
-  .entrada__marca-lista {
-    display: none;
+.entrada__forma--dois {
+  top: 0;
+  right: 0;
+  width: 120px;
+  height: 120px;
+  background: var(--entrada-forma-2);
+  clip-path: polygon(100% 0, 100% 100%, 0 0);
+}
+
+.entrada__forma--tres {
+  bottom: 0;
+  right: 0;
+  width: 160px;
+  height: 160px;
+  background: var(--entrada-forma-3);
+  clip-path: polygon(100% 100%, 100% 0, 0 100%);
+}
+
+.entrada__forma--quatro {
+  bottom: 0;
+  left: 0;
+  width: 72px;
+  height: 72px;
+  background: var(--entrada-forma-3);
+  clip-path: polygon(0 100%, 0 0, 100% 100%);
+}
+
+.entrada__rodape {
+  position: relative;
+  margin: 0;
+  max-width: 380px;
+  font-size: var(--texto-sm);
+  line-height: var(--linha-normal);
+  color: var(--entrada-painel-fraco);
+  text-align: center;
+}
+
+/* ── A amostra do quadro ────────────────────────────────────────────────── */
+
+/*
+ * Um cartão do quadro em miniatura — o mesmo objeto que a pessoa vai olhar o
+ * dia inteiro depois de entrar. Montado com os tokens do quadro real, então
+ * envelhece junto: mudou o chip de preparo lá, muda aqui.
+ *
+ * Esta é a única sombra forte do sistema, e ela é o que faz o cartão flutuar
+ * sobre o painel em vez de ficar colado nele.
+ */
+.amostra {
+  position: relative;
+  width: 380px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  padding: var(--e-4);
+  border-radius: var(--raio-3);
+  background: var(--superficie-1);
+  box-shadow: 0 40px 90px -35px rgb(0 0 0 / 0.45);
+  animation: amostra-flutuar 5s ease-in-out infinite;
+}
+
+@keyframes amostra-flutuar {
+  0%,
+  100% {
+    transform: translateY(0);
   }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/*
+ * Movimento é enfeite aqui: a informação do cartão não depende dele. Some
+ * inteiro quando alguém pede menos movimento, em vez de só encurtar.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .amostra {
+    animation: none;
+  }
+}
+
+.amostra__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
+}
+
+.amostra__codigo {
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-forte);
+  color: var(--texto);
+}
+
+.amostra__chip {
+  padding: 3px var(--e-2);
+  border-radius: var(--raio-total);
+  background: var(--preparo-fundo);
+  color: var(--preparo-texto);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-medio);
+}
+
+.amostra__cliente {
+  margin: 0;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.amostra__itens {
+  list-style: none;
+  margin: 0;
+  padding: var(--e-3) 0;
+  border-top: 1px solid var(--borda);
+  border-bottom: 1px solid var(--borda);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  font-size: var(--texto-sm);
+  color: var(--texto);
+}
+
+.amostra__itens .num {
+  display: inline-block;
+  min-width: 22px;
+  font-weight: var(--peso-forte);
+}
+
+.amostra__rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
+}
+
+.amostra__entregador {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+.amostra__acao {
+  padding: var(--e-2) var(--e-4);
+  border-radius: var(--raio-1);
+  background: var(--acao);
+  color: var(--acao-texto);
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-forte);
 }
 
 .escolha {
