@@ -139,6 +139,11 @@ const PARES = [
   // gráfico, 3:1 — e é o par que impede o verde de clarear até sumir na
   // tentativa de imitar o da referência, que reprova em 1,98:1.
   ['ponto do farol em repouso', 'farol-ok-ponto', 'superficie-3', 3],
+
+  // Item corrente do menu. O par existe separado do vermelho de alarme, e é
+  // aqui que ele fica preso ao mínimo: o #EA1D2C da referência reprova em
+  // 4,04:1 sobre o próprio fundo suave.
+  ['item corrente do menu', 'nav-ativo', 'nav-ativo-suave', 4.5],
 ]
 
 let falhas = 0

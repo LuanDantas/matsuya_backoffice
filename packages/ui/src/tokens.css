@@ -142,6 +142,20 @@
   --farol-ok-ponto: #0f9d58;
 
   /*
+   * O "você está aqui" do menu lateral.
+   *
+   * Par próprio, e não `--perigo` reaproveitado, apesar de a cor ser vizinha.
+   * Vermelho neste sistema significa alarme — atraso, falha, cancelamento —, e
+   * o indicador de navegação não é um alarme. Separado nos tokens, o dia em
+   * que o vermelho de alarme mudar não arrasta o menu junto, e vice-versa.
+   *
+   * #D61324 em vez do #EA1D2C da referência: o original dá 4,04:1 sobre o
+   * fundo suave e reprova AA no rótulo do item ativo.
+   */
+  --nav-ativo: #d61324;
+  --nav-ativo-suave: #fdeaec;
+
+  /*
    * A faixa de contagem do preparo: âmbar **sólido** com texto escuro, como na
    * referência — não o âmbar suave com texto âmbar dos selos.
    *
@@ -267,6 +281,9 @@
 
   /* No escuro a pílula é escura, então o ponto pode subir: 6,96:1. */
   --farol-ok-ponto: #34d399;
+
+  --nav-ativo: #f87171;
+  --nav-ativo-suave: #3a1414;
 
   /* Idênticos ao claro: âmbar claro com texto quase preto já funciona nos dois
      temas, e inverter criaria um terceiro estado para manter. */

@@ -1525,13 +1525,19 @@
   color: var(--texto);
 }
 
-/* Item corrente: fundo suave da marca + barra vertical na borda esquerda, como
-   a referência. Cor sozinha não sobrevive a contraluz nem a daltonismo — a
-   barra é o que garante a leitura. */
+/*
+ * Item corrente: fundo suave + barra vertical na borda esquerda, como a
+ * referência. Cor sozinha não sobrevive a contraluz nem a daltonismo — a
+ * barra e o peso do texto são o que garantem a leitura.
+ *
+ * O vermelho vem de `--nav-ativo`, um par próprio. Não é o vermelho de alarme
+ * do resto do sistema, e não deve virar: aqui ele diz "você está aqui", não
+ * "algo deu errado".
+ */
 .menu__item[aria-current='page'] {
-  background: var(--marca-suave);
-  border-left-color: var(--marca);
-  color: var(--marca);
+  background: var(--nav-ativo-suave);
+  border-left-color: var(--nav-ativo);
+  color: var(--nav-ativo);
   font-weight: var(--peso-forte);
 }
 
