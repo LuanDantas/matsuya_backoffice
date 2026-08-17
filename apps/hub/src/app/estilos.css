@@ -449,6 +449,11 @@
   border: 1px solid var(--borda);
   border-radius: 14px;
   overflow: hidden;
+  /* Nomeadas: só o que a seleção muda. `all` arrastaria junto as trocas de
+     cor dos chips, que precisam ser imediatas. */
+  transition:
+    border-color var(--duracao) var(--curva),
+    box-shadow var(--duracao) var(--curva);
 }
 
 /*
@@ -2748,12 +2753,44 @@
 
 /* ── Cartão selecionado ─────────────────────────────────────────────────── */
 
-/* Anel da marca enquanto o drawer daquele pedido está aberto — a referência
-   marca o cartão de origem, e sem isso o operador perde de vista qual pedido
-   ele abriu quando o quadro se reordena. */
+/*
+ * O cartão cujo drawer está aberto.
+ *
+ * Marcá-lo é necessário: sem isso o operador perde de vista qual pedido ele
+ * abriu quando o quadro se reordena embaixo do drawer.
+ *
+ * ## Por que não é mais vermelho
+ *
+ * Era um anel de 3 px na cor da marca. Neste sistema vermelho significa
+ * **alarme** — é o que diz atraso, cancelamento e falha —, então um pedido
+ * dentro do prazo ganhava a aparência de um pedido estourado só por estar
+ * aberto. O próprio arquivo já tinha decidido isso uma vez, algumas linhas
+ * acima: a borda do cartão deixou de ficar vermelha no atraso porque
+ * "contornar o cartão inteiro transformava uma coluna com quatro atrasos num
+ * paredão vinho onde nada mais se lê". A seleção tinha reintroduzido o
+ * paredão por outra porta.
+ *
+ * ## O que ficou
+ *
+ * Tinta, e não cor semântica: um fio nítido de 2 px (borda + anel) com um halo
+ * translúcido de 4 px em volta. É o único lugar da interface que usa `--texto`
+ * como contorno, então não se confunde com nada — nem com o alarme, nem com o
+ * verde de conclusão, nem com o azul de `--foco`, que é foco de teclado e
+ * precisa continuar distinguível da seleção.
+ *
+ * Sem sombra e sem deslocamento, de propósito: `--sombra-cartao` é `none` no
+ * sistema inteiro, e levantar o cartão selecionado abriria a exceção para
+ * todos os outros. O halo dá a mesma leitura de "este está em primeiro plano"
+ * sem sair do plano.
+ *
+ * O halo cabe: são 5 px para fora da borda, dentro dos 8 px de respiro da
+ * coluna e da distância entre cartões.
+ */
 .cartao[data-selecionado] {
-  border-color: var(--marca);
-  box-shadow: 0 0 0 2px var(--marca);
+  border-color: var(--texto);
+  box-shadow:
+    0 0 0 1px var(--texto),
+    0 0 0 5px color-mix(in srgb, var(--texto) 10%, transparent);
 }
 
 /* ── Seletor de lojas ───────────────────────────────────────────────────── */

@@ -397,6 +397,12 @@ export function Cartao({
       data-variante={variante}
       data-urgencia={nivel}
       data-selecionado={selecionado || undefined}
+      /*
+       * O anel é o único sinal de que este é o cartão aberto, e anel não
+       * chega a quem usa leitor de tela. `aria-current` dá o mesmo fato pelo
+       * canal que não é visual — sem ele a seleção era cor e só.
+       */
+      aria-current={selecionado || undefined}
     >
       <button
         type="button"
