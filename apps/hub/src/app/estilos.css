@@ -333,6 +333,95 @@
   gap: var(--e-2);
 }
 
+/* ── Esqueleto de carregamento ──────────────────────────────────────────── */
+
+/*
+ * Blocos cinzas com a forma do cartão, enquanto os dados não chegam.
+ *
+ * A altura de cada bloco é a do elemento que ele substitui, e o cartão inteiro
+ * tem a altura do cartão de verdade. É o que impede o salto: quando os dados
+ * entram, nada se move de lugar.
+ */
+.esqueleto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  padding: var(--e-3);
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  background: var(--superficie-1);
+  /* Entra escalonado, de cima para baixo — a mesma ordem em que a coluna é
+     lida. Todos surgindo juntos parece um piscar; um a um, carregamento. */
+  animation: esqueleto-entra 240ms var(--curva) both;
+  animation-delay: var(--atraso, 0ms);
+}
+
+.esqueleto__bloco {
+  display: block;
+  border-radius: var(--raio-1);
+  background: var(--superficie-2);
+  position: relative;
+  overflow: hidden;
+}
+
+/*
+ * O reflexo que atravessa cada bloco.
+ *
+ * Sem ele o esqueleto é indistinguível de um cartão vazio quebrado. O
+ * movimento é o que diz "está vindo" — e é por isso que ele some com
+ * `prefers-reduced-motion`, junto com um cinza levemente mais forte, que
+ * mantém a leitura de "provisório" sem movimento nenhum.
+ */
+.esqueleto__bloco::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 25%,
+    color-mix(in srgb, var(--texto) 8%, transparent) 50%,
+    transparent 75%
+  );
+  animation: ui-brilho 1.4s linear infinite;
+}
+
+.esqueleto__chip { width: 55%; height: 18px; border-radius: 999px; }
+.esqueleto__heroi { width: 70%; height: 26px; }
+.esqueleto__faixa { width: 100%; height: 28px; border-radius: 999px; }
+
+.esqueleto__rodape {
+  width: 45%;
+  height: 12px;
+  margin: var(--e-1) auto 0;
+}
+
+@keyframes esqueleto-entra {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .esqueleto { animation: none; }
+  .esqueleto__bloco::after { animation: none; content: none; }
+  .esqueleto__bloco { background: var(--borda); }
+}
+
+/* O ícone de recarregar girando enquanto a busca corre. */
+.ui-botao[data-atualizando] svg {
+  animation: ui-girar 900ms linear infinite;
+}
+
+/* Desabilitado por estar ocupado, não por estar indisponível: o cursor diz
+   "espere", e não "não pode". */
+.ui-botao[data-atualizando]:disabled {
+  opacity: 1;
+  cursor: progress;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-botao[data-atualizando] svg { animation-duration: 2.4s; }
+}
+
 /* ── Cartão ─────────────────────────────────────────────────────────────── */
 
 .cartao {

@@ -438,6 +438,7 @@ export function Casca({
             aoBuscar={definirBusca}
             ocultados={quadro.pedidos.length - visiveis.length}
             aoAtualizar={quadro.recarregar}
+            atualizando={quadro.carregando}
           />
         )}
 
@@ -511,93 +512,94 @@ export function Casca({
           </Faixa>
         )}
 
-        {ehQuadro && quadro.carregando ? (
-          <main className="carregando">
-            <span className="carregando__giro" aria-hidden="true" />
-            <p role="status">Carregando o quadro…</p>
-          </main>
-        ) : (
-          <>
-            {tela === 'inicio' && (
-              <Inicio
-                unityId={unidadeFoco}
-                nomeDaUnidade={nomeDaUnidade}
-                nomeDoUsuario={sessao.identidade?.user.name ?? ''}
-                token={sessao.token}
+        {/*
+          Sem tela de carregamento por cima do quadro.
+
+          Ela trocava o quadro inteiro por um giro centralizado, e isso
+          significava que a cada atualização as colunas sumiam e voltavam —
+          quem estava lendo um pedido perdia o lugar. Agora o esqueleto mora
+          dentro de cada coluna: os cabeçalhos ficam, a largura fica, e cada
+          bloco cinza vira o cartão que estava ali.
+        */}
+        {tela === 'inicio' && (
+          <Inicio
+            unityId={unidadeFoco}
+            nomeDaUnidade={nomeDaUnidade}
+            nomeDoUsuario={sessao.identidade?.user.name ?? ''}
+            token={sessao.token}
+            agora={agora}
+            aoIrParaOQuadro={() => definirTela('pedidos')}
+          />
+        )}
+
+        {ehQuadro && (
+          <main className="area">
+            {modo === 'quadros' ? (
+              <Quadros
+                pedidos={visiveis}
+                permissoes={sessao.permissoes}
                 agora={agora}
-                aoIrParaOQuadro={() => definirTela('pedidos')}
+                emCurso={acoes.emCurso}
+                selecionado={detalhe}
+                nomesDasUnidades={nomesDasUnidades}
+                prazoDeAceiteEmMinutos={prazoDeAceite}
+                carregando={quadro.carregando}
+                aoPedirAcao={pedirAcao}
+                aoAbrirDetalhe={abrirDetalhe}
               />
-            )}
-
-            {ehQuadro && (
-              <main className="area">
-                {modo === 'quadros' ? (
-                  <Quadros
-                    pedidos={visiveis}
-                    permissoes={sessao.permissoes}
-                    agora={agora}
-                    emCurso={acoes.emCurso}
-                    selecionado={detalhe}
-                    nomesDasUnidades={nomesDasUnidades}
-                    prazoDeAceiteEmMinutos={prazoDeAceite}
-                    aoPedirAcao={pedirAcao}
-                    aoAbrirDetalhe={abrirDetalhe}
-                  />
-                ) : (
-                  <Expedicao
-                    pedidos={visiveis}
-                    permissoes={sessao.permissoes}
-                    agora={agora}
-                    emCurso={acoes.emCurso}
-                    selecionado={detalhe}
-                    nomesDasUnidades={nomesDasUnidades}
-                    prazoDeAceiteEmMinutos={prazoDeAceite}
-                    aoPedirAcao={pedirAcao}
-                    aoAbrirDetalhe={abrirDetalhe}
-                  />
-                )}
-              </main>
-            )}
-
-            {tela === 'rota' && (
-              <EmRota
-                pedidos={quadro.pedidos}
-                unidade={{ nome: nomeDaUnidade, lat: unidade?.lat, lng: unidade?.lng }}
+            ) : (
+              <Expedicao
+                pedidos={visiveis}
+                permissoes={sessao.permissoes}
                 agora={agora}
+                emCurso={acoes.emCurso}
+                selecionado={detalhe}
+                nomesDasUnidades={nomesDasUnidades}
+                prazoDeAceiteEmMinutos={prazoDeAceite}
+                aoPedirAcao={pedirAcao}
                 aoAbrirDetalhe={abrirDetalhe}
               />
             )}
+          </main>
+        )}
 
-            {tela === 'conversas' && (
-              <Conversas
-                unityId={unidadeFoco}
-                pedidos={quadro.pedidos}
-                token={sessao.token}
-                agora={agora}
-                aoAbrirConversa={(pedido) => {
-                  definirDetalhe(null)
-                  definirConversa(pedido.id)
-                }}
-              />
-            )}
+        {tela === 'rota' && (
+          <EmRota
+            pedidos={quadro.pedidos}
+            unidade={{ nome: nomeDaUnidade, lat: unidade?.lat, lng: unidade?.lng }}
+            agora={agora}
+            aoAbrirDetalhe={abrirDetalhe}
+          />
+        )}
 
-            {tela === 'cardapio' && <Cardapio unityId={unidadeFoco} token={sessao.token} />}
+        {tela === 'conversas' && (
+          <Conversas
+            unityId={unidadeFoco}
+            pedidos={quadro.pedidos}
+            token={sessao.token}
+            agora={agora}
+            aoAbrirConversa={(pedido) => {
+              definirDetalhe(null)
+              definirConversa(pedido.id)
+            }}
+          />
+        )}
 
-            {tela === 'ajustes' && (
-              <Ajustes
-                som={som}
-                impressao={{
-                  temAgente: impressao.temAgente,
-                  automatica: impressao.automatica,
-                  pendentes: impressao.fila.length,
-                  tentarDeNovo: impressao.tentarDeNovo,
-                }}
-                conexao={ROTULO_DA_CONEXAO[quadro.conexao] ?? quadro.conexao}
-                cursores={quadro.cursores}
-                nomesDasUnidades={nomesDasUnidades}
-              />
-            )}
-          </>
+        {tela === 'cardapio' && <Cardapio unityId={unidadeFoco} token={sessao.token} />}
+
+        {tela === 'ajustes' && (
+          <Ajustes
+            som={som}
+            impressao={{
+              temAgente: impressao.temAgente,
+              automatica: impressao.automatica,
+              pendentes: impressao.fila.length,
+              tentarDeNovo: impressao.tentarDeNovo,
+            }}
+            conexao={ROTULO_DA_CONEXAO[quadro.conexao] ?? quadro.conexao}
+            cursores={quadro.cursores}
+            nomesDasUnidades={nomesDasUnidades}
+          />
         )}
       </div>
 

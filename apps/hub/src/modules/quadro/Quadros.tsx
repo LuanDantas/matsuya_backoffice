@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { EstadoVazio, PainelDeSecao } from '@matsuya/ui'
 import type { OrderAction } from '@matsuya/contracts'
 import type { PedidoDoQuadro } from '@matsuya/api-client'
 import { Cartao } from './Cartao'
 import { CartaoDeAceite } from './CartaoDeAceite'
+import { PilhaDeEsqueletos } from './CartaoEsqueleto'
 import { SECOES, type ChaveDaSecao, type SecaoDoQuadro } from '../../dados/secoes'
 
 /**
@@ -23,6 +24,14 @@ export interface PropsDoQuadro {
   /** Nome por unidade. Só desce ao cartão quando há mais de uma loja aberta. */
   nomesDasUnidades: ReadonlyMap<number, string>
   prazoDeAceiteEmMinutos: number
+  /**
+   * Troca os cartões por esqueletos.
+   *
+   * A prop fica no quadro e não numa tela de carregamento por cima: os
+   * cabeçalhos das colunas continuam na tela durante a busca, e é isso que
+   * impede o layout de saltar quando os dados chegam.
+   */
+  carregando?: boolean
   aoPedirAcao: (pedido: PedidoDoQuadro, acao: OrderAction) => void
   aoAbrirDetalhe: (pedido: PedidoDoQuadro) => void
 }
@@ -96,6 +105,7 @@ export function Quadros({
   selecionado,
   nomesDasUnidades,
   prazoDeAceiteEmMinutos,
+  carregando = false,
   aoPedirAcao,
   aoAbrirDetalhe,
 }: PropsDoQuadro) {
@@ -140,8 +150,24 @@ export function Quadros({
 
   const multiLoja = nomesDasUnidades.size > 1
 
+  /**
+   * O quadro começa na primeira coluna.
+   *
+   * `history.scrollRestoration = 'manual'` cobre a rolagem do documento, mas
+   * a de contêiner interno é restaurada de forma diferente em cada navegador —
+   * e este contêiner rola na horizontal. Sem isto, recarregar podia abrir o
+   * Hub com Aceitar cortada pela borda, como se alguém tivesse arrastado.
+   *
+   * Só na montagem. Repetir a cada recarga jogaria o operador de volta à
+   * primeira coluna toda vez que ele atualizasse olhando Finalizados.
+   */
+  const trilho = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    trilho.current?.scrollTo({ left: 0 })
+  }, [])
+
   return (
-    <div className="quadros">
+    <div className="quadros" ref={trilho}>
       {visiveis.map((secao) => {
         const todos = porSecao.get(secao.chave) ?? []
         const atrasados = contarAtrasados(todos, agora)
@@ -167,7 +193,10 @@ export function Quadros({
               aoFiltrarAlertas={() => alternarFiltro(secao.chave)}
             >
               <div className="quadros__pilha">
-                {lista.map((pedido) =>
+                {carregando && <PilhaDeEsqueletos />}
+
+                {!carregando &&
+                  lista.map((pedido) =>
                   secao.chave === 'aceitar' ? (
                     <CartaoDeAceite
                       key={pedido.id}
@@ -194,14 +223,14 @@ export function Quadros({
                       aoPedirAcao={aoPedirAcao}
                       aoAbrirDetalhe={aoAbrirDetalhe}
                     />
-                  )
-                )}
+                    )
+                  )}
 
-                {lista.length === 0 && (
+                {!carregando && lista.length === 0 && (
                   <EstadoVazio titulo="Nenhum pedido" descricao={secao.vazio} />
                 )}
 
-                {filtrando && (
+                {!carregando && filtrando && (
                   <p className="quadros__filtro" role="status">
                     {todos.length - lista.length === 1
                       ? '1 pedido no prazo está oculto.'

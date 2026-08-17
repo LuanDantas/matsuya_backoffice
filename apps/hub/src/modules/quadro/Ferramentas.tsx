@@ -23,6 +23,8 @@ export interface PropsDasFerramentas {
   /** Quantos pedidos a busca escondeu — some quando o campo está vazio. */
   ocultados: number
   aoAtualizar: () => void
+  /** Uma busca em curso — gira o ícone e tranca o botão contra toque duplo. */
+  atualizando?: boolean
 }
 
 const ROTULO_DO_MODO: Record<ModoDoQuadro, string> = {
@@ -57,6 +59,7 @@ export function Ferramentas({
   aoBuscar,
   ocultados,
   aoAtualizar,
+  atualizando = false,
 }: PropsDasFerramentas) {
   const telaCheia = useTelaCheia()
 
@@ -109,11 +112,26 @@ export function Ferramentas({
         */}
         <span
           className="ferramentas__dica"
-          data-dica="Atualizar o quadro"
+          data-dica={atualizando ? 'Atualizando…' : 'Atualizar o quadro'}
           data-dica-lado="abaixo"
         >
-          <Botao enfase="fantasma" icone="atualizar" onClick={aoAtualizar}>
-            <span className="ui-visualmente-oculto">Atualizar o quadro</span>
+          {/*
+            O ícone gira, em vez de dar lugar ao spinner genérico do `Botao`.
+            É a seta de recarregar rodando — o mesmo desenho, em movimento —,
+            e não um objeto novo aparecendo no lugar dela. O botão fica
+            desabilitado enquanto isso: sem trava, o toque repetido em rede
+            lenta dispara uma busca por toque.
+          */}
+          <Botao
+            enfase="fantasma"
+            icone="atualizar"
+            disabled={atualizando}
+            data-atualizando={atualizando || undefined}
+            onClick={aoAtualizar}
+          >
+            <span className="ui-visualmente-oculto">
+              {atualizando ? 'Atualizando o quadro' : 'Atualizar o quadro'}
+            </span>
           </Botao>
         </span>
 
