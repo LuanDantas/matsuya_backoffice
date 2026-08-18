@@ -3334,9 +3334,14 @@
  * apoio terminava encostado na faixa de fecho logo abaixo. Duas frases sobre o
  * mesmo assunto separadas por três pixels se leem como uma frase só quebrada
  * no lugar errado.
+ *
+ * O afastamento é grande porque a faixa de fecho é **tingida**: fundo colorido
+ * encostado em texto puxa o texto para dentro dele, e as duas coisas passam a
+ * parecer o mesmo bloco. O que separa dois blocos com fundos diferentes é o
+ * branco entre eles, não a divisória.
  */
 .contas__linha:last-of-type {
-  padding-bottom: var(--e-5);
+  padding-bottom: var(--e-8);
 }
 
 /* ── Fecho do pagamento ─────────────────────────────────────────────────── */
