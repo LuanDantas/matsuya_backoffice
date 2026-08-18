@@ -2326,20 +2326,20 @@
 /*
  * ## A capa
  *
- * O cabeçalho do painel vira uma faixa pintada. É a segunda e última exceção à
+ * O cabeçalho do painel é uma faixa pintada. É a segunda e última exceção à
  * regra de "nem gradiente nem sombra" — a primeira é o painel da entrada —, e
  * a justificativa é a mesma: nenhuma das duas é superfície de trabalho. O
  * quadro, onde o turno inteiro acontece, continua chapado.
  *
- * As formas são recortadas com `clip-path` em pseudo-elementos: mesma figura
- * que um SVG por muito menos, sem um nó a mais no DOM, e nada aqui escala.
- * Ficam nos cantos e em branco quase transparente — moldura que puxa o olho
- * deixou de ser moldura, e o que precisa ser lido aqui é o número do pedido.
+ * O vocabulário é o dos cartões do corpo, traduzido para fundo escuro: todo
+ * título tem seu disco à esquerda, todo apoio é micro-caixa-alta, todo dado
+ * secundário mora num crachá. O que muda é o material — vidro sobre vermelho
+ * em vez de cinza sobre branco.
  */
 .ui-drawer[data-variante='pedido'] .ui-drawer__cabecalho {
   position: relative;
   overflow: hidden;
-  align-items: center;
+  align-items: flex-start;
   padding: var(--e-5) var(--e-4);
   padding-top: max(var(--e-5), env(safe-area-inset-top));
   border-bottom: 0;
@@ -2347,32 +2347,64 @@
   color: var(--capa-texto);
 }
 
+/*
+ * As formas, recortadas com `clip-path` em pseudo-elementos.
+ *
+ * Mesma figura que um SVG por muito menos, sem um nó a mais no DOM, e nada
+ * aqui escala. Ficam nos cantos e em branco quase transparente — moldura que
+ * puxa o olho deixou de ser moldura, e o que precisa ser lido aqui é o número
+ * do pedido.
+ *
+ * Elas respiram: 12 s de ida e volta, deslocamento de poucos pixels. É lento o
+ * bastante para não ser percebido como movimento enquanto se lê, e o
+ * suficiente para a faixa não parecer uma imagem congelada quando o painel
+ * fica aberto no balcão.
+ */
 .ui-drawer[data-variante='pedido'] .ui-drawer__cabecalho::before,
 .ui-drawer[data-variante='pedido'] .ui-drawer__cabecalho::after {
   content: '';
   position: absolute;
   display: block;
-  background: rgb(255 255 255 / 0.09);
   pointer-events: none;
 }
 
 .ui-drawer[data-variante='pedido'] .ui-drawer__cabecalho::before {
-  top: 0;
-  right: 88px;
-  width: 128px;
-  height: 128px;
-  clip-path: polygon(100% 0, 100% 100%, 0 0);
-}
-
-.ui-drawer[data-variante='pedido'] .ui-drawer__cabecalho::after {
-  right: -30px;
-  bottom: -46px;
+  top: -20px;
+  right: 92px;
   width: 150px;
   height: 150px;
-  border-radius: 50%;
+  background: rgb(255 255 255 / 0.09);
+  clip-path: polygon(100% 0, 100% 100%, 0 0);
+  animation: capa-respira 12s ease-in-out infinite;
 }
 
-/* O conteúdo sobe acima das formas. Sem isto o círculo passa por cima do
+/*
+ * O clarão. Radial e não sólido: é o que dá profundidade à faixa sem virar uma
+ * segunda forma — o gradiente de fundo é linear, e um foco de luz cruzando com
+ * ele é o que impede a faixa de se ler como um retângulo pintado.
+ */
+.ui-drawer[data-variante='pedido'] .ui-drawer__cabecalho::after {
+  right: -60px;
+  bottom: -90px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgb(255 255 255 / 0.16) 0%,
+    rgb(255 255 255 / 0.05) 45%,
+    transparent 70%
+  );
+  animation: capa-respira 12s ease-in-out infinite reverse;
+}
+
+@keyframes capa-respira {
+  0%,
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-10px, 6px, 0) scale(1.06); }
+}
+
+/* O conteúdo sobe acima das formas. Sem isto o clarão passa por cima do
    horário, que é justamente a informação que ele deveria emoldurar. */
 .ui-drawer[data-variante='pedido'] .ui-drawer__titulo,
 .ui-drawer[data-variante='pedido'] .ui-drawer__acoes {
@@ -2381,9 +2413,43 @@
 }
 
 .ui-drawer[data-variante='pedido'] .ui-drawer__subtitulo {
-  gap: var(--e-3);
+  gap: var(--e-2);
   margin-top: var(--e-3);
-  color: var(--capa-fraco);
+  color: var(--capa-texto);
+}
+
+/*
+ * A entrada da capa, escalonada.
+ *
+ * Mesma ideia dos blocos do corpo — o painel se monta em vez de chegar como
+ * parede —, e na mesma ordem em que se lê: placa, nome, crachás. Os 40 ms
+ * entre etapas são os mesmos de lá, para as duas metades do painel entrarem no
+ * mesmo compasso.
+ */
+.capa__identidade,
+.ui-drawer[data-variante='pedido'] .ui-drawer__subtitulo,
+.ui-drawer[data-variante='pedido'] .ui-drawer__acoes {
+  animation: capa-entra 320ms var(--curva) both;
+}
+
+.ui-drawer[data-variante='pedido'] .ui-drawer__subtitulo { animation-delay: 60ms; }
+.ui-drawer[data-variante='pedido'] .ui-drawer__acoes { animation-delay: 120ms; }
+
+@keyframes capa-entra {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-drawer[data-variante='pedido'] .ui-drawer__cabecalho::before,
+  .ui-drawer[data-variante='pedido'] .ui-drawer__cabecalho::after,
+  .capa__identidade,
+  .ui-drawer[data-variante='pedido'] .ui-drawer__subtitulo,
+  .ui-drawer[data-variante='pedido'] .ui-drawer__acoes {
+    animation: none;
+  }
 }
 
 .capa__identidade {
@@ -2394,20 +2460,48 @@
 }
 
 /*
- * O número em placa vazada.
+ * A placa do número, com rótulo em cima.
  *
  * Contorno e não preenchimento: sobre a faixa vermelha, uma placa branca
  * sólida viraria o elemento mais pesado da tela e roubaria a leitura do nome
  * do cliente, que é quem se atende. Vazada, ela delimita sem competir.
+ *
+ * O rótulo "PEDIDO" resolve uma ambiguidade real — um número emoldurado
+ * sozinho podia ser mesa, comanda ou senha — e traz para a capa a mesma
+ * micro-caixa-alta que rotula os blocos lá embaixo.
  */
-.capa__codigo {
+.capa__placa {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
   padding: var(--e-1) var(--e-3);
-  border: 2px solid rgb(255 255 255 / 0.55);
+  border: 2px solid rgb(255 255 255 / 0.5);
   border-radius: var(--raio-2);
+  background: rgb(255 255 255 / 0.08);
+}
+
+.capa__placa small {
+  font-size: 10px;
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  /*
+   * Token e não `opacity`.
+   *
+   * Branco a 75% sobre a parada mais clara do gradiente dá 3,95:1 — abaixo do
+   * mínimo, e num texto de 10 px, que é onde menos se pode economizar.
+   * `--capa-fraco` é a mesma leitura de "apoio" aferida em 4,80:1, e o
+   * verificador de contraste a cobre; opacidade ele não enxerga.
+   */
+  color: var(--capa-fraco);
+}
+
+.capa__placa strong {
   font-size: var(--texto-2xl);
   font-weight: var(--peso-forte);
-  line-height: 1.1;
+  line-height: 1.05;
   letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 .ui-drawer[data-variante='pedido'] .ui-drawer__titulo h2 {
@@ -2415,32 +2509,63 @@
 }
 
 /*
- * O crachá do modo.
+ * Os crachás dos metadados.
  *
- * Ganha corpo porque é o que muda o que a loja faz com o pedido pronto —
- * chamar o entregador ou o cliente no balcão. Como palavra cinza no meio da
- * linha de metadados ele se lia como categoria; em vidro sólido, com o ícone
- * do veículo ou da casa, ele se lê como instrução.
+ * Ícone em disco de vidro, texto ao lado — a tradução para fundo escuro do
+ * disco que abre todo cartão do corpo. Como texto corrido separado por pontos,
+ * os três eram uma linha só que o olho percorria inteira para achar uma coisa.
  */
-.capa__modo {
+.capa__cracha {
+  display: inline-flex;
+  align-items: center;
   gap: var(--e-2);
-  padding: var(--e-1) var(--e-3);
-  border: 1px solid rgb(255 255 255 / 0.4);
+  padding: 3px var(--e-3) 3px 3px;
+  border: 1px solid rgb(255 255 255 / 0.22);
   border-radius: var(--raio-total);
-  background: rgb(255 255 255 / 0.16);
-  color: var(--capa-texto);
-  font-size: var(--texto-xs);
+  background: rgb(255 255 255 / 0.1);
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  line-height: 1.3;
+}
+
+.capa__cracha strong {
   font-weight: var(--peso-forte);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+/* O modo é o único cheio: é o que muda o que a loja faz com o pedido pronto,
+   e os outros dois são contexto que não decide nada. */
+.capa__cracha--forte {
+  border-color: rgb(255 255 255 / 0.45);
+  background: rgb(255 255 255 / 0.2);
+  font-weight: var(--peso-forte);
+}
+
+.capa__disco {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.18);
+}
+
+.capa__cracha--forte .capa__disco {
+  /* Disco branco com o ícone em vermelho: é o único ponto de cor invertida da
+     capa, e cai exatamente no crachá que decide alguma coisa. */
+  background: var(--capa-texto);
+  color: var(--capa-ate);
 }
 
 /*
  * Botões redondos sobre a capa, em vidro.
  *
  * Redondos e não retangulares para se lerem como "ferramenta do painel" e não
- * como ação de fluxo — as do rodapé são retangulares. O fundo translúcido deixa
- * o gradiente passar, então eles pertencem à faixa em vez de flutuar sobre ela.
+ * como ação de fluxo — as do rodapé são retangulares. O fundo translúcido
+ * deixa o gradiente passar, então eles pertencem à faixa em vez de flutuar
+ * sobre ela.
  */
 .ui-drawer[data-variante='pedido'] .ui-drawer__acoes .ui-botao,
 .capa__redondo {
@@ -2469,6 +2594,13 @@
   background: rgb(255 255 255 / 0.26);
   border-color: rgb(255 255 255 / 0.5);
   transform: translateY(-1px);
+}
+
+/* Afunda no toque: o retorno em 100 ms é o que separa "o toque pegou" de "a
+   tela travou" num tablet de balcão. */
+.ui-drawer[data-variante='pedido'] .ui-drawer__acoes .ui-botao:active,
+.capa__redondo:active {
+  transform: translateY(0) scale(0.94);
 }
 
 .capa__redondo {

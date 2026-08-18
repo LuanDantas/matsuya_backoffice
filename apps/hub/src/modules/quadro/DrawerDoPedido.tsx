@@ -160,7 +160,17 @@ export function DrawerDoPedido({
       aoFechar={aoFechar}
       titulo={
         <div className="capa__identidade">
-          <span className="capa__codigo num">{pedido.code ?? `#${pedido.id}`}</span>
+          {/*
+            A placa ganha rótulo em cima, como os blocos do corpo — "PEDIDO" em
+            micro-caixa-alta sobre o número. Sozinho, um número emoldurado
+            podia ser mesa, comanda ou senha; com o rótulo ele é o que é, e a
+            capa passa a usar a mesma tipografia de apoio das seções de baixo.
+          */}
+          <span className="capa__placa">
+            <small>Pedido</small>
+            <strong className="num">{pedido.code ?? `#${pedido.id}`}</strong>
+          </span>
+
           {/*
             Com reserva: sem o nome a capa mostrava só um número, e o painel
             perdia a única coisa que diz de quem é o pedido. "Cliente não
@@ -171,21 +181,36 @@ export function DrawerDoPedido({
         </div>
       }
       subtitulo={
+        /*
+          Os metadados viram crachás com ícone em disco — o mesmo vocabulário
+          dos cartões do corpo, onde todo título tem seu disco à esquerda. Como
+          texto corrido separado por pontos, eram uma linha só que o olho lia
+          inteira para achar uma coisa; em três blocos, cada um se acha sozinho.
+        */
         <>
-          <span>
-            <Icone nome="loja" tamanho={14} />
+          <span className="capa__cracha">
+            <span className="capa__disco" aria-hidden="true">
+              <Icone nome="loja" tamanho={14} />
+            </span>
             {nomeDaUnidade}
-            <span aria-hidden="true">·</span>
-            Feito às {horario.format(new Date(pedido.createdAt))}
+          </span>
+
+          <span className="capa__cracha">
+            <span className="capa__disco" aria-hidden="true">
+              <Icone nome="relogio" tamanho={14} />
+            </span>
+            Feito às <strong className="num">{horario.format(new Date(pedido.createdAt))}</strong>
           </span>
 
           {/*
-            O modo vira crachá com peso próprio: é o que muda o que a loja faz
-            com o pedido pronto — chamar o entregador ou o cliente no balcão —
-            e antes era mais uma palavra cinza no meio da linha de metadados.
+            O modo é o único crachá cheio: é o que muda o que a loja faz com o
+            pedido pronto — chamar o entregador ou o cliente no balcão —, e os
+            outros dois são contexto que não decide nada.
           */}
-          <span className="capa__modo" data-modo={retirada ? 'retirada' : 'entrega'}>
-            <Icone nome={retirada ? 'casa' : 'moto'} tamanho={15} />
+          <span className="capa__cracha capa__cracha--forte" data-modo={retirada ? 'retirada' : 'entrega'}>
+            <span className="capa__disco" aria-hidden="true">
+              <Icone nome={retirada ? 'casa' : 'moto'} tamanho={14} />
+            </span>
             {retirada ? 'Retirada' : 'Entrega'}
           </span>
         </>
