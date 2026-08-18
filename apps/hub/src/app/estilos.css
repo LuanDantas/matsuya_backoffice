@@ -2780,9 +2780,15 @@
  * A observação do cliente.
  *
  * É a linha que a cozinha erra, e ela precisa parar o olho que está descendo
- * o painel. Três coisas fazem isso sem gritar: a faixa âmbar na borda
- * esquerda, o texto no corpo do texto normal — e não no tamanho de nota — e o
- * disco do ícone, que dá ao bloco a mesma âncora à esquerda que os cartões têm.
+ * o painel. Duas coisas fazem isso sem gritar: o fundo âmbar inteiro — que
+ * nenhum outro bloco do painel tem — e o texto no corpo do texto normal, e não
+ * no tamanho de nota. O disco do ícone dá ao bloco a mesma âncora à esquerda
+ * que os cartões têm.
+ *
+ * Sem faixa colorida na lateral: o cartão do entregador saiu dela pelo mesmo
+ * motivo, e manter uma aqui deixaria de novo um único bloco do painel com
+ * borda assimétrica — que se lê como desalinhamento antes de se ler como
+ * ênfase. O fundo já é a ênfase.
  *
  * Âmbar e não vermelho: uma observação não é um alarme, é uma instrução. O
  * vermelho deste sistema está reservado para o que deu errado.
@@ -2794,7 +2800,6 @@
   margin: 0;
   padding: var(--e-4);
   border: 1px solid color-mix(in srgb, var(--atencao) 30%, transparent);
-  border-left: 4px solid var(--atencao);
   border-radius: 16px;
   background: var(--atencao-suave);
   color: var(--atencao);
