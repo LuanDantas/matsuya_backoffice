@@ -88,6 +88,11 @@ const PARES = [
   // folha para ler —, então vale a régua de texto, não a de elemento gráfico.
   ['tempo atrasado na folha', 'atencao', 'superficie-1', 4.5],
 
+  // A bolha da loja na conversa. Mesmo par do botão primário, e conferido com
+  // nome próprio porque aqui ele carrega texto corrido — não um rótulo de duas
+  // palavras — e é onde uma reprovação doeria mais.
+  ['bolha da loja no chat', 'texto-inverso', 'marca', 4.5],
+
   ['anel de foco sobre a superfície base', 'foco', 'superficie-base', 3],
   ['anel de foco sobre superfície 1', 'foco', 'superficie-1', 3],
   ['borda forte sobre superfície 1', 'borda-forte', 'superficie-1', 1.3],

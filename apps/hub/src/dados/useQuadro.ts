@@ -51,7 +51,19 @@ export interface EstadoDoQuadro {
 }
 
 
-export function useQuadro(unityIds: number[], token: string | null): EstadoDoQuadro {
+export function useQuadro(
+  unityIds: number[],
+  token: string | null,
+  /**
+   * Onde entregar as linhas de conversa que passam pelo diário.
+   *
+   * Chat entra na **mesma** sequência do quadro, então ele tem de passar por
+   * este cursor — mas o estado dele não mora aqui: uma conversa sobrevive à
+   * linha do pedido no quadro, e tem outro consumidor. Este parâmetro é só a
+   * saída lateral; quem guarda é o `useConversas`.
+   */
+  aoMudarChat?: (mudanca: Mudanca) => void
+): EstadoDoQuadro {
   const [pedidos, definirPedidos] = useState<PedidoDoQuadro[]>([])
   const [carregando, definirCarregando] = useState(true)
   const [erro, definirErro] = useState<string | null>(null)
@@ -63,6 +75,18 @@ export function useQuadro(unityIds: number[], token: string | null): EstadoDoQua
   const conexaoRef = useRef<Conexao | null>(null)
   const tokenRef = useRef(token)
   tokenRef.current = token
+
+  /*
+   * Em `ref`, e isto não é estilo.
+   *
+   * `aoMudarChat` vem de fora e muda de identidade a cada render de quem chama.
+   * Pondo-o nas dependências de `aplicar` — que é dependência do efeito que
+   * monta o socket —, o socket seria derrubado e refeito a cada render, e cada
+   * remontagem refaz a busca do quadro inteiro. Um laço de reconexão que parece
+   * rede instável e é, na verdade, esta linha.
+   */
+  const chatRef = useRef(aoMudarChat)
+  chatRef.current = aoMudarChat
 
   // A lista de ids muda de identidade a cada render; a chave estável evita
   // derrubar socket e cursores sem que a seleção tenha mudado de verdade.
@@ -88,6 +112,14 @@ export function useQuadro(unityIds: number[], token: string | null): EstadoDoQua
    * andar para trás.
    */
   const aplicar = useCallback((mudanca: Mudanca) => {
+    // Conversa sai por aqui e não encosta no cache de pedidos. Sem este desvio
+    // a linha cairia no caminho de baixo, onde `summary.status` não existe, e
+    // seria descartada em silêncio — a mensagem simplesmente não chegaria.
+    if (mudanca.entityType === 'chat_message') {
+      chatRef.current?.(mudanca)
+      return
+    }
+
     const resumo = mudanca.summary as Partial<PedidoDoQuadro> | undefined
     if (!resumo || typeof resumo.status !== 'string') return
 
@@ -153,6 +185,16 @@ export function useQuadro(unityIds: number[], token: string | null): EstadoDoQua
       obterToken: () => tokenRef.current,
       buscarMudancas: (params) => api.mudancas(params),
       aplicar,
+      /*
+       * Assina conversas quando — e só quando — alguém está ouvindo.
+       *
+       * Um sinal só, em vez de um booleano à parte que poderia discordar do
+       * sink. Quem monta a `Casca` só passa `aoMudarChat` se o operador tem
+       * `chat:read`, então entrar na sala e ter onde entregar são a mesma
+       * decisão. Assinar sem ouvinte encheria o cursor de linhas que ninguém
+       * consome; ouvir sem assinar seria um sink mudo.
+       */
+      assinarChat: chatRef.current !== undefined,
       // Só a loja que pediu recarrega. Recarregar tudo por causa de uma
       // unidade jogaria fora o cursor das outras sem motivo.
       aoExigirRecarga: (unityId) => void carregarLoja(unityId),

@@ -35,6 +35,8 @@ export type NomeDoIcone =
   | 'tela-cheia'
   | 'casa'
   | 'balao'
+  | 'enviar'
+  | 'rosto'
   | 'lista'
   | 'engrenagem'
   | 'menu'
@@ -77,6 +79,22 @@ const CAMINHOS: Record<NomeDoIcone, string> = {
   lupa: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM21 21l-4.3-4.3',
   'tela-cheia': 'M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M16 21h3a2 2 0 0 0 2-2v-3M8 21H5a2 2 0 0 1-2-2v-3',
   casa: 'M3 10.5 12 3l9 7.5M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5M9.5 21v-6h5v6',
+  /* Carinha sorrindo — o gesto universal de "pôr um emoji". Contorno, como o
+     resto do conjunto; o emoji em si é desenhado pela fonte do sistema. */
+  rosto: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM9 10h.01M15 10h.01M8.5 14.5a4.5 4.5 0 0 0 7 0',
+  /*
+   * Avião de papel apontando para a DIREITA.
+   *
+   * A primeira versão apontava para cima-direita e nunca ficou centrada dentro
+   * do botão redondo: a ponta fina em cima e o corpo cheio embaixo puxam o peso
+   * visual para um canto, e ajuste de posição só disfarça. Deitado, a forma é
+   * simétrica no eixo vertical e centra sozinha.
+   *
+   * Conferido **renderizando** o botão e medindo contra o centro real — foi
+   * deduzindo pela caixa delimitadora do caminho que eu errei da primeira vez:
+   * a caixa estava certinha em 12,12 e a tinta não.
+   */
+  enviar: 'M3 5.5 20.5 12 3 18.5l2.4-6.5zM5.4 12H12',
   balao: 'M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.8-.9L3 20.5l1.6-4.8A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5Z',
   lista: 'M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01',
   engrenagem: 'M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z',

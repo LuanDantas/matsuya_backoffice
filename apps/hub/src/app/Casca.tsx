@@ -9,6 +9,7 @@ import { criarCliente } from '../dados/cliente'
 import { ORDER_ACTION_INFO, type OrderAction } from '@matsuya/contracts'
 import type { useSessao } from '../dados/useSessao'
 import { useQuadro } from '../dados/useQuadro'
+import { useConversas } from '../dados/useConversas'
 import { useAcoesDoPedido } from '../dados/useAcoesDoPedido'
 import { useAlertas } from '../som/useAlertas'
 import type { EstadoDoSom } from '../som/alertas'
@@ -90,7 +91,30 @@ export function Casca({
   agora: number
 }) {
   const lojas = sessao.unidadesAtuais
-  const quadro = useQuadro(lojas, sessao.token)
+
+  /*
+   * Conversas vem ANTES do quadro porque o quadro recebe o sink dela.
+   *
+   * O socket é um só e nasce dentro do `useQuadro`; mensagem de chat entra na
+   * mesma sequência do diário e por isso passa pelo mesmo cursor. O que não é
+   * compartilhado é o estado — ver `useConversas`.
+   *
+   * O sink só é passado com `chat:read`, e é ele que decide se a sala de
+   * conversas é assinada: assinar sem ter onde entregar encheria o cursor de
+   * linhas que ninguém consome.
+   */
+  const conversas = useConversas(
+    lojas,
+    sessao.token,
+    sessao.identidade?.user.id ?? null,
+    sessao.permissoes.has('chat:read')
+  )
+
+  const quadro = useQuadro(
+    lojas,
+    sessao.token,
+    sessao.permissoes.has('chat:read') ? conversas.aoMudarChat : undefined
+  )
 
   /**
    * A unidade "de trabalho" das telas que só sabem lidar com uma.
@@ -224,10 +248,31 @@ export function Casca({
     [quadro.pedidos, detalhe]
   )
 
-  const pedidoDaConversa = useMemo(
-    () => quadro.pedidos.find((p) => p.id === conversa) ?? null,
-    [quadro.pedidos, conversa]
-  )
+  /*
+   * A conversa aberta, guardada — e não derivada a cada render.
+   *
+   * Derivando de `quadro.pedidos`, o drawer **sumia no meio da digitação** e
+   * jogava o texto fora: basta o pedido sair da janela de finalizados, ou a
+   * seleção de lojas mudar (o que esvazia `pedidos`), para a busca voltar
+   * `null` e o painel deixar de existir. Já era assim antes; com a conversa ao
+   * vivo mantendo as pessoas mais tempo ali, ficou mais provável.
+   *
+   * A referência é atualizada enquanto o pedido continua na lista, para o
+   * cabeçalho não congelar num status velho — mas nunca volta a `null` sozinha.
+   */
+  const conversaGuardada = useRef<PedidoDoQuadro | null>(null)
+
+  const pedidoDaConversa = useMemo(() => {
+    if (conversa === null) {
+      conversaGuardada.current = null
+      return null
+    }
+
+    const atual = quadro.pedidos.find((p) => p.id === conversa)
+    if (atual) conversaGuardada.current = atual
+
+    return conversaGuardada.current?.id === conversa ? conversaGuardada.current : null
+  }, [quadro.pedidos, conversa])
 
   /**
    * Ponto único onde se decide entre executar e confirmar.
@@ -250,7 +295,20 @@ export function Casca({
 
   const abrirDetalhe = useCallback(
     (pedido: PedidoDoQuadro) => {
-      definirConversa(null)
+      /*
+       * Fecha a conversa **só quando ela é um drawer**.
+       *
+       * Nas telas em que o chat abre em painel lateral, os dois painéis
+       * empilhados deixariam o quadro com uma faixa de 200 px e nenhum dos três
+       * serviria para nada — daí fechar um ao abrir o outro.
+       *
+       * Na tela de Conversas o chat **não** é drawer: é a coluna da direita, e
+       * o `DrawerDeChat` nem chega a renderizar ali. Limpar o estado lá
+       * desmarcava a conversa e esvaziava a coluna inteira — quem clicava em
+       * "Ver pedido" perdia a conversa que estava lendo.
+       */
+      if (tela !== 'conversas') definirConversa(null)
+
       definirDetalhe(pedido.id)
 
       /*
@@ -261,7 +319,7 @@ export function Casca({
        */
       if (!pedido.items) quadro.completar(pedido.id)
     },
-    [quadro]
+    [quadro, tela]
   )
 
   /**
@@ -279,6 +337,30 @@ export function Casca({
   useEffect(() => {
     if (quadro.conexao === 'ao-vivo') void fila.reenviar()
   }, [quadro.conexao, fila])
+
+  /*
+   * Volta a contar as não lidas quando o socket volta.
+   *
+   * Enquanto ele esteve fora, mensagens podem ter chegado — a recuperação por
+   * cursor devolve as das conversas abertas, mas o contador por loja é uma
+   * leitura à parte e precisa ser refeita. É a mesma razão da fila offline
+   * logo acima.
+   */
+  useEffect(() => {
+    if (quadro.conexao === 'ao-vivo') conversas.revalidar()
+  }, [quadro.conexao, conversas.revalidar])
+
+  /*
+   * Avisa o cache de conversas qual está aberta.
+   *
+   * `abrir` limpa a marca de novidade, busca a conversa e a protege da poda —
+   * podar por baixo de quem está lendo é o pior momento possível.
+   */
+  useEffect(() => {
+    if (conversa === null) return
+    conversas.abrir(conversa)
+    return () => conversas.fechar(conversa)
+  }, [conversa, conversas.abrir, conversas.fechar])
 
   /*
    * Todas as unidades do acesso, e não só as do quadro.
@@ -363,9 +445,21 @@ export function Casca({
     return rotuloDoAlerta(ativos, alertasDoDispositivo.length)
   }, [farol.porLoja, silenciados, alertasDoDispositivo.length])
 
-  // Sem endpoint agregado de não lidas por seleção; somar os pedidos com
-  // conversa aberta é o que dá para saber sem uma requisição por loja.
-  const naoLidasTotal = 0
+  /*
+   * As não lidas, somadas entre as lojas selecionadas.
+   *
+   * Era `0` escrito à mão, com a justificativa de que faltava endpoint agregado.
+   * O endpoint por loja existe; o que faltava era somar as N escolhidas, e é o
+   * que `useConversas` faz agora — com a loja que falha sendo **reportada** em
+   * vez de contada como zero.
+   *
+   * **Hoje isto vale zero mesmo assim, e está certo.** O servidor conta só
+   * mensagem de cliente não lida, e nada neste sistema cria mensagem de
+   * cliente. A diferença é que o número passou a ser calculado e verdadeiro em
+   * vez de fixo e certo por coincidência — e acende sozinho no dia em que
+   * houver quem escreva do outro lado.
+   */
+  const naoLidasTotal = conversas.total
 
   /**
    * A janela cheia do prazo de aceite, para a barra do cartão saber o 100%.
@@ -389,7 +483,7 @@ export function Casca({
         permissoes={sessao.permissoes}
         tela={tela}
         aoNavegar={definirTela}
-        naoLidas={0}
+        naoLidas={naoLidasTotal}
       />
 
       <div className="app__conteudo">
@@ -683,14 +777,33 @@ export function Casca({
 
         {tela === 'conversas' && (
           <Conversas
-            unityId={unidadeFoco}
+            /*
+             * Todos os pedidos das lojas selecionadas, e não os de uma só.
+             *
+             * A tela recebia `unityId={unidadeFoco}` para as não lidas enquanto
+             * já recebia os pedidos de todas — então pedido de outra loja nunca
+             * entrava em "Aguardando resposta", mesmo com mensagem esperando.
+             * Conversas é fila de trabalho, como o quadro e as exceções, e não
+             * uma tela de uma loja só como Início, Cardápio e Ajustes.
+             */
             pedidos={quadro.pedidos}
-            token={sessao.token}
+            nomesDasLojas={nomesDasUnidades}
+            naoLidasPorPedido={conversas.naoLidasPorPedido}
+            novidades={conversas.novidades}
+            lojasComFalha={conversas.lojasComFalha}
+            threads={conversas.threads}
+            selecionado={conversa}
+            podeEscrever={sessao.permissoes.has('chat:write')}
             agora={agora}
-            aoAbrirConversa={(pedido) => {
+            aoSelecionar={(pedido) => {
               definirDetalhe(null)
               definirConversa(pedido.id)
             }}
+            // O mesmo painel do quadro: um só lugar mostrando o pedido.
+            aoAbrirPedido={abrirDetalhe}
+            aoEnviar={conversas.enviar}
+            aoReenviar={conversas.reenviar}
+            aoMarcarLida={conversas.marcarLida}
           />
         )}
 
@@ -721,7 +834,7 @@ export function Casca({
         nomeDaUnidade={nomeDaUnidade}
         agora={agora}
         ocupado={pedidoAberto ? acoes.emCurso.has(pedidoAberto.id) : false}
-        naoLidas={0}
+        naoLidas={pedidoAberto ? conversas.naoLidasPorPedido.get(pedidoAberto.id) ?? 0 : 0}
         aoPedirAcao={(acao) => pedidoAberto && pedirAcao(pedidoAberto, acao)}
         aoAbrirConversa={() => {
           if (!pedidoAberto) return
@@ -733,9 +846,42 @@ export function Casca({
       />
 
       <DrawerDeChat
-        pedido={pedidoDaConversa}
-        nomeDaUnidade={nomeDaUnidade}
-        token={sessao.token}
+        /*
+         * Na tela de Conversas a thread é inline, ao lado da lista — o drawer
+         * ali seria um segundo chat por cima do primeiro. Ele existe para quem
+         * chega pelo detalhe do pedido, que quer falar sem sair do pedido.
+         */
+        pedido={tela === 'conversas' ? null : pedidoDaConversa}
+        // O nome da loja DO PEDIDO, e não o da unidade em foco: os pedidos vêm
+        // de todas as lojas selecionadas, e o subtítulo imprimia "Santana" sob
+        // um pedido da Mooca.
+        nomeDaUnidade={
+          pedidoDaConversa
+            ? nomesDasUnidades.get(pedidoDaConversa.unityId) ??
+              `Unidade ${pedidoDaConversa.unityId}`
+            : nomeDaUnidade
+        }
+        mensagens={
+          pedidoDaConversa ? conversas.threads.get(pedidoDaConversa.id)?.mensagens ?? [] : []
+        }
+        carregando={
+          pedidoDaConversa
+            ? conversas.threads.get(pedidoDaConversa.id)?.carregando ?? true
+            : false
+        }
+        erro={pedidoDaConversa ? conversas.threads.get(pedidoDaConversa.id)?.erro ?? null : null}
+        agora={agora}
+        aoEnviar={(corpo) =>
+          pedidoDaConversa ? conversas.enviar(pedidoDaConversa.id, corpo) : Promise.resolve()
+        }
+        aoReenviar={(idLocal) =>
+          pedidoDaConversa
+            ? conversas.reenviar(pedidoDaConversa.id, idLocal)
+            : Promise.resolve()
+        }
+        aoMarcarLida={(upToId) =>
+          pedidoDaConversa && conversas.marcarLida(pedidoDaConversa.id, upToId)
+        }
         podeEscrever={sessao.permissoes.has('chat:write')}
         // Volta para o detalhe de onde veio, em vez de fechar tudo: o operador
         // abriu a conversa a partir de um pedido e ainda está tratando dele.

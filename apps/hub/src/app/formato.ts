@@ -86,6 +86,28 @@ export function restante(ate: string, agora: number): string {
  * pessoa dizem mais do que uma silhueta genérica — e elas ficam desenhadas por
  * baixo da foto, reaparecendo sozinhas quando a imagem não carrega.
  */
+/**
+ * Uma cor estável para o avatar de quem não tem foto.
+ *
+ * Derivada do nome, então a mesma pessoa tem sempre o mesmo tom — e quem opera
+ * todo dia passa a achar a conversa pela cor antes de ler o nome. Sorteio faria
+ * o disco mudar de cor a cada render, que é o oposto de útil.
+ *
+ * **A cor nunca identifica sozinha.** O nome está sempre ao lado e as iniciais
+ * dentro do disco; ela é um reforço, não o sinal.
+ *
+ * **Luminosidade 30%, e não os 38% de `corDaLoja`.** Aquela função serve a um
+ * disco com um *ícone* dentro, e ícone é elemento gráfico: a régua é 3:1. Aqui
+ * dentro vão **letras**, que são texto e exigem 4,5:1 — e a 38% a matiz
+ * amarela dá 3,50:1 com branco por cima, reprovando. Medido nas 360 matizes:
+ * a 30% o pior caso é 5,27:1.
+ */
+export function corDoNome(nome: string): string {
+  let soma = 0
+  for (let i = 0; i < nome.length; i += 1) soma = (soma + nome.charCodeAt(i)) % 360
+  return `hsl(${soma} 45% 30%)`
+}
+
 export function iniciais(nome: string): string {
   const partes = nome.trim().split(/\s+/).filter(Boolean)
   if (partes.length === 0) return '?'

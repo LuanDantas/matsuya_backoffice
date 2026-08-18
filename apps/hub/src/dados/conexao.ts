@@ -35,6 +35,14 @@ export interface OpcoesDaConexao {
     limit: number
   }) => Promise<RespostaDeMudancas>
   aplicar: (mudanca: Mudanca) => void
+  /**
+   * Assinar também o canal de conversas.
+   *
+   * Separado porque **é permissão diferente**: o canal `chat` exige
+   * `chat:read`, e nem todo operador a tem. Ver `assinar()` para por que isso
+   * precisa ser um segundo pedido em vez de um canal a mais no primeiro.
+   */
+  assinarChat?: boolean
   /** Recebe a loja que precisa recarregar — só ela, não o quadro inteiro. */
   aoExigirRecarga: (unityId: number) => void
   /**
@@ -159,6 +167,27 @@ export class Conexao {
     })
 
     /*
+     * Mensagem de conversa — pelo MESMO sincronizador, e é o ponto todo.
+     *
+     * Toda mensagem grava uma linha no diário da loja e consome um `seq` da
+     * mesma sequência que o quadro usa. Enquanto isto aqui não existia, o
+     * cursor não avançava nessas linhas: o próximo evento de pedido chegava com
+     * `seq > cursor + 1` e o Hub concluía, corretamente pela regra que segue,
+     * que tinha perdido mensagem — pedindo o intervalo por HTTP. **Cada mensagem
+     * enviada numa loja custava a todo Hub conectado dela uma recuperação do
+     * quadro inteiro.** Curava-se sozinho, que é por que ninguém notou.
+     *
+     * Roteando por aqui, além de a conversa ficar ao vivo, o cursor volta a
+     * andar e essa recuperação some. E a mensagem herda de graça o dedupe por
+     * `seq`: chegando pelo socket e de novo dentro de um intervalo recuperado,
+     * ela é aplicada uma vez só — sem isso, seriam duas bolhas idênticas.
+     */
+    this.socket.on('chat.message_posted', (evento: unknown) => {
+      const unityId = Number((evento as { unityId?: number } | null)?.unityId)
+      this.sincronizadores.get(unityId)?.aoReceberEvento(evento)
+    })
+
+    /*
      * Posição do entregador. Best-effort e sem `seq` — ver `aoMoverEntregador`.
      */
     this.socket.on('delivery.position', (evento: unknown) => {
@@ -207,6 +236,26 @@ export class Conexao {
     })
   }
 
+  /**
+   * Pede as salas ao servidor.
+   *
+   * ## Por que conversas vai num pedido separado
+   *
+   * O caminho óbvio seria `channels: ['orders', 'chat']`. **Ele derruba o
+   * quadro.** O servidor valida a permissão de cada canal pedido e recusa o
+   * pedido **inteiro** antes de entrar em qualquer sala (`io.ts`), então um
+   * operador sem `chat:read` perderia junto a assinatura de pedidos. E o
+   * fracasso seria mudo: o `!ok` abaixo apenas retorna, `mudarEstado('ao-vivo')`
+   * nunca é alcançado, e a carência de 30 s só dispara em desconexão — o socket
+   * segue conectado. O quadro pararia de atualizar com o indicador verde e
+   * nenhum erro em lugar nenhum.
+   *
+   * Entrar em sala é aditivo do lado do servidor, então dois pedidos funcionam.
+   * O segundo é deliberadamente inconsequente: o retorno dele é ignorado — não
+   * conta em `concedidas`, não mexe no estado da conexão e não alimenta o
+   * cursor (é o mesmo cursor da loja; entregá-lo duas vezes pediria recuperação
+   * à toa). Conversas pode falhar inteiro e o quadro fica intacto.
+   */
   private assinar() {
     let concedidas = 0
 
@@ -234,6 +283,13 @@ export class Conexao {
           if (concedidas === 1) this.iniciarHeartbeat()
         }
       )
+
+      // O segundo pedido, sem retorno de chamada: não há nada a fazer com a
+      // resposta dele, e é justamente essa ausência que garante que ele não
+      // consegue interferir no quadro.
+      if (this.opcoes.assinarChat) {
+        this.socket?.emit('subscribe', { storeId: unityId, channels: ['chat'] })
+      }
     }
   }
 

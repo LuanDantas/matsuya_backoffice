@@ -224,7 +224,53 @@ export class Sincronizador {
     if (serverCursor > this.cursor) void this.recuperar()
   }
 
+  /**
+   * Traduz o envelope do socket para a mesma forma que a recuperação HTTP
+   * devolve.
+   *
+   * **É de propósito que as duas formas sejam idênticas.** A mesma mudança pode
+   * chegar pelos dois caminhos — pelo socket, e de novo dentro de um intervalo
+   * recuperado — e é a igualdade de forma que permite ao dedupe por `seq` tratar
+   * as duas como uma. Se o socket produzisse um formato próprio, a duplicata
+   * viraria uma segunda linha na tela em vez de um descarte.
+   */
   private envelopeParaMudanca(envelope: EnvelopeDeEvento): Mudanca {
+    /*
+     * Chat entra na mesma sequência, e essa é a razão de ele estar aqui.
+     *
+     * Toda mensagem grava uma linha no diário da loja e consome um `seq` da
+     * **mesma** sequência que o quadro usa. Enquanto o Hub não tratava
+     * `chat.message_posted`, o cursor não avançava nela — e o próximo evento de
+     * pedido chegava com `seq > cursor + 1`, ou seja, como lacuna. Cada mensagem
+     * enviada numa loja custava a todo Hub conectado daquela loja uma
+     * recuperação HTTP do quadro inteiro. Curava-se sozinho, que é exatamente
+     * por que ninguém notou.
+     *
+     * O envelope de chat tem outra forma — `data: { orderId, message }`, sem
+     * `version` e sem `summary` —, então o ramo é obrigatório: pelo caminho de
+     * baixo ele viraria uma mudança de pedido com `version: 0` e `summary: {}`.
+     */
+    if (envelope.type === 'chat.message_posted') {
+      const dados = (envelope.data ?? {}) as {
+        orderId?: number
+        message?: Record<string, unknown>
+      }
+
+      return {
+        seq: envelope.seq,
+        entityType: 'chat_message',
+        // `entityId` é o **pedido**, não a mensagem: é assim que a linha do
+        // diário grava, e é por pedido que uma conversa é endereçada.
+        entityId: Number(dados.orderId ?? 0),
+        op: 'created',
+        // Mensagem não tem versão — ela nasce e não muda. O `1` é o mesmo valor
+        // que a API grava no diário, e existe só para o formato fechar.
+        version: 1,
+        summary: dados.message ?? {},
+        occurredAt: envelope.occurredAt,
+      }
+    }
+
     const dados = (envelope.data ?? {}) as {
       orderId?: number
       version?: number

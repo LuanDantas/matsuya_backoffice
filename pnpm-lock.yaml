@@ -66,6 +66,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.90.2
         version: 5.101.4(react@19.2.8)
+      emoji-picker-react:
+        specifier: ^4.19.1
+        version: 4.19.1(react@19.2.8)
       maplibre-gl:
         specifier: ^5.24.0
         version: 5.24.0
@@ -789,6 +792,12 @@ packages:
   electron-to-chromium@1.5.407:
     resolution: {integrity: sha512-4R8XgQOdfxexCd/u63lRm6wCHjECwI45MV9wxAs2ggtfWe2hwlo1ql97jKsju2IcJ+jFSTwBssyYoiWhh7mauQ==}
 
+  emoji-picker-react@4.19.1:
+    resolution: {integrity: sha512-BmDdqInKFVYJpv7qS9WI6L9656cDAC+FkDvUjJds56nKHbaVTBNeDmLwKBytRnzu37zWHs9Isg7gt5PT43y6xA==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      react: '>=16'
+
   engine.io-client@6.6.6:
     resolution: {integrity: sha512-iY6QdftLQ9pyiPoX082bpf/u1UewnOaJrtJIF9T0++QB34lZrj0uP+Q/bj8AlUsAxqhnkTV2BS8SBZSxOmoV5Q==}
 
@@ -823,6 +832,9 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
+
+  flairup@1.0.0:
+    resolution: {integrity: sha512-IKlE+pNvL2R+kVL1kEhUYqRxVqeFnjiIvHWDMLFXNaqyUdFXQM2wte44EfMYJNHkW16X991t2Zg8apKkhv7OBA==}
 
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
@@ -1621,6 +1633,11 @@ snapshots:
 
   electron-to-chromium@1.5.407: {}
 
+  emoji-picker-react@4.19.1(react@19.2.8):
+    dependencies:
+      flairup: 1.0.0
+      react: 19.2.8
+
   engine.io-client@6.6.6:
     dependencies:
       '@socket.io/component-emitter': 3.1.2
@@ -1677,6 +1694,8 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.5):
     optionalDependencies:
       picomatch: 4.0.5
+
+  flairup@1.0.0: {}
 
   fsevents@2.3.3:
     optional: true

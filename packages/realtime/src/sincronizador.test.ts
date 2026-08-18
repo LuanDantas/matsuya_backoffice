@@ -36,9 +36,67 @@ function mudanca(seq: number): Mudanca {
   }
 }
 
+/**
+ * Envelope de chat — outra forma de `data`, e é isso que o ramo trata.
+ *
+ * `data: { orderId, message }`, sem `version` e sem `summary`. Pelo caminho de
+ * pedido ele viraria uma mudança com `version: 0` e `summary: {}`.
+ */
+function envelopeDeChat(seq: number, orderId = 42, extras: Record<string, unknown> = {}) {
+  return {
+    type: 'chat.message_posted',
+    v: 1,
+    seq,
+    unityId: UNIDADE,
+    occurredAt: '2026-08-16T12:00:00.000Z',
+    serverTime: '2026-08-16T12:00:00.000Z',
+    actor: { userId: 1, label: 'ana@matsuya' },
+    data: {
+      orderId,
+      message: {
+        id: 900 + seq,
+        orderId,
+        authorType: 'staff',
+        authorUserId: 1,
+        authorLabel: 'ana@matsuya',
+        body: 'Já está saindo',
+        hidden: false,
+        readByStaff: false,
+        createdAt: '2026-08-16T12:00:00.000Z',
+      },
+    },
+    ...extras,
+  }
+}
+
+/** A linha do diário que a recuperação HTTP devolve para a MESMA mensagem. */
+function mudancaDeChat(seq: number, orderId = 42): Mudanca {
+  return {
+    seq,
+    entityType: 'chat_message',
+    entityId: orderId,
+    op: 'created',
+    version: 1,
+    summary: {
+      id: 900 + seq,
+      orderId,
+      authorType: 'staff',
+      authorUserId: 1,
+      authorLabel: 'ana@matsuya',
+      body: 'Já está saindo',
+      hidden: false,
+      readByStaff: false,
+      createdAt: '2026-08-16T12:00:00.000Z',
+    },
+    occurredAt: '2026-08-16T12:00:00.000Z',
+  }
+}
+
 interface Cenario {
   sincronizador: Sincronizador
   aplicados: number[]
+  /** As mudanças inteiras, para conferir forma e não só ordem. */
+  mudancas: Mudanca[]
   estados: EstadoDeSincronia[]
   recargas: number
   buscar: ReturnType<typeof vi.fn>
@@ -49,6 +107,7 @@ function montar(
   opcoes: { limite?: number; maximoDePaginas?: number } = {}
 ): Cenario {
   const aplicados: number[] = []
+  const mudancas: Mudanca[] = []
   const estados: EstadoDeSincronia[] = []
   let recargas = 0
 
@@ -61,6 +120,7 @@ function montar(
 
   const cenario: Cenario = {
     aplicados,
+    mudancas,
     estados,
     get recargas() {
       return recargas
@@ -71,7 +131,10 @@ function montar(
   cenario.sincronizador = new Sincronizador({
     unityId: UNIDADE,
     buscarMudancas: buscar,
-    aplicar: (m) => aplicados.push(m.seq),
+    aplicar: (m) => {
+      aplicados.push(m.seq)
+      mudancas.push(m)
+    },
     aoExigirRecarga: () => {
       recargas += 1
     },
@@ -262,6 +325,100 @@ describe('sincronizador de cursor', () => {
 
       expect(c.sincronizador.aoReceberEvento(envelope(11, { unityId: 99 }))).toBe('invalido')
       expect(c.aplicados).toEqual([])
+    })
+  })
+
+  describe('mensagens de chat', () => {
+    /*
+     * O motivo deste bloco existir.
+     *
+     * Toda mensagem grava uma linha no diário da loja e consome um `seq` da
+     * MESMA sequência que o quadro usa. Enquanto o Hub não tratava
+     * `chat.message_posted`, o cursor não avançava nela, e o próximo evento de
+     * pedido chegava como lacuna — uma recuperação HTTP do quadro inteiro por
+     * mensagem enviada, em todo Hub conectado àquela loja.
+     */
+    it('avança o cursor como qualquer outro evento', () => {
+      const c = montar()
+      c.sincronizador.iniciarEm(10)
+
+      expect(c.sincronizador.aoReceberEvento(envelopeDeChat(11))).toBe('aplicado')
+      expect(c.sincronizador.cursorAtual).toBe(11)
+
+      // E o evento de pedido seguinte NÃO é lacuna — que é o defeito que este
+      // ramo apaga.
+      expect(c.sincronizador.aoReceberEvento(envelope(12))).toBe('aplicado')
+      expect(c.aplicados).toEqual([11, 12])
+    })
+
+    it('traduz para a mesma forma que a recuperação HTTP devolve', () => {
+      const c = montar()
+      c.sincronizador.iniciarEm(10)
+      c.sincronizador.aoReceberEvento(envelopeDeChat(11, 42))
+
+      // Igualdade byte a byte com a linha do diário: é ela que permite ao
+      // dedupe por `seq` tratar socket e replay como a mesma coisa.
+      expect(c.mudancas[0]).toEqual(mudancaDeChat(11, 42))
+    })
+
+    it('não vira mudança de pedido com versão zero', () => {
+      // O caminho antigo lia `data.version` e `data.summary`, que o envelope de
+      // chat não tem — o resultado era uma mudança de pedido silenciosamente
+      // vazia, que o quadro descartava e a mensagem se perdia.
+      const c = montar()
+      c.sincronizador.iniciarEm(0)
+      c.sincronizador.aoReceberEvento(envelopeDeChat(1))
+
+      expect(c.mudancas[0]!.entityType).toBe('chat_message')
+      expect(c.mudancas[0]!.op).toBe('created')
+      expect(c.mudancas[0]!.summary).not.toEqual({})
+    })
+
+    it('endereça a conversa pelo pedido, não pela mensagem', () => {
+      const c = montar()
+      c.sincronizador.iniciarEm(0)
+      c.sincronizador.aoReceberEvento(envelopeDeChat(1, 77))
+
+      // `entityId` é o pedido. A mensagem tem id 901 e ele não pode vazar para
+      // cá — é por pedido que uma conversa é endereçada.
+      expect(c.mudancas[0]!.entityId).toBe(77)
+    })
+
+    it('descarta a duplicata quando a mesma mensagem vem pelos dois caminhos', async () => {
+      // Socket entrega o seq 12; a recuperação de uma lacuna anterior traz o 12
+      // de novo dentro do intervalo. Sem forma igual e dedupe por seq, seriam
+      // duas bolhas idênticas na tela.
+      const c = montar([
+        {
+          changes: [mudanca(11), mudancaDeChat(12)],
+          cursor: 12,
+          hasMore: false,
+          snapshotRequired: false,
+        },
+      ])
+      c.sincronizador.iniciarEm(10)
+
+      expect(c.sincronizador.aoReceberEvento(envelopeDeChat(12))).toBe('lacuna')
+      await vi.waitFor(() => expect(c.aplicados).toEqual([11, 12]))
+
+      // O 12 entrou UMA vez.
+      expect(c.aplicados.filter((s) => s === 12)).toHaveLength(1)
+    })
+
+    it('mistura com eventos de pedido sem sair de ordem', async () => {
+      const c = montar([
+        {
+          changes: [mudanca(11), mudancaDeChat(12), mudanca(13)],
+          cursor: 13,
+          hasMore: false,
+          snapshotRequired: false,
+        },
+      ])
+      c.sincronizador.iniciarEm(10)
+
+      // Chega o 14 antes do intervalo: lacuna, recuperação, e tudo drena em ordem.
+      expect(c.sincronizador.aoReceberEvento(envelope(14))).toBe('lacuna')
+      await vi.waitFor(() => expect(c.aplicados).toEqual([11, 12, 13, 14]))
     })
   })
 })

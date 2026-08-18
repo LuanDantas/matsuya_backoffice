@@ -1,6 +1,7 @@
 import { Drawer, Icone } from '@matsuya/ui'
 import type { PedidoDoQuadro } from '@matsuya/api-client'
 import { Chat } from './Chat'
+import type { MensagemLocal } from '../../dados/mensagens'
 import { horario } from '../../app/formato'
 
 /**
@@ -13,14 +14,33 @@ import { horario } from '../../app/formato'
 export function DrawerDeChat({
   pedido,
   nomeDaUnidade,
-  token,
+  mensagens,
+  carregando,
+  erro,
   podeEscrever,
+  agora,
+  aoEnviar,
+  aoReenviar,
+  aoMarcarLida,
   aoFechar,
 }: {
   pedido: PedidoDoQuadro | null
+  /**
+   * O nome da loja **do pedido**.
+   *
+   * Vinha da unidade em foco enquanto os pedidos vêm de todas as lojas
+   * selecionadas — então abrir a conversa de um pedido da Mooca com o foco na
+   * Santana imprimia "Santana" aqui embaixo. Uma mentira pequena e visível.
+   */
   nomeDaUnidade: string
-  token: string | null
+  mensagens: MensagemLocal[]
+  carregando: boolean
+  erro: string | null
   podeEscrever: boolean
+  agora: number
+  aoEnviar: (corpo: string) => Promise<void>
+  aoReenviar: (idLocal: number) => Promise<void>
+  aoMarcarLida: (upToId: number) => void
   aoFechar: () => void
 }) {
   if (!pedido) return null
@@ -59,8 +79,14 @@ export function DrawerDeChat({
       <Chat
         orderId={pedido.id}
         codigoDoPedido={pedido.code}
-        token={token}
+        mensagens={mensagens}
+        carregando={carregando}
+        erro={erro}
         podeEscrever={podeEscrever}
+        agora={agora}
+        aoEnviar={aoEnviar}
+        aoReenviar={aoReenviar}
+        aoMarcarLida={aoMarcarLida}
       />
     </Drawer>
   )

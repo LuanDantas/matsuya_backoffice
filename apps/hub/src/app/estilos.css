@@ -835,7 +835,8 @@
     color var(--duracao-rapida) var(--curva);
 }
 
-.chip:hover[aria-pressed='false'] {
+.chip:hover[aria-pressed='false'],
+.chip:hover[aria-selected='false'] {
   background: var(--superficie-3);
   border-color: var(--texto-apagado);
 }
@@ -848,7 +849,8 @@
  * tem cor". Invertido — tinta escura, texto claro — o chip ativo se destaca
  * dos outros pelo peso, e continua legível sem depender de matiz nenhuma.
  */
-.chip[aria-pressed='true'] {
+.chip[aria-pressed='true'],
+.chip[aria-selected='true'] {
   background: var(--texto);
   border-color: var(--texto);
   color: var(--texto-inverso);
@@ -864,7 +866,16 @@
   font-weight: var(--peso-forte);
 }
 
-.chip[aria-pressed='true'] .chip__contagem {
+/*
+ * `aria-selected` para aba, `aria-pressed` para filtro alternável.
+ *
+ * As duas regras convivem de propósito: `Conversas` usa aba de verdade
+ * (`role="tab"`, onde `aria-pressed` seria inválido) e o "Em rota" ainda usa a
+ * forma antiga. Tirar `aria-pressed` daqui deixaria o chip ativo daquela tela
+ * sem estilo nenhum, em silêncio.
+ */
+.chip[aria-pressed='true'] .chip__contagem,
+.chip[aria-selected='true'] .chip__contagem {
   background: rgb(255 255 255 / 0.22);
   color: var(--texto-inverso);
 }
@@ -2109,46 +2120,269 @@
 /* ── Chat ───────────────────────────────────────────────────────────────── */
 
 .chat {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--e-3);
-  min-height: 320px;
+  min-height: 0;
 }
 
+/*
+ * A lista ocupa o que sobrar, e não 44% da altura da tela.
+ *
+ * O `max-height: 44vh` existia porque a conversa só vivia dentro de um drawer.
+ * Agora ela também é uma coluna inteira, e o teto fixo a espremia numa janelinha
+ * com o resto do painel vazio embaixo. `flex: 1` sobre um pai de altura definida
+ * faz as duas molduras funcionarem.
+ */
 .chat__lista {
   flex: 1;
-  min-height: 240px;
-  max-height: 44vh;
+  min-height: 200px;
   overflow-y: auto;
+  /* Não encadeia a rolagem na página quando a conversa chega ao fim. */
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
-  gap: var(--e-2);
-  padding-right: var(--e-1);
+  gap: var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  /*
+   * Branco, e sem papel de parede.
+   *
+   * A versão anterior tinha um desenho em SVG sobre `--superficie-2`. Na tela
+   * ficou pesado: a conversa é o conteúdo, e o fundo estava competindo com ela.
+   * A referência resolve com branco quase puro e deixa as bolhas fazerem a
+   * separação — que é o que elas já fazem, com borda e sombra.
+   */
+  background: var(--superficie-1);
 }
 
-.chat__mensagem {
+/* ── Separador de dia ───────────────────────────────────────────────────── */
+
+.chat__dia {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+}
+
+/*
+ * "Hoje", "Ontem", a data.
+ *
+ * Não existia, e sem ele uma conversa de três dias vira um bloco contínuo em
+ * que 14:02 pode ser de hoje ou de terça — e ninguém sabe qual.
+ */
+.chat__data {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  margin: 0;
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+.chat__data::before,
+.chat__data::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--borda);
+}
+
+/* ── O grupo de mensagens ───────────────────────────────────────────────── */
+
+/*
+ * Mensagens seguidas do mesmo autor viram um grupo, com UM horário no fim.
+ *
+ * Antes cada bolha carregava o próprio rodapé: três respostas seguidas
+ * empilhavam três carimbos iguais, e o resultado lia como log de sistema, não
+ * como conversa.
+ */
+.chat__grupo {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--e-2);
   max-width: 82%;
-  padding: var(--e-2) var(--e-3);
-  border-radius: var(--raio-2);
-  background: var(--superficie-2);
-  border: 1px solid var(--borda);
 }
 
 /* A loja fala à direita; o cliente, à esquerda. Convenção de aplicativo de
    mensagem — quebrar isso obriga a ler o rótulo em toda linha. */
-.chat__mensagem[data-autor='staff'] {
+.chat__grupo[data-autor='staff'] {
   align-self: flex-end;
-  background: var(--marca-suave);
-  border-color: var(--marca);
+  flex-direction: row-reverse;
 }
 
-.chat__mensagem[data-autor='system'] {
+.chat__grupo[data-autor='system'] {
   align-self: center;
   max-width: 100%;
+}
+
+.chat__bolhas {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/*
+ * O avatar, com as iniciais de quem escreveu.
+ *
+ * `authorLabel` já vinha da API e nunca era mostrado: num turno de quatro
+ * pessoas, "a loja respondeu" não diz quem respondeu — e é isso que se quer
+ * saber quando o cliente liga cobrando o que foi combinado.
+ */
+.chat__avatar {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--raio-total);
+  background: var(--superficie-3);
+  color: var(--texto-fraco);
+  font-size: 10px;
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.02em;
+}
+
+.chat__grupo[data-autor='staff'] .chat__avatar {
+  background: var(--marca-suave);
+  color: var(--marca);
+}
+
+.chat__quem {
+  margin: 0 0 2px;
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-medio);
+  color: var(--texto-fraco);
+}
+
+.chat__grupo[data-autor='staff'] .chat__quem {
+  text-align: right;
+}
+
+/* ── A bolha ────────────────────────────────────────────────────────────── */
+
+.chat__mensagem {
+  position: relative;
+  padding: var(--e-2) var(--e-3);
+  /* Raio generoso, como a referência: é o que separa "bolha de conversa" de
+     "caixa de formulário". */
+  border-radius: var(--raio-3);
+  background: var(--superficie-1);
+  border: 1px solid var(--borda);
+  /*
+   * A única sombra das bolhas, e mínima: elas agora flutuam sobre o papel de
+   * parede, e sem um fio de separação a borda clara se perde no desenho.
+   */
+  box-shadow: 0 1px 1px rgb(0 0 0 / 6%);
+  /* Entra subindo. Uma mensagem que aparece de repente no meio de uma conversa
+     que já estava na tela não se distingue de uma que já estava lá. */
+  animation: chat-entra 220ms var(--curva) both;
+}
+
+@keyframes chat-entra {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/*
+ * O rabicho, só na ÚLTIMA bolha do grupo.
+ *
+ * Um triângulo em `border-width` — sem SVG, sem máscara. O canto que o carrega
+ * perde o arredondamento; os outros três ficam. É o que faz três respostas
+ * seguidas lerem como um bloco de fala, com uma ponta só, em vez de três
+ * balões soltos.
+ */
+.chat__bolhas .chat__mensagem:last-child {
+  border-bottom-left-radius: var(--e-1);
+}
+
+.chat__bolhas .chat__mensagem:last-child::before {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: -7px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 9px 9px;
+  border-color: transparent transparent var(--borda) transparent;
+}
+
+/* A segunda camada preenche o triângulo, deixando a de baixo aparecendo como
+   se fosse a borda. Duas pontas em vez de uma máscara. */
+.chat__bolhas .chat__mensagem:last-child::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -5px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 7px 7px;
+  border-color: transparent transparent var(--superficie-1) transparent;
+}
+
+/*
+ * A loja fala em vermelho preenchido, com texto claro.
+ *
+ * Antes era `--marca-suave`, um rosa lavado que quase não se distinguia do
+ * branco do outro lado. Preenchido é o peso que a referência usa (lá em
+ * quase-preto); aqui fica na marca, com o MESMO par do botão primário —
+ * `--marca` + `--texto-inverso` —, que já está no verificador de contraste.
+ *
+ * **A ressalva, dita:** vermelho no resto do Hub significa alarme. Aqui ele
+ * significa "fui eu que falei". Foi ponderado; se a leitura ficar ambígua na
+ * operação, o par `--dica-escura-*` é a troca óbvia e são duas linhas.
+ */
+.chat__grupo[data-autor='staff'] .chat__mensagem {
+  background: var(--marca);
+  border-color: var(--marca);
+  color: var(--texto-inverso);
+}
+
+.chat__grupo[data-autor='staff'] .chat__bolhas .chat__mensagem:last-child {
+  border-bottom-left-radius: var(--raio-3);
+  border-bottom-right-radius: var(--e-1);
+}
+
+/* Do lado da loja o rabicho troca de lado — e de cor, para casar com a bolha. */
+.chat__grupo[data-autor='staff'] .chat__bolhas .chat__mensagem:last-child::before {
+  left: auto;
+  right: -7px;
+  border-width: 0 9px 9px 0;
+  border-color: transparent var(--marca) transparent transparent;
+}
+
+.chat__grupo[data-autor='staff'] .chat__bolhas .chat__mensagem:last-child::after {
+  left: auto;
+  right: -5px;
+  border-width: 0 7px 7px 0;
+  border-color: transparent var(--marca) transparent transparent;
+}
+
+/* O aviso do sistema é uma pastilha centrada, não um balão: ele não é fala de
+   ninguém, e um rabicho apontaria para um interlocutor que não existe. */
+.chat__grupo[data-autor='system'] .chat__mensagem::before,
+.chat__grupo[data-autor='system'] .chat__mensagem::after {
+  display: none;
+}
+
+.chat__grupo[data-autor='system'] .chat__mensagem {
   background: transparent;
   border-style: dashed;
+  border-radius: var(--raio-total);
   color: var(--texto-fraco);
   font-size: var(--texto-sm);
+  text-align: center;
+}
+
+/* Ainda subindo: some um pouco, sem sumir. Abaixo de 0.5 pareceria desabilitada
+   em vez de em trânsito. */
+.chat__mensagem[data-pendente] {
+  opacity: 0.65;
 }
 
 .chat__mensagem[data-falhou] {
@@ -2174,6 +2408,10 @@
   color: var(--texto-fraco);
 }
 
+.chat__grupo[data-autor='staff'] .chat__meta {
+  justify-content: flex-end;
+}
+
 .chat__reenviar {
   display: inline-flex;
   align-items: center;
@@ -2188,28 +2426,122 @@
   cursor: pointer;
 }
 
+/* Ver as mensagens que a janela de render deixou para trás. */
+.chat__anteriores {
+  align-self: center;
+  min-height: 32px;
+  padding: 0 var(--e-3);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-total);
+  background: var(--superficie-1);
+  color: var(--texto-fraco);
+  font: inherit;
+  font-size: var(--texto-xs);
+  cursor: pointer;
+}
+
+.chat__anteriores:hover {
+  background: var(--superficie-3);
+  color: var(--texto);
+}
+
+/* ── O compositor ───────────────────────────────────────────────────────── */
+
 .chat__envio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  padding: var(--e-3) var(--e-4) var(--e-4);
+  border-top: 1px solid var(--borda);
+}
+
+/*
+ * Frases prontas — atalho de digitação, não modelo salvo.
+ *
+ * Rolam na horizontal em vez de quebrarem em várias linhas: elas não podem
+ * roubar altura da conversa, que é o conteúdo da tela.
+ */
+.chat__atalhos {
+  display: flex;
+  gap: var(--e-2);
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.chat__atalho {
+  flex: none;
+  max-width: 260px;
+  min-height: 28px;
+  padding: 0 var(--e-3);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-total);
+  background: var(--superficie-2);
+  color: var(--texto-fraco);
+  font: inherit;
+  font-size: var(--texto-xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition:
+    background-color var(--duracao-rapida) var(--curva),
+    color var(--duracao-rapida) var(--curva);
+}
+
+.chat__atalho:hover {
+  background: var(--marca-suave);
+  border-color: var(--marca);
+  color: var(--marca);
+}
+
+.chat__campo {
   display: flex;
   gap: var(--e-2);
   align-items: flex-end;
 }
 
-.chat__envio textarea {
+.chat__campo textarea {
   flex: 1;
-  min-height: var(--alvo);
-  padding: var(--e-3);
-  border: 1px solid var(--borda-forte);
-  border-radius: var(--raio-1);
-  background: var(--superficie-base);
+  /*
+   * 38 px, e não os 44 do alvo mínimo: quem carrega o alvo agora é a **pílula**
+   * em volta, que fica em ~46 px. O campo dentro dela alinha com o botão de
+   * enviar, que também tem 38.
+   */
+  min-height: 38px;
+  /* Teto de crescimento: a conversa não pode ser espremida por um campo que
+     cresce sem limite. Passando disso, ele rola por dentro. */
+  max-height: 160px;
+  /* Sem borda, sem fundo e sem recuo à esquerda: a moldura é a pílula, e o
+     campo é só o miolo dela. */
+  padding: var(--e-2) var(--e-2) var(--e-2) 0;
+  border: 0;
+  background: transparent;
   color: var(--texto);
   font-family: inherit;
   font-size: var(--texto-base);
   line-height: var(--linha-normal);
-  resize: vertical;
+  /* Cresce sozinha, em vez de obrigar a arrastar a alça. */
+  resize: none;
+  overflow-y: auto;
+}
+
+/*
+ * Só perto do limite.
+ *
+ * O `maxLength` corta em silêncio e a API recusa acima de 1000 — cortar sem
+ * avisar é pior que os dois. Mostrar o contador desde o primeiro caractere
+ * seria ruído numa mensagem de dez palavras.
+ */
+.chat__contador {
+  margin: 0;
+  align-self: flex-end;
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
 }
 
 .chat__aviso {
   margin: 0;
+  padding: var(--e-3);
   font-size: var(--texto-sm);
   color: var(--texto-fraco);
   text-align: center;
@@ -2217,6 +2549,56 @@
 
 .chat__aviso--erro {
   color: var(--perigo);
+}
+
+/* ── Esqueleto ──────────────────────────────────────────────────────────── */
+
+.chat__esqueleto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+}
+
+.chat__esqueleto-bolha {
+  width: 60%;
+  height: 42px;
+  border-radius: var(--raio-2);
+  background: linear-gradient(
+    90deg,
+    var(--superficie-2) 25%,
+    var(--superficie-3) 50%,
+    var(--superficie-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: chat-pulsa 1400ms linear infinite;
+}
+
+.chat__esqueleto-bolha--minha {
+  align-self: flex-end;
+  width: 45%;
+}
+
+@keyframes chat-pulsa {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/*
+ * Movimento reduzido: o conteúdo é o mesmo, sem o gesto.
+ *
+ * O brilho em laço do esqueleto é exatamente o tipo de animação que a
+ * preferência existe para desligar.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .chat__esqueleto-bolha,
+  .chat__mensagem,
+  .conversas__linha-item {
+    animation: none;
+  }
+
+  .conversas__item:active {
+    transform: none;
+  }
 }
 
 /* ── Abas de navegação na barra ─────────────────────────────────────────── */
@@ -2963,6 +3345,10 @@
  */
 .menu__alternar,
 .menu__item {
+  /* O fundo do item, exposto como variável: é ele que o anel do distintivo
+     usa. Sem isso o anel ficaria de uma cor fixa e apareceria como um halo
+     errado assim que o item fosse o corrente ou estivesse sob o ponteiro. */
+  --fundo-do-item: var(--superficie-1);
   display: flex;
   align-items: center;
   gap: var(--e-3);
@@ -2990,6 +3376,7 @@
 
 .menu__alternar:hover,
 .menu__item:hover {
+  --fundo-do-item: var(--superficie-3);
   background: var(--superficie-3);
   color: var(--texto);
 }
@@ -3004,6 +3391,7 @@
  * "algo deu errado".
  */
 .menu__item[aria-current='page'] {
+  --fundo-do-item: var(--nav-ativo-suave);
   background: var(--nav-ativo-suave);
   border-left-color: var(--nav-ativo);
   color: var(--nav-ativo);
@@ -3038,13 +3426,27 @@
   flex-shrink: 0;
 }
 
+/* O glifo, do tamanho do ícone. É a âncora do distintivo — ver `MenuLateral`. */
+.menu__glifo {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .menu__distintivo {
   position: absolute;
-  top: -6px;
-  right: -8px;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
+  /* No canto do ícone, encavalando-o de leve: é a convenção de distintivo, e é
+     o que faz ele ser lido como "marca deste ícone" e não como um número solto
+     ao lado do rótulo. */
+  top: -7px;
+  right: -9px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  /* Anel na cor do trilho, para o distintivo se destacar do ícone por baixo
+     sem depender de o fundo do menu ser de uma cor específica. */
+  box-shadow: 0 0 0 2px var(--fundo-do-item);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3060,8 +3462,25 @@
    */
   background: var(--alarme-fundo);
   color: var(--alarme-texto);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: var(--peso-forte);
+  line-height: 1;
+  /* Entra crescendo: um número que simplesmente aparece no canto do olho não
+     se distingue de um que já estava lá. */
+  animation: distintivo-entra 220ms var(--curva) both;
+}
+
+@keyframes distintivo-entra {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu__distintivo {
+    animation: none;
+  }
 }
 
 /* Num tablet em retrato o menu vira uma faixa de ícones e não expande: 220 px
@@ -4911,9 +5330,11 @@
   cursor: not-allowed;
 }
 
-/* ── Conversas, cardápio e ajustes ──────────────────────────────────────── */
+/* ── Cardápio e ajustes ─────────────────────────────────────────────────── */
 
-.conversas,
+/* Conversas saiu desta regra: ela virou mestre/detalhe de duas colunas, e uma
+   coluna única de 900 px não comporta lista e conversa lado a lado. As outras
+   duas continuam como estavam. */
 .cardapio,
 .ajustes {
   flex: 1;
@@ -4927,7 +5348,8 @@
   width: 100%;
 }
 
-.conversas__lista,
+/* As regras de `.conversas__*` mudaram de lugar, para junto do resto da tela de
+   duas colunas no fim do arquivo. Aqui fica só o que é do cardápio. */
 .cardapio__lista {
   list-style: none;
   margin: 0;
@@ -4935,42 +5357,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--e-2);
-}
-
-.conversas__item {
-  width: 100%;
-  min-height: var(--alvo);
-  padding: var(--e-3);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  border: 1px solid var(--borda);
-  border-radius: var(--raio-1);
-  background: var(--superficie-1);
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.conversas__item:hover { border-color: var(--marca); }
-
-.conversas__linha {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--e-2);
-  font-size: var(--texto-sm);
-}
-
-.conversas__linha--fraca {
-  font-size: var(--texto-xs);
-  color: var(--texto-fraco);
-}
-
-.conversas__abrir {
-  font-size: var(--texto-xs);
-  color: var(--marca);
 }
 
 .cardapio__item {
@@ -7251,4 +7637,725 @@
   .folha__pino {
     transition: none;
   }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Conversas — mestre/detalhe
+
+   Mesmo desenho de "Em rota": 380 px de lista e o resto para o conteúdo, com o
+   mesmo ponto de colapso. É consistência de propósito — duas telas que fazem a
+   mesma coisa (escolher à esquerda, ler à direita) não devem ter regras
+   próprias.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.conversas {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: var(--e-3);
+  padding: var(--e-3);
+}
+
+@media (max-width: 1100px) {
+  .conversas {
+    grid-template-columns: 1fr;
+    /* A lista primeiro no estreito: sem ela não há como escolher a conversa. */
+    grid-template-rows: minmax(200px, 40%) 1fr;
+  }
+}
+
+/*
+ * A coluna é um painel branco, igual ao da conversa ao lado.
+ *
+ * Ela não tinha fundo declarado, então mostrava o `--superficie-base` cinza da
+ * página — e os cartões, transparentes, ficavam cinza sobre cinza. Some com o
+ * cartão como objeto e some com o contraste da lista inteira.
+ */
+.conversas__coluna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  min-height: 0;
+  padding: var(--e-3);
+  border: 1px solid var(--borda);
+  border-radius: 16px;
+  background: var(--superficie-1);
+}
+
+.conversas__secoes {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  /* 2px à direita para o polegar da rolagem não encostar na borda. */
+  padding-right: 2px;
+}
+
+.conversas__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  /* Vão pequeno: quem separa agora é o traço, e somar os dois deixaria a lista
+     esparsa demais para caber turno nenhum na tela. */
+  gap: 2px;
+}
+
+.conversas__linha-item {
+  animation: conversas-entra 240ms var(--curva) both;
+  animation-delay: calc(var(--ordem, 0) * 40ms);
+}
+
+@keyframes conversas-entra {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.conversas__item {
+  width: 100%;
+  padding: var(--e-2) var(--e-3);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-3);
+  border: 0;
+  border-radius: var(--raio-2);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--duracao-rapida) var(--curva),
+    transform var(--duracao-rapida) var(--curva);
+}
+
+/*
+ * O hover pinta a linha inteira, sem borda.
+ *
+ * A versão anterior trocava a cor da borda: num cartão de 84 px isso é um fio
+ * de 1 px mudando de tom, que quase não se vê. Um degrau de superfície responde
+ * ao ponteiro de relance, que é o que o hover existe para fazer.
+ */
+.conversas__item:hover {
+  background: var(--superficie-3);
+}
+
+.conversas__item:active {
+  transform: scale(0.995);
+}
+
+/*
+ * Selecionado: cinza claro e nada mais.
+ *
+ * Passou por um rosa da marca com barra vermelha na borda, e ficou pesado —
+ * numa lista que já tem o tingido das não-lidas, virou uma terceira cor
+ * disputando atenção. Um degrau neutro de superfície diz "é esta" sem competir
+ * com sinal nenhum, e é o que a referência faz: a linha escolhida vira uma
+ * pastilha clara.
+ *
+ * O nome ganha peso junto — assim a seleção não depende só do fundo, que é o
+ * que some em contraluz e para quem não distingue tons próximos.
+ */
+.conversas__item[data-selecionado],
+.conversas__item[data-nao-lida][data-selecionado] {
+  background: var(--superficie-3);
+}
+
+.conversas__item[data-selecionado] .conversas__nome {
+  color: var(--texto);
+  font-weight: var(--peso-forte);
+}
+
+/*
+ * Não lida: fundo levemente tingido, e o nome em peso mais forte.
+ *
+ * Cor sozinha não sobrevive a contraluz nem a daltonismo — o peso do nome e a
+ * contagem ao lado são o que garantem a leitura. Ver também o ponto no avatar,
+ * que é o sinal local.
+ */
+.conversas__item[data-nao-lida]:not([data-selecionado]) {
+  background: var(--alarme-suave);
+}
+
+.conversas__item[data-nao-lida] .conversas__nome {
+  font-weight: var(--peso-forte);
+  color: var(--texto);
+}
+
+/* ── O avatar ───────────────────────────────────────────────────────────── */
+
+.conversas__avatar {
+  position: relative;
+  flex: none;
+}
+
+.conversas__avatar > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--raio-total);
+  color: #fff;
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.02em;
+}
+
+/*
+ * O ponto de novidade, com anel na cor de trás.
+ *
+ * O anel é o que o separa do disco colorido por baixo — sem ele, o ponto some
+ * em metade das matizes que a função de cor pode gerar.
+ */
+.conversas__ponto {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--raio-total);
+  background: var(--marca);
+  box-shadow: 0 0 0 2px var(--superficie-1);
+}
+
+/* ── A coluna de texto ──────────────────────────────────────────────────── */
+
+/*
+ * Sem divisória — a referência separa as linhas só por espaço.
+ *
+ * A versão anterior punha um traço nesta coluna (para começar depois do
+ * avatar). Sobre o painel branco ele virou ruído: com o cartão já ganhando
+ * fundo no hover e na seleção, o traço só somava linha à tela.
+ */
+.conversas__texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.conversas__linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e-2);
+  font-size: var(--texto-sm);
+}
+
+.conversas__linha--fraca {
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+.conversas__nome {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--peso-medio);
+}
+
+.conversas__quando {
+  flex: none;
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+.conversas__item[data-nao-lida] .conversas__quando {
+  color: var(--marca);
+  font-weight: var(--peso-medio);
+}
+
+/* Código, tipo de entrega e valor: o que esta linha é, em uma linha. */
+.conversas__sobre {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/*
+ * A contagem: círculo com um dígito, pastilha com dois.
+ *
+ * `min-width` igual à altura é o que mantém o "1" redondo em vez de oval.
+ */
+.conversas__contagem {
+  flex: none;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--raio-total);
+  background: var(--alarme-fundo);
+  color: var(--alarme-texto);
+  font-size: 11px;
+  font-weight: var(--peso-forte);
+  line-height: 1;
+}
+
+.conversas__rodape {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  flex-wrap: wrap;
+}
+
+/* Só aparece com mais de uma loja selecionada: com uma só, repetir o nome em
+   toda linha é ruído. */
+.conversas__loja {
+  padding: 1px var(--e-2);
+  border-radius: var(--raio-total);
+  background: var(--superficie-3);
+  color: var(--texto-fraco);
+  font-size: var(--texto-xs);
+}
+
+/* ── A coluna da conversa ────────────────────────────────────────────────── */
+
+.conversas__thread {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid var(--borda);
+  border-radius: 16px;
+  background: var(--superficie-1);
+  overflow: hidden;
+}
+
+.conversas__cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  border-bottom: 1px solid var(--borda);
+}
+
+.conversas__identidade {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+/*
+ * Os fatos do pedido, em linha e quebrando quando faltar largura.
+ *
+ * Eles vêm do quadro, que é ao vivo — então o status muda sozinho enquanto a
+ * conversa está aberta, que é justamente quando ele importa: quem está
+ * escrevendo "já vai sair" precisa que a tela discorde se não for verdade.
+ */
+.conversas__fatos {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  flex-wrap: wrap;
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+.conversas__fato {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  white-space: nowrap;
+}
+
+.conversas__titulo {
+  display: flex;
+  align-items: baseline;
+  gap: var(--e-2);
+  min-width: 0;
+  font-size: var(--texto-sm);
+}
+
+.conversas__titulo span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--texto-fraco);
+}
+
+/* Sem conversa escolhida, o vazio ocupa a coluna inteira e fica centrado. */
+.conversas__thread > .ui-vazio {
+  margin: auto;
+}
+
+/* ── O seletor de emoji ─────────────────────────────────────────────────── */
+
+.chat__emoji-caixa {
+  position: relative;
+  flex: none;
+}
+
+/*
+ * As ferramentas do compositor: mesmo tamanho de alvo do botão de enviar.
+ *
+ * 44 px porque a tela é usada em tablet de balcão — um botão que se erra duas
+ * vezes custa mais tempo do que o espaço que economiza.
+ */
+.chat__ferramenta {
+  width: var(--alvo);
+  height: var(--alvo);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--raio-2);
+  background: transparent;
+  color: var(--texto-fraco);
+  cursor: pointer;
+  transition:
+    background-color var(--duracao-rapida) var(--curva),
+    color var(--duracao-rapida) var(--curva);
+}
+
+.chat__ferramenta:hover {
+  background: var(--superficie-3);
+  color: var(--texto);
+}
+
+.chat__ferramenta[data-ativo] {
+  background: var(--marca-suave);
+  border-color: var(--marca);
+  color: var(--marca);
+}
+
+/*
+ * O painel sobe a partir do botão, ancorado à esquerda e acima.
+ *
+ * Acima porque o compositor mora no rodapé: aberto para baixo, ele sairia da
+ * tela. `z-index` acima do conteúdo e abaixo de modal — ele é um popover, não
+ * uma camada que bloqueia o resto.
+ */
+.emoji {
+  position: absolute;
+  bottom: calc(var(--alvo) + var(--e-2));
+  left: 0;
+  z-index: var(--z-sobreposicao);
+  border-radius: var(--raio-3);
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 22%);
+  animation: emoji-entra 180ms var(--curva) both;
+}
+
+@keyframes emoji-entra {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+/* Reserva o tamanho do painel enquanto o pacote é buscado: sem isto a folha
+   nasce com 0 px e salta para 320×380 quando o código chega. */
+.emoji__carregando {
+  width: 320px;
+  height: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-3);
+  background: var(--superficie-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emoji {
+    animation: none;
+  }
+}
+
+/* ── As abas de Conversas ───────────────────────────────────────────────── */
+
+/*
+ * Faixa própria, e não a `.chips`.
+ *
+ * Aquela é `position: sticky` com margens negativas calibradas para um pai com
+ * `--e-4` de recuo; a coluna de conversas tem outro, e reusá-la jogaria a faixa
+ * para fora do painel. O que se reusa é o `.chip`, que já é a estética certa.
+ */
+.conversas__abas {
+  display: flex;
+  gap: var(--e-2);
+  flex-wrap: wrap;
+}
+
+/*
+ * A aba é alta o bastante para o dedo, mas não tanto quanto um chip de filtro:
+ * são duas, ficam sempre visíveis, e 44 px cada roubaria da lista uma linha
+ * inteira de conversa.
+ */
+.conversas__abas .chip {
+  flex: 1;
+  min-height: 38px;
+  justify-content: center;
+  font-size: var(--texto-xs);
+}
+
+/* O painel rola e é alcançável por teclado; o anel só aparece para quem chegou
+   por Tab, não para quem clicou numa linha. */
+.conversas__secoes:focus {
+  outline: none;
+}
+
+.conversas__secoes:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: -2px;
+  border-radius: var(--raio-1);
+}
+
+/*
+ * `data-fixada` existe no DOM e **não tem regra aqui**, de propósito: a linha
+ * presa já está selecionada, e um segundo sinal visual para um detalhe de
+ * mecânica interna explicaria ao operador um problema que ele não deveria nem
+ * perceber. O atributo fica para depuração.
+ */
+
+/* ── O compositor em pílula ─────────────────────────────────────────────── */
+
+/*
+ * Campo e ferramentas dentro de uma pílula só, com o enviar do lado de fora —
+ * o desenho da referência. Antes eram três caixas soltas lado a lado.
+ */
+.chat__campo {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--e-2);
+  padding: var(--e-1);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-3);
+  background: var(--superficie-1);
+  transition: border-color var(--duracao-rapida) var(--curva);
+}
+
+/* O anel de foco vai na pílula inteira, e não só na textarea: visualmente o
+   campo é a pílula, e um anel só no miolo pareceria desalinhado. */
+.chat__campo:focus-within {
+  border-color: var(--marca);
+}
+
+.chat__campo textarea:focus {
+  outline: none;
+}
+
+.chat__enviar {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--raio-total);
+  background: var(--marca);
+  color: var(--texto-inverso);
+  cursor: pointer;
+  transition:
+    background-color var(--duracao-rapida) var(--curva),
+    opacity var(--duracao-rapida) var(--curva);
+}
+
+.chat__enviar:hover:not(:disabled) {
+  background: var(--marca-hover);
+}
+
+/*
+ * Desabilitado: mais apagado e sem cursor de clique.
+ *
+ * O alvo continua com 38 px de área visível dentro de uma pílula de 44 px de
+ * altura — o dedo acerta a pílula, e o botão ocupa a ponta dela.
+ */
+.chat__enviar:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* O giro padrão é de 28 px na cor da marca — dentro do botão vermelho ele
+   sumiria. Aqui ele encolhe e inverte. */
+.chat__enviar .carregando__giro {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+  border-color: rgb(255 255 255 / 0.35);
+  border-top-color: var(--texto-inverso);
+}
+
+/* A ferramenta de emoji mora dentro da pílula, então perde a borda própria. */
+.chat__emoji-caixa .chat__ferramenta {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--raio-total);
+}
+
+/* ── A busca da lista ───────────────────────────────────────────────────── */
+
+/*
+ * Uma linha só, com a lupa dentro.
+ *
+ * O `CampoLinha` do sistema desenha o rótulo acima do campo — correto num
+ * formulário, caro aqui: eram duas linhas de altura numa coluna em que altura é
+ * lista. Numa busca, a lupa e o texto de exemplo já dizem o que o campo faz.
+ */
+.conversas__busca {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  padding: 0 var(--e-3);
+  /* 36 px: abaixo do alvo de toque de 44, e de propósito — buscar é ação de
+     teclado, não de dedo, e a lista é que precisa da altura. */
+  height: 36px;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-total);
+  background: var(--superficie-2);
+  color: var(--texto-apagado);
+  transition:
+    border-color var(--duracao-rapida) var(--curva),
+    background-color var(--duracao-rapida) var(--curva);
+}
+
+.conversas__busca:focus-within {
+  border-color: var(--marca);
+  background: var(--superficie-1);
+}
+
+.conversas__busca input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--texto);
+  font: inherit;
+  font-size: var(--texto-sm);
+}
+
+.conversas__busca input:focus {
+  outline: none;
+}
+
+/* O X nativo do `type=search` aparece só no WebKit e com desenho próprio;
+   trocamos por um botão que existe nos dois e responde ao teclado. */
+.conversas__busca input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.conversas__limpar {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--raio-total);
+  background: var(--superficie-3);
+  color: var(--texto-fraco);
+  cursor: pointer;
+}
+
+.conversas__limpar:hover {
+  background: var(--borda-forte);
+  color: var(--texto);
+}
+
+/* ── O separador entre conversas ────────────────────────────────────────── */
+
+/*
+ * Recuado à esquerda para começar **depois do avatar**, como em qualquer
+ * mensageiro: assim ele separa as linhas sem cortar a coluna de rostos, que é
+ * por onde o olho desce.
+ *
+ * No `li`, e não no cartão: o cartão ganha fundo próprio no hover e na seleção,
+ * e uma borda dentro dele apareceria por cima desse fundo.
+ */
+/*
+ * Pseudo-elemento, e não borda no `li`.
+ *
+ * A borda obrigaria a recuar o `li` para a linha começar depois do avatar, e
+ * depois a compensar esse recuo com margem negativa e largura no cartão — três
+ * medidas amarradas que quebram na primeira que alguém mexer. O pseudo-elemento
+ * é uma linha que se recua sozinha e não move nada.
+ */
+.conversas__linha-item:not(:last-child)::after {
+  content: '';
+  display: block;
+  height: 1px;
+  /* 42 do avatar + o vão até o texto + o recuo do cartão: começa alinhado com
+     o nome, como em qualquer mensageiro. */
+  margin: var(--e-1) 0 0 calc(42px + var(--e-3) + var(--e-3));
+  background: var(--borda);
+}
+
+/* ── O estado de envio ──────────────────────────────────────────────────── */
+
+/*
+ * Relógio enquanto sobe, tique quando o servidor aceitou — e só esses dois,
+ * porque só esses dois são fato. Ver o comentário em `Chat.tsx` para por que
+ * não há tique duplo nem tique azul.
+ */
+.chat__estado {
+  display: inline-flex;
+  align-items: center;
+  color: var(--texto-fraco);
+}
+
+.chat__grupo[data-autor='staff'] .chat__estado {
+  /* Dentro do rodapé da bolha vermelha o cinza sumiria; aqui ele acompanha o
+     texto de apoio, que já está sobre o fundo do painel. */
+  color: var(--texto-fraco);
+}
+
+.chat__estado[data-estado='enviando'] {
+  opacity: 0.6;
+}
+
+/*
+ * Sem empurrão nenhum.
+ *
+ * Houve aqui um `translate(1px, -1px)` para "corrigir opticamente" o avião
+ * antigo — e ele **piorou**, porque eu tinha deduzido a direção do desvio pela
+ * caixa delimitadora do caminho em vez de olhar o botão renderizado. O conserto
+ * de verdade foi trocar o glifo por um simétrico (ver `enviar` em `Icone.tsx`);
+ * com ele, o centro do flex basta.
+ *
+ * `display: block` fica: tira o vão de linha-base que o `svg` inline carrega.
+ */
+.chat__enviar svg {
+  display: block;
+}
+
+/*
+ * "Ver pedido" é menor que o piso de toque do sistema, e é uma exceção
+ * consciente.
+ *
+ * O `.ui-botao` impõe 44 px em todas as variantes, com um motivo bom: no
+ * balcão, um botão que o operador erra duas vezes custa mais do que o espaço
+ * que economiza. Mas aquele piso foi calibrado para as **ações do quadro** —
+ * aceitar, despachar, imprimir —, que decidem o pedido e são apertadas com
+ * pressa.
+ *
+ * Este aqui é navegação secundária num cabeçalho: ele abre um painel de
+ * leitura, não muda nada, e ao lado de um campo de busca que já vive com 36 px
+ * pela mesma razão. A 36 px de altura por ~120 de largura ele continua bem
+ * acima do mínimo de 24×24 do WCAG — o que se abre mão é da folga extra do
+ * alvo de 44, não da acessibilidade.
+ *
+ * Fica escopado ao cabeçalho da conversa. Se virar hábito espalhar isto, o
+ * certo é discutir uma variante de verdade no `Botao`, não repetir a exceção.
+ */
+.conversas__cabecalho .ui-botao {
+  min-height: 36px;
+  padding: 0 var(--e-3);
+  font-size: var(--texto-xs);
 }

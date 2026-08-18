@@ -88,12 +88,21 @@ export function MenuLateral({
                 data-dica-lado="direita"
               >
                 <span className="menu__icone">
-                  <Icone nome={item.icone} tamanho={20} />
-                  {distintivo && (
-                    <span className="menu__distintivo num" aria-hidden="true">
-                      {naoLidas > 9 ? '9+' : naoLidas}
-                    </span>
-                  )}
+                  {/*
+                    O distintivo se ancora NESTE invólucro, do tamanho do
+                    glifo — e não em `.menu__icone`, que tem a largura do
+                    trilho (68 px) para centralizar o ícone. Ancorado lá fora,
+                    ele flutuava a meio caminho do rótulo, longe do ícone que
+                    deveria estar marcando.
+                  */}
+                  <span className="menu__glifo">
+                    <Icone nome={item.icone} tamanho={20} />
+                    {distintivo && (
+                      <span className="menu__distintivo num" aria-hidden="true">
+                        {naoLidas > 9 ? '9+' : naoLidas}
+                      </span>
+                    )}
+                  </span>
                 </span>
                 <span className="menu__rotulo">{item.rotulo}</span>
               </button>
