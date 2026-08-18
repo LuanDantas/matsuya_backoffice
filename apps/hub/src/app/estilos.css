@@ -4411,7 +4411,7 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: 380px 1fr;
   gap: var(--e-3);
   padding: var(--e-3);
 }
@@ -4419,49 +4419,256 @@
 @media (max-width: 1100px) {
   .rota {
     grid-template-columns: 1fr;
-    grid-template-rows: 260px 1fr;
+    grid-template-rows: 300px 1fr;
   }
+
   .rota__mapa { order: -1; }
 }
 
 .rota__lista {
   display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
   min-height: 0;
+  padding: var(--e-3);
+  border: 1px solid var(--borda);
+  border-radius: 16px;
+  background: var(--superficie-1);
 }
 
-.rota__lista .ui-painel {
-  flex: 1;
-  min-width: 0;
-}
-
-.rota__lista .ui-painel__corpo {
-  overflow-y: auto;
+/* A frase que diz o que a aba contém, e some quando se troca de aba. */
+.rota__explica {
+  margin: 0;
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
 }
 
 .rota__itens {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   list-style: none;
   margin: 0;
-  padding: 0;
+  /* 2px à direita para o polegar da rolagem não encostar na borda do cartão. */
+  padding: 0 2px 0 0;
   display: flex;
   flex-direction: column;
   gap: var(--e-2);
 }
 
+.rota__linha-item {
+  animation: rota-entra 240ms var(--curva) both;
+  animation-delay: calc(var(--ordem, 0) * 40ms);
+}
+
+@keyframes rota-entra {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
 .rota__item {
   width: 100%;
-  min-height: var(--alvo);
+  min-height: 76px;
   padding: var(--e-3);
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  border: 1px solid var(--borda);
-  border-radius: var(--raio-1);
+  gap: var(--e-1);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-2);
   background: var(--superficie-1);
   color: inherit;
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color var(--duracao-rapida) var(--curva);
+  transition:
+    background-color var(--duracao-rapida) var(--curva),
+    border-color var(--duracao-rapida) var(--curva),
+    transform var(--duracao-rapida) var(--curva);
+}
+
+/* Cinza no ponteiro, marca só na seleção: vermelho no hover diria "algo
+   aconteceu" onde só diz "o ponteiro está em cima". */
+.rota__item:hover {
+  background: var(--superficie-3);
+  border-color: var(--texto-apagado);
+}
+
+.rota__item:active {
+  transform: translateY(1px);
+}
+
+.rota__item[data-selecionado] {
+  border-color: var(--marca);
+  background: var(--marca-suave);
+}
+
+.rota__linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2);
+  font-size: var(--texto-sm);
+}
+
+.rota__linha--fraca {
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+.rota__quem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * A barra do trecho até a loja.
+ *
+ * Responde "está chegando?" sem obrigar a ler o mapa. Fina de propósito: é
+ * contexto de uma linha de lista, não o assunto dela — o assunto é o pedido.
+ */
+.rota__trecho {
+  display: block;
+  height: 3px;
+  margin-top: var(--e-1);
+  border-radius: var(--raio-total);
+  background: var(--superficie-2);
+  overflow: hidden;
+}
+
+.rota__trecho > span {
+  display: block;
+  height: 100%;
+  border-radius: var(--raio-total);
+  background: var(--grafico-linha);
+  transition: width var(--duracao) var(--curva);
+}
+
+/* ── O mapa ─────────────────────────────────────────────────────────────── */
+
+.rota__mapa {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+  min-height: 0;
+}
+
+.mapa {
+  flex: 1;
+  min-height: 240px;
+  border: 1px solid var(--borda);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--superficie-2);
+  /* O canvas do MapLibre precisa de contexto de posicionamento para os
+     controles e para os marcadores. */
+  position: relative;
+}
+
+.mapa--sem-dados,
+.mapa--carregando {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-3);
+  padding: var(--e-6);
+  text-align: center;
+  color: var(--texto-fraco);
+  font-size: var(--texto-sm);
+}
+
+/*
+ * Os pinos, em HTML.
+ *
+ * O motivo continua o do mapa anterior — imagem do pacote quebra em build com
+ * hash —, e agora ele rende mais: em HTML o pino herda os tokens do tema e
+ * aceita transição, que é o que faz o do entregador **andar** em vez de saltar
+ * de um ponto ao outro a cada ping.
+ */
+.mapa__pino {
+  display: block;
+  cursor: pointer;
+}
+
+.mapa__pino > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--superficie-1);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  color: var(--texto-inverso);
+  font-size: 11px;
+  font-weight: var(--peso-forte);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
+  transition:
+    transform var(--duracao-rapida) var(--curva),
+    background-color var(--duracao) var(--curva);
+}
+
+.mapa__pino--loja > span {
+  background: var(--marca);
+}
+
+.mapa__pino--destino > span {
+  background: var(--grafico-linha);
+}
+
+/* O selecionado cresce em vez de mudar de cor: a cor já diz "destino", e uma
+   segunda cor faria pensar que é outro tipo de coisa. */
+.mapa__pino--ativo > span {
+  transform: rotate(-45deg) scale(1.25);
+  border-color: var(--marca);
+}
+
+/*
+ * O entregador é redondo, e os outros dois são gota.
+ *
+ * A forma é o que separa quem se move de quem está parado — e ela funciona
+ * antes da cor, de longe, e para quem não distingue matiz. Loja e destino são
+ * lugares; o entregador é gente andando.
+ */
+.mapa__pino--entregador > span {
+  border-radius: 50%;
+  transform: none;
+  background: var(--sucesso);
+}
+
+/*
+ * O deslocamento entre um ping e o outro.
+ *
+ * O MapLibre posiciona o marcador com `transform: translate(...)` no elemento
+ * externo — animar essa transição é o que transforma um salto de duzentos
+ * metros a cada cinco segundos em movimento. Sem isso, o pino pisca de lugar e
+ * lê como falha de renderização, não como alguém se movendo.
+ */
+.mapa__pino--entregador {
+  transition: transform 1.2s linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rota__linha-item {
+    animation: none;
+  }
+
+  /* O pino salta em vez de deslizar. Meia animação de movimento é pior do que
+     nenhuma para quem tem enxaqueca vestibular. */
+  .mapa__pino--entregador {
+    transition: none;
+  }
+
+  .rota__item:active {
+    transform: none;
+  }
 }
 
 /* Invólucro de dica na barra: não pode alterar o alinhamento do que envolve. */
@@ -4487,80 +4694,6 @@
 .contador:disabled {
   opacity: 0.45;
   cursor: not-allowed;
-}
-
-.rota__item:hover,
-.rota__item[data-selecionado] {
-  border-color: var(--marca);
-}
-
-.rota__linha {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--e-2);
-  font-size: var(--texto-sm);
-}
-
-.rota__linha--fraca {
-  font-size: var(--texto-xs);
-  color: var(--texto-fraco);
-}
-
-.rota__mapa {
-  display: flex;
-  flex-direction: column;
-  gap: var(--e-2);
-  min-height: 0;
-}
-
-.rota__nota {
-  display: flex;
-  align-items: center;
-  gap: var(--e-2);
-  margin: 0;
-  font-size: var(--texto-xs);
-  color: var(--texto-fraco);
-}
-
-.mapa {
-  flex: 1;
-  min-height: 240px;
-  border: 1px solid var(--borda);
-  border-radius: var(--raio-2);
-  overflow: hidden;
-  background: var(--superficie-2);
-}
-
-.mapa--sem-dados,
-.mapa--carregando {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--e-3);
-  padding: var(--e-6);
-  text-align: center;
-  color: var(--texto-fraco);
-  font-size: var(--texto-sm);
-}
-
-/* Pino desenhado em HTML, não em imagem: o PNG padrão do Leaflet quebra em
-   build com hash, e é a causa mais comum de "marcador não aparece". */
-.mapa__pino span {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: 2px solid #fff;
-  border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg);
-  background: var(--pino);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 700;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.35);
 }
 
 /* ── Conversas, cardápio e ajustes ──────────────────────────────────────── */

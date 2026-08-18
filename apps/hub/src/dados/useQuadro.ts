@@ -157,6 +157,31 @@ export function useQuadro(unityIds: number[], token: string | null): EstadoDoQua
       // unidade jogaria fora o cursor das outras sem motivo.
       aoExigirRecarga: (unityId) => void carregarLoja(unityId),
       aoMudarOperacao: () => definirVersaoDasLojas((v) => v + 1),
+
+      /*
+       * Escreve a posição no pedido que já está em memória.
+       *
+       * Só mexe em `entrega.posicao` — nunca cria a entrega nem toca em estado,
+       * nome ou ETA. Um ping é a única coisa que ele sabe; inventar o resto a
+       * partir dele apagaria o que o evento de corrida trouxe.
+       *
+       * Pedido que não está no quadro é ignorado em silêncio: é entrega de
+       * outra loja, ou de um pedido que já saiu da janela — e um ping não é
+       * motivo para ir buscar nada.
+       */
+      aoMoverEntregador: (_unityId, orderId, posicao) => {
+        definirPedidos((atuais) => {
+          const i = atuais.findIndex((p) => p.id === orderId)
+          if (i < 0 || !atuais[i]!.entrega) return atuais
+
+          const proximo = [...atuais]
+          proximo[i] = {
+            ...atuais[i]!,
+            entrega: { ...atuais[i]!.entrega!, posicao },
+          }
+          return proximo
+        })
+      },
       aoMudarEstado: definirConexao,
       aoMudarSincronia: definirSincronia,
     })

@@ -26,6 +26,18 @@ export interface ConfigDoHub {
    * `nunca`   — sempre manual, pelo botão do detalhe do pedido.
    */
   impressaoAutomatica?: 'agente' | 'sempre' | 'nunca'
+  /**
+   * O estilo do mapa de "Em rota".
+   *
+   * Configurável e não cravado no código porque o provedor é a peça mais frágil
+   * desta tela: o padrão é o OpenFreeMap, gratuito e liberado para uso
+   * comercial, mas é uma instância pública mantida por uma pessoa. Se um dia
+   * sair do ar, apontar para outro provedor — ou para uma instância própria —
+   * é editar um arquivo de configuração, não recompilar o Hub.
+   *
+   * Aceita qualquer estilo no formato do MapLibre.
+   */
+  estiloDoMapa?: string
 }
 
 export const config: ConfigDoHub = {

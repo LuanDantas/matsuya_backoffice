@@ -56,6 +56,28 @@ export interface EntregaDoQuadro {
   fotoUrl: string | null
   nota: number | null
   notaDeQuantas: number | null
+  /**
+   * Onde o entregador estava da última vez que se soube.
+   *
+   * **Não segue a regra do nome.** Foto e nome só aparecem a partir da chegada
+   * à loja; posição é o contrário — só interessa **enquanto ele está na rua**,
+   * e vale nos dois trechos, até a loja e até o cliente.
+   *
+   * `em` vem sempre junto: um pino desenhado a partir de um ping de quarenta
+   * minutos atrás mente com a mesma confiança de um de cinco segundos, e sem o
+   * carimbo a tela não tem como distinguir os dois.
+   *
+   * `null` é o caso normal em produção — não existe app de entregador nem
+   * publicação do parceiro. Quem preenche hoje é o simulador.
+   */
+  posicao: PosicaoDoEntregador | null
+}
+
+export interface PosicaoDoEntregador {
+  lat: number
+  lng: number
+  /** ISO de quando a posição foi recebida. */
+  em: string
 }
 
 export interface PedidoDoQuadro {

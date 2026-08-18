@@ -2,6 +2,7 @@ import { io, type Socket } from 'socket.io-client'
 import { Sincronizador, type EstadoDeSincronia } from '@matsuya/realtime'
 import type { Mudanca, RespostaDeMudancas } from '@matsuya/contracts'
 import { expirarSessao } from './cliente'
+import type { PosicaoDoEntregador } from '@matsuya/api-client'
 
 /**
  * Liga o socket aos sincronizadores de cursor.
@@ -47,6 +48,21 @@ export interface OpcoesDaConexao {
    * nenhum pedido depende do rótulo estar certo neste instante.
    */
   aoMudarOperacao?: (unityId: number) => void
+  /**
+   * O entregador se moveu.
+   *
+   * **Fora do diário, como a operação da loja, e pelo mesmo tipo de motivo —
+   * levado ao extremo.** O cursor existe para que nenhum pedido se perca, e
+   * cada mudança registrada consome um `seq`. Um ping de posição a cada poucos
+   * segundos por entrega ativa inundaria essa sequência: o quadro veria saltos
+   * enormes entre dois eventos de estado e concluiria, corretamente pela regra
+   * que ele segue, que perdeu mensagens — pedindo reposição atrás de reposição.
+   *
+   * Posição também não precisa de garantia: perder um ping não deixa nada
+   * inconsistente, porque o próximo substitui o anterior por inteiro. É o único
+   * dado deste sistema de que isso é verdade.
+   */
+  aoMoverEntregador?: (unityId: number, orderId: number, posicao: PosicaoDoEntregador) => void
   aoMudarEstado: (estado: EstadoDaConexao) => void
   aoMudarSincronia?: (estado: EstadoDeSincronia) => void
 }
@@ -140,6 +156,22 @@ export class Conexao {
     this.socket.on('order.delivery_changed', (evento: unknown) => {
       const unityId = Number((evento as { unityId?: number } | null)?.unityId)
       this.sincronizadores.get(unityId)?.aoReceberEvento(evento)
+    })
+
+    /*
+     * Posição do entregador. Best-effort e sem `seq` — ver `aoMoverEntregador`.
+     */
+    this.socket.on('delivery.position', (evento: unknown) => {
+      const e = evento as
+        | { unityId?: number; data?: { orderId?: number; posicao?: PosicaoDoEntregador } }
+        | null
+
+      const unityId = Number(e?.unityId)
+      const orderId = Number(e?.data?.orderId)
+      const posicao = e?.data?.posicao
+
+      if (!Number.isInteger(unityId) || !Number.isInteger(orderId) || !posicao) return
+      this.opcoes.aoMoverEntregador?.(unityId, orderId, posicao)
     })
 
     this.socket.on('store.operation_changed', (evento: unknown) => {
