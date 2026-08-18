@@ -3104,17 +3104,17 @@
   grid-template-columns: 64px 1fr;
   gap: var(--e-3);
   align-items: start;
-  padding: var(--e-3) var(--e-2);
-  margin: 0 calc(var(--e-2) * -1);
-  transition: background-color var(--duracao) var(--curva);
+  padding: var(--e-3) 0;
 }
 
-/* Realce sob o ponteiro. Numa lista de dez itens com opções, é o que mantém o
-   olho na linha certa ao cruzar do nome para o preço. */
-.itens li:hover {
-  background: var(--superficie-3);
-}
-
+/*
+ * Sem realce sob o ponteiro.
+ *
+ * O realce fazia sentido enquanto a linha tinha quatro colunas e o olho
+ * precisava cruzar do nome até o preço lá na borda. Com a foto ancorando a
+ * linha e o preço já na mesma altura do nome, ele só acrescentava movimento a
+ * uma lista que não é clicável — e nada aqui responde ao clique.
+ */
 /* Divisória reta entre itens — lista de conferência quer régua, não ficha. */
 .itens li + li {
   border-top: 1px solid var(--borda);
@@ -3169,10 +3169,6 @@
   color: var(--texto-inverso);
   font-size: var(--texto-xs);
   font-weight: var(--peso-forte);
-}
-
-.itens li:hover .itens__selo {
-  border-color: var(--superficie-3);
 }
 
 .itens__corpo {
@@ -3239,10 +3235,6 @@
   color: var(--texto-corpo);
   font-size: var(--texto-xs);
   font-weight: var(--peso-forte);
-}
-
-.itens li:hover .itens__opcao-qtd {
-  background: var(--superficie-2);
 }
 
 .itens__opcao-nome {
@@ -3333,6 +3325,18 @@
    as linhas acima existem para explicá-lo. */
 .contas__linha[data-destaque] dd {
   font-size: var(--texto-xl);
+}
+
+/*
+ * A última conta — a do pagamento — respira mais embaixo.
+ *
+ * Ela é a única com linha de apoio ("o entregador recolhe este valor"), e o
+ * apoio terminava encostado na faixa de fecho logo abaixo. Duas frases sobre o
+ * mesmo assunto separadas por três pixels se leem como uma frase só quebrada
+ * no lugar errado.
+ */
+.contas__linha:last-of-type {
+  padding-bottom: var(--e-5);
 }
 
 /* ── Fecho do pagamento ─────────────────────────────────────────────────── */
