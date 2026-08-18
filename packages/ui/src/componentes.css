@@ -782,3 +782,222 @@ button.ui-painel__alerta[aria-pressed='true'] {
 @media (prefers-reduced-motion: reduce) {
   [data-dica]::after { transition: none; }
 }
+
+/* ── Interruptor ────────────────────────────────────────────────────────── */
+
+/*
+ * O alvo tem 44 px, o desenho tem 26.
+ *
+ * O trilho pequeno é o que a referência mostra e o que se reconhece como
+ * interruptor; o botão em volta é maior e invisível, porque a tela é usada em
+ * tablete e um alvo de 26 px é errado duas vezes em cada dez.
+ */
+.ui-interruptor {
+  flex: none;
+  width: var(--alvo);
+  height: var(--alvo);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.ui-interruptor__trilho {
+  position: relative;
+  width: 44px;
+  height: 26px;
+  border-radius: var(--raio-total);
+  background: var(--borda-forte);
+  transition: background-color var(--duracao) var(--curva);
+}
+
+.ui-interruptor__carrinho {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--raio-total);
+  background: var(--superficie-1);
+  /* A única sombra do componente, e ela tem função: separar o carrinho do
+     trilho quando os dois estão claros. */
+  box-shadow: 0 1px 2px rgb(0 0 0 / 25%);
+  /* `transform` e não `left`: anima na GPU e não provoca recálculo de layout. */
+  transition: transform var(--duracao) var(--curva);
+}
+
+.ui-interruptor[aria-checked='true'] .ui-interruptor__trilho {
+  background: var(--marca);
+}
+
+.ui-interruptor[aria-checked='true'] .ui-interruptor__carrinho {
+  transform: translateX(18px);
+}
+
+.ui-interruptor:focus-visible {
+  outline: none;
+}
+
+/* O anel vai no trilho, não no botão: o botão é maior que o desenho, e um anel
+   nele ficaria flutuando longe do que ele controla. */
+.ui-interruptor:focus-visible .ui-interruptor__trilho {
+  outline: 2px solid var(--foco);
+  outline-offset: 3px;
+}
+
+.ui-interruptor:disabled {
+  cursor: not-allowed;
+}
+
+.ui-interruptor:disabled .ui-interruptor__trilho {
+  opacity: 0.4;
+}
+
+/*
+ * Movimento reduzido: o carrinho muda de lado sem deslizar.
+ *
+ * O estado continua legível — posição, cor e `aria-checked` são três pistas, e
+ * nenhuma delas depende da animação.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .ui-interruptor__trilho,
+  .ui-interruptor__carrinho {
+    transition: none;
+  }
+}
+
+/* ── Escolha ────────────────────────────────────────────────────────────── */
+
+.ui-escolha {
+  position: relative;
+}
+
+.ui-escolha__gatilho {
+  min-height: 36px;
+  min-width: 190px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2);
+  padding: 0 var(--e-2) 0 var(--e-3);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-1);
+  background: var(--superficie-1);
+  color: var(--texto);
+  font: inherit;
+  font-size: var(--texto-sm);
+  cursor: pointer;
+  transition: border-color var(--duracao-rapida) var(--curva);
+}
+
+.ui-escolha__gatilho:hover:not(:disabled) {
+  border-color: var(--texto-apagado);
+}
+
+.ui-escolha__gatilho[aria-expanded='true'] {
+  border-color: var(--marca);
+}
+
+.ui-escolha__gatilho:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
+}
+
+.ui-escolha__gatilho:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ui-escolha__valor {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * A lista abre **para baixo e alinhada à direita**, porque este controle vive
+ * na ponta direita de uma linha de ajuste: alinhada à esquerda ela sairia da
+ * borda do painel.
+ */
+.ui-escolha__lista {
+  position: absolute;
+  top: calc(100% + var(--e-1));
+  right: 0;
+  z-index: var(--z-sobreposicao);
+  min-width: 240px;
+  margin: 0;
+  padding: var(--e-1);
+  list-style: none;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-2);
+  background: var(--superficie-1);
+  /* A lista flutua sobre o conteúdo: sem sombra, a borda dela se confunde com
+     as divisórias das linhas por baixo. */
+  box-shadow: 0 8px 24px rgb(0 0 0 / 16%);
+  animation: escolha-entra 140ms var(--curva) both;
+}
+
+@keyframes escolha-entra {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.ui-escolha__opcao {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-2);
+  /* 40 px: alvo confortável numa lista curta, sem esticar o painel. */
+  min-height: 40px;
+  padding: var(--e-2);
+  border-radius: var(--raio-1);
+  cursor: pointer;
+}
+
+/*
+ * `data-em-foco` e não `:hover`.
+ *
+ * O cursor do teclado e o do ponteiro são o mesmo aqui — a lista é percorrida
+ * por `aria-activedescendant`, e o foco do navegador nunca sai do gatilho.
+ * Estilizar por `:hover` deixaria a navegação por seta sem nenhum destaque
+ * visível, que é o defeito clássico de listbox reimplementada.
+ */
+.ui-escolha__opcao[data-em-foco] {
+  background: var(--superficie-3);
+}
+
+.ui-escolha__marca {
+  flex: none;
+  width: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 2px;
+  color: var(--marca);
+}
+
+.ui-escolha__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: var(--texto-sm);
+}
+
+.ui-escolha__opcao[aria-selected='true'] .ui-escolha__texto {
+  font-weight: var(--peso-medio);
+}
+
+.ui-escolha__detalhe {
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-escolha__lista {
+    animation: none;
+  }
+}

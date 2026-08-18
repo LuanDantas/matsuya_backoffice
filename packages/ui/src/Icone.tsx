@@ -46,6 +46,7 @@ export type NomeDoIcone =
   | 'som'
   | 'som-cortado'
   | 'impressora'
+  | 'lixeira'
   | 'olho'
   | 'olho-cortado'
   | 'cartao'
@@ -127,6 +128,9 @@ const CAMINHOS: Record<NomeDoIcone, string> = {
     'M9.9 5.2A10.5 10.5 0 0 1 12 5c6.4 0 10 7 10 7a18 18 0 0 1-3.1 4M6.2 6.7A18 18 0 0 0 2 12s3.6 7 10 7a10.4 10.4 0 0 0 4-.8M10 10a3 3 0 0 0 4 4M2 2l20 20',
 
   // Térmica de balcão: corpo, bandeja de saída e a fenda do papel.
+  /* Lixeira de contorno: o conjunto não tinha nenhuma, e "revogar" sem glifo
+     depende só da palavra para se distinguir dos outros botões do cartão. */
+  lixeira: 'M4 7h16M10 11v6M14 11v6M5 7l1 13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-13M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3',
   impressora: 'M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M6 14h12v7H6z',
 }
 
