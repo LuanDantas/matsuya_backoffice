@@ -3246,20 +3246,21 @@
 }
 
 /*
- * A última conta — a do pagamento — respira mais embaixo.
+ * A última conta — a do pagamento — respira mais embaixo, e a faixa que a
+ * segue não acrescenta o dela.
  *
- * Ela é a única com linha de apoio ("o entregador recolhe este valor"), e o
- * apoio terminava encostado na faixa de fecho logo abaixo. Duas frases sobre o
- * mesmo assunto separadas por três pixels se leem como uma frase só quebrada
- * no lugar errado.
- *
- * O afastamento é grande porque a faixa de fecho é **tingida**: fundo colorido
- * encostado em texto puxa o texto para dentro dele, e as duas coisas passam a
- * parecer o mesmo bloco. O que separa dois blocos com fundos diferentes é o
- * branco entre eles, não a divisória.
+ * Ela é a única linha do painel com apoio ("o entregador recolhe este valor"),
+ * e duas frases sobre o mesmo assunto a três pixels de distância se leem como
+ * uma frase só quebrada no lugar errado. Como o respiro já está no padding, o
+ * do fecho é zerado aqui — somados dariam quase sessenta pixels de branco no
+ * meio de um cartão.
  */
 .contas .linha-d:last-child {
   padding-bottom: var(--e-8);
+}
+
+.contas + .fecho {
+  margin-top: 0;
 }
 
 /* ── Fecho do pagamento ─────────────────────────────────────────────────── */
@@ -3286,7 +3287,16 @@
   display: flex;
   align-items: center;
   gap: var(--e-3);
-  margin: 0 calc(var(--e-4) * -1) calc(var(--e-4) * -1);
+  /*
+   * O respiro é do fecho, e não de quem vem antes.
+   *
+   * Fundo tingido encostado em texto puxa o texto para dentro dele, e as duas
+   * coisas passam a parecer o mesmo bloco — o que separa blocos de fundos
+   * diferentes é o branco entre eles, não a divisória. Morando aqui, a regra
+   * vale para os quatro cartões que usam a faixa, em vez de ser reescrita em
+   * cada um.
+   */
+  margin: var(--e-6) calc(var(--e-4) * -1) calc(var(--e-4) * -1);
   padding: var(--e-4);
   border-top: 1px solid var(--borda);
   border-radius: 0 0 15px 15px;
