@@ -83,6 +83,11 @@ const PARES = [
   ['faixa informativa', 'texto', 'info-suave', 4.5],
   ['faixa de atenção', 'texto', 'atencao-suave', 4.5],
   ['faixa de perigo', 'texto', 'perigo-suave', 4.5],
+  // O tempo de atraso na folha de acompanhamento: o número em laranja sobre o
+  // branco do cartão. É a figura da folha — a informação que a pessoa abriu a
+  // folha para ler —, então vale a régua de texto, não a de elemento gráfico.
+  ['tempo atrasado na folha', 'atencao', 'superficie-1', 4.5],
+
   ['anel de foco sobre a superfície base', 'foco', 'superficie-base', 3],
   ['anel de foco sobre superfície 1', 'foco', 'superficie-1', 3],
   ['borda forte sobre superfície 1', 'borda-forte', 'superficie-1', 1.3],

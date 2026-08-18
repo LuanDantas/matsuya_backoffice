@@ -51,6 +51,37 @@ import { config } from '../../app/config'
 
 const ESTILO_PADRAO = 'https://tiles.openfreemap.org/styles/liberty'
 
+/**
+ * A cor da linha, lida do token em vez de escrita aqui.
+ *
+ * O WebGL não enxerga variável de CSS: o `paint` do MapLibre quer um valor
+ * resolvido. Ler o token no momento de criar a camada é o que mantém a linha
+ * do mapa e a linha do gráfico da home com a **mesma** cor — duas constantes
+ * hexadecimais em arquivos diferentes divergem na primeira vez que alguém
+ * ajusta uma delas.
+ *
+ * O `fallback` cobre o teste em `jsdom`, onde não há folha de estilo carregada.
+ */
+function corDaRota(): string {
+  const token = getComputedStyle(document.documentElement)
+    .getPropertyValue('--grafico-linha')
+    .trim()
+  return token || '#1d4ed8'
+}
+
+/**
+ * O traçado desenhado sobre o mapa, quando alguém está acompanhando.
+ *
+ * `pontos` já vem na ordem do GeoJSON (`[lng, lat]`) da API — o Hub nunca
+ * decodifica polilinha nem inverte coordenada. Ver `modules/entregas/trajeto.ts`
+ * na API, onde a conversão acontece uma vez só.
+ */
+export interface RotaNoMapa {
+  pontos: Array<[number, number]>
+  /** Quem está sendo acompanhado — o mapa enquadra só este par. */
+  pedidoId: number
+}
+
 export interface PontoDeEntrega {
   id: number
   codigo: string
@@ -82,12 +113,18 @@ export default function MapaDasEntregas({
   nomeDaUnidade,
   pontos,
   selecionado,
+  rota,
+  foco,
   aoSelecionar,
 }: {
   unidade: Coordenada | null
   nomeDaUnidade: string
   pontos: PontoDeEntrega[]
   selecionado: number | null
+  /** O traçado a desenhar, ou `null` quando ninguém está acompanhando. */
+  rota: RotaNoMapa | null
+  /** Os pontos a enquadrar ao acompanhar — sobrepõe o enquadramento do conjunto. */
+  foco: Coordenada[] | null
   aoSelecionar: (id: number) => void
 }) {
   const caixa = useRef<HTMLDivElement>(null)
@@ -106,6 +143,11 @@ export default function MapaDasEntregas({
   const chaveDosPontos = useMemo(
     () => pontos.map((p) => p.id).sort((a, b) => a - b).join(','),
     [pontos]
+  )
+
+  const chaveDoFoco = useMemo(
+    () => (foco ? foco.map((c) => `${c.lat.toFixed(4)},${c.lng.toFixed(4)}`).join('|') : ''),
+    [foco]
   )
 
   // ── O mapa, criado uma vez ──────────────────────────────────────────────
@@ -164,6 +206,10 @@ export default function MapaDasEntregas({
         // no mesmo elemento que permite ao CSS animar o deslocamento. Recriar
         // faria o pino piscar de um ponto para o outro.
         existente.setLngLat([coord.lng, coord.lat])
+        // A classe também muda sem o pino mudar de lugar — é assim que ele
+        // esmaece ao entrar num acompanhamento e volta ao sair. Sem esta linha,
+        // só pinos recém-criados receberiam o estado novo.
+        existente.getElement().className = classe
         return
       }
 
@@ -181,9 +227,18 @@ export default function MapaDasEntregas({
     if (unidade) por('loja', 'mapa__pino mapa__pino--loja', unidade, '★')
 
     for (const ponto of pontos) {
+      /*
+       * Acompanhando um, os outros esmaecem — não somem.
+       *
+       * Sumir esconderia entregas que continuam existindo e continuam podendo
+       * dar errado; esmaecer diz "não é este" sem apagar a informação. O
+       * atributo de dado faz o CSS decidir, e não este arquivo.
+       */
+      const foraDoFoco = rota !== null && rota.pedidoId !== ponto.id
+
       por(
         `destino-${ponto.id}`,
-        `mapa__pino mapa__pino--destino${selecionado === ponto.id ? ' mapa__pino--ativo' : ''}`,
+        `mapa__pino mapa__pino--destino${selecionado === ponto.id ? ' mapa__pino--ativo' : ''}${foraDoFoco ? ' mapa__pino--esmaecido' : ''}`,
         ponto.coordenada,
         '',
         () => aoSelecionar(ponto.id)
@@ -192,7 +247,7 @@ export default function MapaDasEntregas({
       if (ponto.entregador) {
         por(
           `entregador-${ponto.id}`,
-          'mapa__pino mapa__pino--entregador',
+          `mapa__pino mapa__pino--entregador${foraDoFoco ? ' mapa__pino--esmaecido' : ''}`,
           ponto.entregador,
           ''
         )
@@ -208,12 +263,87 @@ export default function MapaDasEntregas({
     }
   }, [pontos, unidade, selecionado, aoSelecionar])
 
+
+  // ── O traçado ───────────────────────────────────────────────────────────
+  /*
+   * Duas linhas empilhadas, e não uma.
+   *
+   * Por baixo um traço largo e claro, por cima o fino e colorido. É o desenho
+   * de contorno de sempre, e ele existe porque o mapa por baixo não é uma cor
+   * só: a mesma linha atravessa parques verdes, avenidas brancas e quarteirões
+   * cinzentos, e sem o contorno ela some justamente onde o fundo tem a
+   * luminosidade dela. Com o contorno, a legibilidade não depende do que estava
+   * embaixo.
+   *
+   * Fonte e camadas são criadas uma vez e depois só têm os dados trocados:
+   * remover e recriar camada a cada atualização faz o mapa piscar.
+   */
+  useEffect(() => {
+    const gl = mapa.current
+    if (!gl) return
+
+    const dados = {
+      type: 'FeatureCollection' as const,
+      features: rota
+        ? [
+            {
+              type: 'Feature' as const,
+              properties: {},
+              geometry: { type: 'LineString' as const, coordinates: rota.pontos },
+            },
+          ]
+        : [],
+    }
+
+    const aplicar = () => {
+      const fonte = gl.getSource('rota') as maplibregl.GeoJSONSource | undefined
+
+      if (fonte) {
+        fonte.setData(dados)
+        return
+      }
+
+      gl.addSource('rota', { type: 'geojson', data: dados })
+
+      gl.addLayer({
+        id: 'rota-contorno',
+        type: 'line',
+        source: 'rota',
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        // Branco nos dois temas, de propósito: o estilo do mapa não muda com o
+        // tema do Hub — as ruas continuam claras —, e um contorno escuro sobre
+        // elas devolveria o problema que o contorno existe para resolver.
+        paint: { 'line-color': '#ffffff', 'line-width': 7, 'line-opacity': 0.9 },
+      })
+
+      gl.addLayer({
+        id: 'rota-linha',
+        type: 'line',
+        source: 'rota',
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': corDaRota(), 'line-width': 3.5 },
+      })
+    }
+
+    // `addSource` antes de o estilo carregar lança. Numa tela que abre com o
+    // acompanhamento já pedido, essa é a corrida normal, não a exceção.
+    if (gl.isStyleLoaded()) aplicar()
+    else gl.once('load', aplicar)
+  }, [rota])
+
   // ── O enquadramento ─────────────────────────────────────────────────────
   useEffect(() => {
     const gl = mapa.current
     if (!gl) return
 
-    const todos = [
+    /*
+     * Acompanhando, o mapa enquadra **o par**, não o conjunto.
+     *
+     * Enquadrar todas as entregas enquanto se acompanha uma deixa a linha
+     * traçada como um risco de dois centímetros no canto. O par é o que a
+     * pergunta pede: onde ele está, e para onde vai.
+     */
+    const todos = foco ?? [
       ...(unidade ? [unidade] : []),
       ...pontos.map((p) => p.coordenada),
     ]
@@ -229,10 +359,21 @@ export default function MapaDasEntregas({
       new maplibregl.LngLatBounds([todos[0]!.lng, todos[0]!.lat], [todos[0]!.lng, todos[0]!.lat])
     ) as LngLatBoundsLike
 
-    gl.fitBounds(limites, { padding: 56, maxZoom: 15, duration: 400 })
-    // Só quando o CONJUNTO muda — ver `chaveDosPontos`.
+    /*
+     * Mais folga embaixo quando a folha está aberta: ela ocupa a faixa inferior
+     * do mapa, e sem isso o destino cairia atrás dela — justamente o ponto que
+     * quem abriu a folha quer ver.
+     */
+    gl.fitBounds(limites, {
+      padding: foco ? { top: 56, right: 56, bottom: 220, left: 56 } : 56,
+      maxZoom: 15,
+      duration: 400,
+    })
+    // Só quando o CONJUNTO muda — ver `chaveDosPontos` —, ou quando entra e sai
+    // um acompanhamento. `chaveDoFoco` é string pelo mesmo motivo: o array é
+    // recriado a cada render e arrancaria o mapa da mão de quem navega.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chaveDosPontos, unidade])
+  }, [chaveDosPontos, unidade, chaveDoFoco])
 
   // Sem nenhuma coordenada não há mapa a desenhar — e um mapa do oceano com
   // zoom mundial é pior do que uma explicação.

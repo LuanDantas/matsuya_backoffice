@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import type { EstadoDaCorrida, PedidoDoQuadro } from '@matsuya/api-client'
 import {
   abaDoPedido,
+  focoDoAcompanhamento,
+  fracaoPercorrida,
   idadeDaPosicao,
   partirPorAba,
   progressoDoTrecho,
@@ -116,5 +118,47 @@ describe('idade da posição', () => {
 
   it('não fica negativa com relógio adiantado', () => {
     expect(idadeDaPosicao(new Date(AGORA + 30_000).toISOString(), AGORA)).toBe(0)
+  })
+})
+
+describe('fracaoPercorrida', () => {
+  it('mede distância percorrida sobre o total', () => {
+    expect(fracaoPercorrida(1000, 250)).toBeCloseTo(0.75)
+    expect(fracaoPercorrida(1000, 1000)).toBe(0)
+    expect(fracaoPercorrida(1000, 0)).toBe(1)
+  })
+
+  it('grampeia quem saiu da rota, sem andar para trás', () => {
+    // "Restante" maior que o total acontece: o desvio de quem saiu do traçado
+    // entra na conta, e ele ainda precisa voltar.
+    expect(fracaoPercorrida(1000, 1500)).toBe(0)
+  })
+
+  it('não mostra barra quando não há o que medir', () => {
+    // Zero e ausência são coisas diferentes: uma barra vazia afirma "não saiu
+    // do lugar", e aqui a resposta certa é "não sei".
+    expect(fracaoPercorrida(null, 100)).toBeNull()
+    expect(fracaoPercorrida(0, 100)).toBeNull()
+    expect(fracaoPercorrida(1000, null)).toBeNull()
+    expect(fracaoPercorrida(1000, undefined)).toBeNull()
+  })
+})
+
+describe('focoDoAcompanhamento', () => {
+  const entregador = { lat: -23.5, lng: -46.62 }
+  const destino = { lat: -23.58, lng: -46.63 }
+
+  it('enquadra o par quando conhece os dois', () => {
+    expect(focoDoAcompanhamento(entregador, destino)).toEqual([entregador, destino])
+  })
+
+  it('cai para o que sabe quando falta um', () => {
+    expect(focoDoAcompanhamento(null, destino)).toEqual([destino])
+    expect(focoDoAcompanhamento(entregador, null)).toEqual([entregador])
+  })
+
+  it('não move o mapa quando não sabe nada', () => {
+    expect(focoDoAcompanhamento(null, null)).toBeNull()
+    expect(focoDoAcompanhamento(undefined, undefined)).toBeNull()
   })
 })

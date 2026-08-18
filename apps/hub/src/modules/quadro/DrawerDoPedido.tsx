@@ -7,7 +7,7 @@ import {
   type OrderAction,
 } from '@matsuya/contracts'
 import type { PedidoDoQuadro } from '@matsuya/api-client'
-import { decorrido, horario, moeda, restante } from '../../app/formato'
+import { decorrido, horario, iniciais, moeda, restante } from '../../app/formato'
 
 /**
  * Detalhe do pedido, em painel lateral.
@@ -76,14 +76,6 @@ const ICONE_DO_PAGAMENTO: Record<string, NomeDoIcone> = {
  * menos pertencem a esta pessoa e ajudam a distinguir dois entregadores na
  * mesma loja.
  */
-function iniciais(nome: string): string {
-  const partes = nome.trim().split(/\s+/).filter(Boolean)
-  if (partes.length === 0) return '?'
-  const primeira = partes[0]![0]!
-  const ultima = partes.length > 1 ? partes[partes.length - 1]![0]! : ''
-  return (primeira + ultima).toUpperCase()
-}
-
 /**
  * Quantas entregas avaliadas a média precisa ter para ser mostrada.
  *

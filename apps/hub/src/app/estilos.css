@@ -4468,24 +4468,39 @@
   }
 }
 
+/*
+ * O cartão, agora um `article` com duas ações no rodapé.
+ *
+ * Ele era um `button` gigante. Com duas ações isso deixou de ser possível:
+ * botão dentro de botão é HTML inválido, o navegador desfaz o aninhamento e o
+ * teclado para de alcançar o de dentro. O envelope virou neutro, e o corpo
+ * continua clicável por `.rota__toque` — a área grande, para quem usa a tela
+ * com pressa.
+ */
 .rota__item {
   width: 100%;
-  min-height: 76px;
   padding: var(--e-3);
   display: flex;
   flex-direction: column;
-  gap: var(--e-1);
+  gap: var(--e-3);
   border: 1px solid var(--borda-forte);
   border-radius: var(--raio-2);
   background: var(--superficie-1);
   color: inherit;
-  font: inherit;
   text-align: left;
-  cursor: pointer;
   transition:
     background-color var(--duracao-rapida) var(--curva),
-    border-color var(--duracao-rapida) var(--curva),
-    transform var(--duracao-rapida) var(--curva);
+    border-color var(--duracao-rapida) var(--curva);
+}
+
+/* Avatar à esquerda, conteúdo à direita: a coluna de rostos é a âncora que
+   o olho desce quando a pergunta é "quem está com o pedido do fulano?". */
+.rota__toque {
+  min-height: 60px;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-3);
+  cursor: pointer;
 }
 
 /* Cinza no ponteiro, marca só na seleção: vermelho no hover diria "algo
@@ -4495,12 +4510,89 @@
   border-color: var(--texto-apagado);
 }
 
-.rota__item:active {
+.rota__item[data-selecionado] {
+  border-color: var(--marca);
+  background: var(--marca-suave);
+}
+
+/*
+ * Acompanhando: a borda da marca, mais grossa, sem mudar o tamanho do cartão.
+ *
+ * `inset` em vez de `border-width`, senão o cartão cresceria um pixel e a
+ * lista inteira andaria embaixo do ponteiro no momento do clique.
+ */
+.rota__item[data-acompanhando] {
+  border-color: var(--marca);
+  background: var(--marca-suave);
+  box-shadow: inset 0 0 0 1px var(--marca);
+}
+
+/* As duas ações, separadas do corpo por uma linha: elas decidem, o corpo
+   informa, e a divisão diz onde uma coisa acaba e a outra começa. */
+.rota__acoes {
+  display: flex;
+  gap: var(--e-2);
+  padding-top: var(--e-3);
+  border-top: 1px solid var(--borda);
+}
+
+.rota__acao {
+  flex: 1;
+  /* 44 px: o alvo mínimo de toque. A tela é usada em tablet de balcão, e um
+     botão que se erra duas vezes custa mais do que o espaço que economiza. */
+  min-height: var(--alvo);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-2);
+  padding: 0 var(--e-3);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-1);
+  background: var(--superficie-1);
+  color: var(--texto);
+  font: inherit;
+  font-size: var(--texto-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color var(--duracao-rapida) var(--curva),
+    border-color var(--duracao-rapida) var(--curva),
+    transform var(--duracao-rapida) var(--curva);
+}
+
+.rota__acao:hover {
+  background: var(--superficie-3);
+  border-color: var(--texto-apagado);
+}
+
+.rota__acao:active {
   transform: translateY(1px);
 }
 
-.rota__item[data-selecionado] {
+/* Uma primária por cartão — a pergunta desta tela é "onde está e quando
+   chega?", e é este botão que a responde. */
+.rota__acao--primaria {
   border-color: var(--marca);
+  background: var(--marca);
+  /* Mesmo par do botão primário do sistema (`--marca` + `--texto-inverso`),
+     que é o medido e aprovado. Inventar um par aqui seria abrir um contraste
+     que ninguém conferiu. */
+  color: var(--texto-inverso);
+  font-weight: var(--peso-forte);
+}
+
+.rota__acao--primaria:hover {
+  background: var(--marca-hover);
+  border-color: var(--marca-hover);
+}
+
+/* Já acompanhando: o botão deixa de convidar e passa a informar. */
+.rota__acao--primaria[data-ativa] {
+  background: var(--superficie-1);
+  color: var(--marca);
+}
+
+.rota__acao--primaria[data-ativa]:hover {
   background: var(--marca-suave);
 }
 
@@ -4517,14 +4609,137 @@
   color: var(--texto-fraco);
 }
 
+.rota__corpo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-1);
+}
+
+/*
+ * O avatar do entregador.
+ *
+ * Iniciais desenhadas por baixo, foto por cima: as letras reaparecem sozinhas
+ * quando a imagem não carrega — entregador sem foto cadastrada, ou a internet
+ * da loja ruim. É o mesmo recurso do detalhe do pedido, e evita um `onError`
+ * com estado a mais para manter.
+ */
+.rota__avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--superficie-3);
+  color: var(--texto-corpo);
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.02em;
+  overflow: hidden;
+}
+
+.rota__avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+/*
+ * O selo do estado, no canto do avatar.
+ *
+ * Quem é a pessoa e o que ela está fazendo são duas informações. Empilhá-las no
+ * mesmo círculo é o que permite à linha caber numa altura em vez de duas — e o
+ * ícone separa os estados sem depender de cor. Fica fora do recorte da foto,
+ * por isso o `z-index`.
+ */
+.rota__selo {
+  z-index: 1;
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--superficie-1);
+  border-radius: 50%;
+  background: var(--texto-fraco);
+  color: var(--texto-inverso);
+}
+
+/* O tom vive no selo, e não no avatar inteiro: tingir o círculo do rosto
+   pintaria a pessoa com a cor do estado dela. */
+.rota__avatar[data-tom='sucesso'] .rota__selo { background: var(--sucesso); }
+.rota__avatar[data-tom='atencao'] .rota__selo { background: var(--atencao); }
+
+/*
+ * Sem ninguém atribuído, o disco não finge um rosto.
+ *
+ * Leva o ícone do estado em tinta pálida e fundo tracejado: a borda vazada diz
+ * "aqui vai entrar alguém" sem competir com quem já tem entregador de verdade.
+ * O atributo vem do componente, e não de um `:has()` — o avatar sempre tem um
+ * `svg` (o selo do estado), então detectar a ausência pela árvore daria uma
+ * regra que ninguém consegue ler depois.
+ */
+.rota__avatar[data-sem-entregador] {
+  background: transparent;
+  border: 1px dashed var(--borda-forte);
+  color: var(--texto-apagado);
+}
+
 .rota__quem {
   display: inline-flex;
   align-items: center;
-  gap: var(--e-1);
+  gap: var(--e-2);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--texto);
+  font-weight: var(--peso-medio);
+}
+
+/* A nota, quando há corridas suficientes para ela significar algo. */
+.rota__nota {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  color: var(--atencao);
+  font-weight: var(--peso-forte);
+}
+
+.rota__nota svg {
+  fill: currentColor;
+}
+
+/* Cliente e bairro na mesma linha, separados por um ponto desenhado em CSS —
+   um caractere a menos para o leitor de tela ler em voz alta. */
+.rota__cliente {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rota__bairro {
+  color: var(--texto-apagado);
+}
+
+.rota__bairro::before {
+  content: '·';
+  margin-right: var(--e-2);
 }
 
 /*
@@ -6695,5 +6910,345 @@
   /* A seta invertida é estado, não movimento — continua girada. */
   .lojas__tabela th[aria-sort='ascending'] .lojas__seta {
     transform: rotate(180deg);
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   A folha de acompanhamento
+
+   Ancorada no rodapé do mapa, e não sobre a tela inteira: acompanhar é olhar,
+   não decidir. A linha traçada precisa continuar visível enquanto se lê o
+   tempo, então a folha ocupa só a faixa de baixo e não tem véu — nada por trás
+   dela fica inativo.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* O mapa passa a ser o contexto de posicionamento da folha. */
+.rota__mapa {
+  position: relative;
+}
+
+.folha {
+  position: absolute;
+  right: var(--e-3);
+  bottom: var(--e-3);
+  left: var(--e-3);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  padding: var(--e-4);
+  border: 1px solid var(--borda-forte);
+  border-radius: 16px;
+  background: var(--superficie-1);
+  /*
+     A única sombra da tela, e ela tem função: a folha flutua sobre o mapa, e
+     sem separação a borda dela se confunde com as ruas por baixo. `--sombra-
+     cartao` é `none` de propósito no resto do sistema — cartões não flutuam.
+  */
+  box-shadow: 0 8px 32px rgb(0 0 0 / 18%);
+  /* Entra deslizando de baixo, que é de onde ela vem. */
+  animation: folha-entra 260ms var(--curva) both;
+}
+
+.folha:focus {
+  outline: none;
+}
+
+/* O foco entra na folha ao abrir; o anel só aparece para quem navega por
+   teclado, e não para quem acabou de clicar em "Acompanhar". */
+.folha:focus-visible {
+  outline: 2px solid var(--marca);
+  outline-offset: 2px;
+}
+
+@keyframes folha-entra {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+.folha__topo {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+}
+
+.folha__avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--raio-total);
+  background: var(--superficie-3);
+  color: var(--texto-fraco);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.02em;
+  overflow: hidden;
+}
+
+/* A foto por cima das iniciais: elas reaparecem sozinhas quando a imagem não
+   carrega, sem um `onError` com estado a mais para manter. */
+.folha__avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.folha__avatar[data-sem-entregador] {
+  color: var(--texto-apagado);
+}
+
+.folha__quem {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.folha__quem strong {
+  font-size: var(--texto-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folha__estado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+.folha__codigo {
+  flex: none;
+}
+
+.folha__fechar {
+  flex: none;
+  width: var(--alvo);
+  height: var(--alvo);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--raio-1);
+  background: none;
+  color: var(--texto-fraco);
+  cursor: pointer;
+  transition: background-color var(--duracao-rapida) var(--curva);
+}
+
+.folha__fechar:hover {
+  background: var(--superficie-3);
+  color: var(--texto);
+}
+
+.folha__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+}
+
+.folha__numeros {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--e-4);
+  flex-wrap: wrap;
+}
+
+/* A figura da folha: quanto falta em tempo. Grande porque é a resposta; o
+   resto da folha é contexto dela. */
+.folha__figura {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+}
+
+.folha__figura > .num {
+  font-size: var(--texto-2xl);
+  font-weight: var(--peso-forte);
+  line-height: 1.1;
+  /* Algarismos de largura fixa: o número anda a cada segundo, e sem isso a
+     linha inteira se mexeria a cada troca de dígito. */
+  font-variant-numeric: tabular-nums;
+}
+
+.folha__figura[data-atrasado] > .num {
+  color: var(--atencao);
+}
+
+.folha__figura-vazia {
+  font-size: var(--texto-lg);
+  font-weight: 500;
+  color: var(--texto-fraco);
+}
+
+.folha__figura-rotulo {
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+.folha__medidas {
+  display: flex;
+  gap: var(--e-5);
+  margin: 0;
+}
+
+.folha__medidas dt {
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+.folha__medidas dd {
+  margin: 0;
+  font-size: var(--texto-sm);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A ressalva fica colada no número que ela qualifica: linha reta e distância
+   pela rua não são a mesma medida, e em cidade a diferença passa de 30%. */
+.folha__ressalva {
+  display: block;
+  font-size: var(--texto-xs);
+  font-weight: 400;
+  color: var(--texto-fraco);
+}
+
+.folha__trajeto {
+  position: relative;
+}
+
+.folha__trilho {
+  position: relative;
+  display: block;
+  height: 6px;
+  border-radius: var(--raio-total);
+  background: var(--superficie-3);
+}
+
+.folha__trilho > span:first-child {
+  display: block;
+  height: 100%;
+  border-radius: var(--raio-total);
+  background: var(--marca);
+  transition: width var(--duracao) var(--curva);
+}
+
+/* O pino sobre a barra é a mesma moto do mapa, no mesmo trecho: as duas
+   leituras do progresso apontam para o mesmo lugar. */
+.folha__pino {
+  position: absolute;
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--superficie-1);
+  border-radius: var(--raio-total);
+  background: var(--marca);
+  color: var(--texto-inverso);
+  transform: translate(-50%, -50%);
+  transition: left var(--duracao) var(--curva);
+}
+
+.folha__acoes {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Esqueleto no formato do conteúdo, e não um giro: a primeira busca de cada
+   trecho manda traçar a rota e pode levar alguns segundos. */
+.folha__corpo--esqueleto {
+  gap: var(--e-2);
+}
+
+.folha__esqueleto {
+  display: block;
+  border-radius: var(--raio-1);
+  background: linear-gradient(
+    90deg,
+    var(--superficie-3) 25%,
+    var(--superficie-2) 50%,
+    var(--superficie-3) 75%
+  );
+  background-size: 200% 100%;
+  animation: folha-pulsa 1400ms linear infinite;
+}
+
+.folha__esqueleto--figura {
+  width: 140px;
+  height: 32px;
+}
+
+.folha__esqueleto--linha {
+  width: 100%;
+  height: 14px;
+}
+
+@keyframes folha-pulsa {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.folha__corpo--erro {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--e-2);
+  color: var(--atencao);
+  font-size: var(--texto-sm);
+}
+
+.folha__corpo--erro p {
+  margin: 0;
+}
+
+/*
+ * Acompanhando um, os outros esmaecem — não somem.
+ *
+ * Sumir esconderia entregas que continuam existindo e continuam podendo dar
+ * errado. Esmaecer diz "não é este" sem apagar a informação.
+ */
+.mapa__pino--esmaecido {
+  opacity: 0.35;
+  transition: opacity var(--duracao) var(--curva);
+}
+
+/*
+ * Movimento reduzido: a folha aparece, não desliza.
+ *
+ * O que ela comunica pelo movimento — "veio de baixo" — é conveniência, não
+ * informação. Quem pediu menos movimento recebe o mesmo conteúdo sem o gesto,
+ * e o pulso do esqueleto para: um brilho varrendo em laço é exatamente o tipo
+ * de animação que a preferência existe para desligar.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .folha {
+    animation: none;
+  }
+
+  .folha__esqueleto {
+    animation: none;
+  }
+
+  .folha__trilho > span:first-child,
+  .folha__pino {
+    transition: none;
   }
 }

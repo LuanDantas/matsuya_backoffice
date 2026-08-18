@@ -78,3 +78,18 @@ export function decorrido(desde: string, agora: number): string {
 export function restante(ate: string, agora: number): string {
   return duracao(Math.floor((new Date(ate).getTime() - agora) / 1000))
 }
+
+/**
+ * Iniciais de um nome, para o avatar.
+ *
+ * Primeira letra do primeiro e do último nome. Duas letras que pertencem a esta
+ * pessoa dizem mais do que uma silhueta genérica — e elas ficam desenhadas por
+ * baixo da foto, reaparecendo sozinhas quando a imagem não carrega.
+ */
+export function iniciais(nome: string): string {
+  const partes = nome.trim().split(/\s+/).filter(Boolean)
+  if (partes.length === 0) return '?'
+  const primeira = partes[0]![0]!
+  const ultima = partes.length > 1 ? partes[partes.length - 1]![0]! : ''
+  return (primeira + ultima).toUpperCase()
+}

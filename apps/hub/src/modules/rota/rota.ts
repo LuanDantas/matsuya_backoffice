@@ -98,3 +98,47 @@ export function idadeDaPosicao(em: string, agora: number): number {
  * está, e é dessa afirmação que sai a ligação errada para o cliente.
  */
 export const POSICAO_VELHA_MINUTOS = 5
+
+/**
+ * Quanto do traçado já foi percorrido, entre 0 e 1.
+ *
+ * Par de `progressoDoTrecho`, e mede outra coisa: aquele conta **tempo**
+ * decorrido sobre tempo previsto; este conta **distância** percorrida sobre
+ * distância total. Os dois existem porque nem toda entrega tem traçado — sem
+ * ele só resta o relógio —, e vale não confundi-los: o relógio enche sozinho
+ * mesmo com o entregador parado no sinal, a distância não.
+ *
+ * `null` quando falta o que medir. A barra some, em vez de mostrar zero — uma
+ * barra vazia afirma "não saiu do lugar", que é diferente de "não sei".
+ */
+export function fracaoPercorrida(
+  metrosTotais: number | null | undefined,
+  metrosRestantes: number | null | undefined
+): number | null {
+  if (!metrosTotais || metrosTotais <= 0) return null
+  if (metrosRestantes === null || metrosRestantes === undefined) return null
+
+  // Grampeado nos dois extremos: quem saiu da rota tem "restante" maior que o
+  // total, e a barra não pode andar para trás nem transbordar.
+  return Math.max(0, Math.min(1, 1 - metrosRestantes / metrosTotais))
+}
+
+/**
+ * O par de pontos que o mapa enquadra ao acompanhar uma entrega.
+ *
+ * Ao acompanhar, o enquadramento deixa de ser "tudo o que está na tela" e passa
+ * a ser **este** entregador e **este** destino. Enquadrar o conjunto inteiro
+ * enquanto se acompanha um deixa a linha traçada como um risco de dois
+ * centímetros no canto do mapa.
+ *
+ * Sem posição do entregador sobra o destino, e o mapa centra nele — que é o que
+ * se sabe. Sem nenhum dos dois, `null`: o enquadramento anterior fica onde
+ * está, em vez de saltar para o oceano.
+ */
+export function focoDoAcompanhamento(
+  entregador: { lat: number; lng: number } | null | undefined,
+  destino: { lat: number; lng: number } | null | undefined
+): Array<{ lat: number; lng: number }> | null {
+  const pontos = [entregador, destino].filter(Boolean) as Array<{ lat: number; lng: number }>
+  return pontos.length > 0 ? pontos : null
+}

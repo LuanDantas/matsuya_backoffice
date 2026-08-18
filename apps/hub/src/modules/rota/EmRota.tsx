@@ -1,17 +1,33 @@
-import { Suspense, lazy, useMemo, useState, type CSSProperties } from 'react'
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+} from 'react'
 import { EstadoVazio, Faixa, Icone, Selo, type NomeDoIcone } from '@matsuya/ui'
 import { ORDER_STATUS_LABEL, ORDER_STATUS_TONE, type OrderStatus } from '@matsuya/contracts'
-import type { PedidoDoQuadro } from '@matsuya/api-client'
+import type {
+  AcompanhamentoDaEntrega,
+  EstadoDaCorrida,
+  PedidoDoQuadro,
+} from '@matsuya/api-client'
 import { coordenadaValida, distanciaKm, formatarDistancia, type Coordenada } from '@matsuya/utils'
-import { decorrido } from '../../app/formato'
+import { decorrido, iniciais } from '../../app/formato'
 import {
   POSICAO_VELHA_MINUTOS,
+  abaDoPedido,
+  focoDoAcompanhamento,
   idadeDaPosicao,
   partirPorAba,
   progressoDoTrecho,
   type Aba,
 } from './rota'
-import type { PontoDeEntrega } from './MapaDasEntregas'
+import { PainelDaEntrega } from './PainelDaEntrega'
+import { useAcompanhamento } from './useAcompanhamento'
+import type { PontoDeEntrega, RotaNoMapa } from './MapaDasEntregas'
 
 /**
  * Acompanhamento das entregas.
@@ -57,6 +73,13 @@ interface Props {
   unidade: { nome: string; lat?: number | null; lng?: number | null }
   agora: number
   aoAbrirDetalhe: (pedido: PedidoDoQuadro) => void
+  /**
+   * Busca o acompanhamento de uma entrega — traçado, distância e previsão.
+   *
+   * Vem de fora porque é uma chamada de rede, e esta tela não conhece cliente
+   * de API: quem monta a `Casca` já tem um, autenticado e com a sessão certa.
+   */
+  aoAcompanhar: (orderId: number, signal?: AbortSignal) => Promise<AcompanhamentoDaEntrega>
 }
 
 interface LinhaDaRota {
@@ -66,9 +89,12 @@ interface LinhaDaRota {
   bairro: string | null
 }
 
-export function EmRota({ pedidos, unidade, agora, aoAbrirDetalhe }: Props) {
+export function EmRota({ pedidos, unidade, agora, aoAbrirDetalhe, aoAcompanhar }: Props) {
   const [aba, definirAba] = useState<Aba>('coleta')
   const [selecionado, definirSelecionado] = useState<number | null>(null)
+  const [acompanhando, definirAcompanhando] = useState<number | null>(null)
+
+  const acompanhamento = useAcompanhamento(acompanhando, aoAcompanhar)
 
   const coordDaLoja = useMemo(
     () => coordenadaValida(unidade.lat, unidade.lng),
@@ -150,6 +176,55 @@ export function EmRota({ pedidos, unidade, agora, aoAbrirDetalhe }: Props) {
 
   const semCoordenada = linhas.length - pontos.length
 
+  /*
+   * A entrega acompanhada pode terminar embaixo da mão.
+   *
+   * Ela é entregue, sai das duas abas, e a folha ficaria aberta com a linha
+   * desenhada e um cronômetro correndo para uma corrida que acabou. `abaDoPedido`
+   * é a mesma régua que monta as listas: fora das duas abas, não há nada na rua
+   * para acompanhar.
+   *
+   * O pedido é procurado em `pedidos`, e não em `linhas`: trocar de aba não
+   * pode fechar a folha, e a lista só tem a aba corrente.
+   */
+  const pedidoAcompanhado = useMemo(() => {
+    const encontrado = pedidos.find((p) => p.id === acompanhando) ?? null
+    return encontrado && abaDoPedido(encontrado) !== null ? encontrado : null
+  }, [pedidos, acompanhando])
+
+  const aindaNaRua = pedidoAcompanhado !== null
+
+  /*
+   * E o acompanhamento para de ser consultado junto.
+   *
+   * Sem isto a folha some da tela mas o intervalo continua batendo na API a
+   * cada dez segundos por uma entrega que terminou — o tipo de vazamento que
+   * não aparece em teste nenhum e só se descobre no log de produção.
+   */
+  useEffect(() => {
+    if (acompanhando !== null && !aindaNaRua) definirAcompanhando(null)
+  }, [acompanhando, aindaNaRua])
+
+  const rotaNoMapa = useMemo<RotaNoMapa | null>(() => {
+    if (!aindaNaRua || acompanhando === null) return null
+    const pontosDaRota = acompanhamento.dados?.rota?.pontos
+    if (!pontosDaRota || pontosDaRota.length < 2) return null
+    return { pontos: pontosDaRota, pedidoId: acompanhando }
+  }, [acompanhamento.dados, acompanhando, aindaNaRua])
+
+  const foco = useMemo(
+    () =>
+      aindaNaRua
+        ? focoDoAcompanhamento(
+            acompanhamento.dados?.entrega?.posicao ?? null,
+            acompanhamento.dados?.destino ?? null
+          )
+        : null,
+    [acompanhamento.dados, aindaNaRua]
+  )
+
+  const fecharAcompanhamento = useCallback(() => definirAcompanhando(null), [])
+
   return (
     <main className="rota">
       <div className="rota__lista">
@@ -196,7 +271,12 @@ export function EmRota({ pedidos, unidade, agora, aoAbrirDetalhe }: Props) {
                 agora={agora}
                 ordem={Math.min(indice, 7)}
                 selecionado={selecionado === pedido.id}
-                aoClicar={() => {
+                acompanhando={acompanhando === pedido.id}
+                aoAcompanhar={() => {
+                  definirSelecionado(pedido.id)
+                  definirAcompanhando(pedido.id)
+                }}
+                aoAbrirDetalhe={() => {
                   definirSelecionado(pedido.id)
                   aoAbrirDetalhe(pedido)
                 }}
@@ -235,13 +315,62 @@ export function EmRota({ pedidos, unidade, agora, aoAbrirDetalhe }: Props) {
             nomeDaUnidade={unidade.nome}
             pontos={pontos}
             selecionado={selecionado}
+            rota={rotaNoMapa}
+            foco={foco}
             aoSelecionar={definirSelecionado}
           />
         </Suspense>
+
+        {/*
+          A folha é remontada por `key` ao trocar de entrega: é isso que faz o
+          foco entrar de novo e a animação de entrada acontecer, em vez de o
+          conteúdo trocar por baixo sem nenhum sinal de que mudou.
+        */}
+        {pedidoAcompanhado && (
+          <PainelDaEntrega
+            key={pedidoAcompanhado.id}
+            pedido={pedidoAcompanhado}
+            acompanhamento={acompanhamento.dados}
+            carregando={acompanhamento.carregando}
+            erro={acompanhamento.erro}
+            agora={agora}
+            aoFechar={fecharAcompanhamento}
+            aoAbrirDetalhe={() => aoAbrirDetalhe(pedidoAcompanhado)}
+          />
+        )}
       </div>
     </main>
   )
 }
+
+/**
+ * Estado da corrida, para o selo no canto do avatar e para a linha de apoio.
+ *
+ * O ícone é o que separa os estados sem depender de cor — e ele fica no avatar,
+ * e não numa segunda coluna: quem é a pessoa e o que ela está fazendo são duas
+ * informações, e empilhá-las no mesmo círculo é o que faz a linha caber numa
+ * altura em vez de duas.
+ */
+const CORRIDA: Record<
+  EstadoDaCorrida,
+  { icone: NomeDoIcone; rotulo: string; tom: 'neutro' | 'atencao' | 'sucesso' }
+> = {
+  buscando: { icone: 'lupa', rotulo: 'Procurando entregador', tom: 'atencao' },
+  a_caminho: { icone: 'moto', rotulo: 'A caminho da loja', tom: 'neutro' },
+  na_loja: { icone: 'loja', rotulo: 'No balcão', tom: 'atencao' },
+  em_rota: { icone: 'moto', rotulo: 'A caminho do cliente', tom: 'sucesso' },
+  entregue: { icone: 'check', rotulo: 'Entregue', tom: 'sucesso' },
+  falhou: { icone: 'alerta', rotulo: 'Falhou', tom: 'atencao' },
+}
+
+/**
+ * Quantas corridas avaliadas a média precisa ter para ser mostrada.
+ *
+ * Mesma régua do detalhe do pedido. Abaixo disso o número engana quem decide
+ * olhando: "5,0" de quem fez quatro corridas e "4,7" de quem fez oitocentas
+ * têm o mesmo tamanho na tela e dizem coisas opostas.
+ */
+const MINIMO_DE_CORRIDAS_PARA_NOTA = 30
 
 function Linha({
   pedido,
@@ -251,7 +380,9 @@ function Linha({
   agora,
   ordem,
   selecionado,
-  aoClicar,
+  acompanhando,
+  aoAcompanhar,
+  aoAbrirDetalhe,
 }: {
   pedido: PedidoDoQuadro
   distancia: number | null
@@ -260,78 +391,175 @@ function Linha({
   agora: number
   ordem: number
   selecionado: boolean
-  aoClicar: () => void
+  acompanhando: boolean
+  aoAcompanhar: () => void
+  aoAbrirDetalhe: () => void
 }) {
   const entrega = pedido.entrega ?? null
+  const corrida = entrega ? CORRIDA[entrega.estado] : null
 
   /*
-   * O que a corrida já sabe, e que esta tela nunca mostrou.
+   * A barra do trecho.
    *
-   * Nome do entregador, minutos até a loja e hora de chegada vêm na resposta
-   * desde sempre, já tipados — e a linha exibia só status, cliente e bairro. Na
-   * coleta é justamente isso que se quer saber: quem vem, e há quanto tempo
-   * está parado no balcão.
+   * Na coleta ela mede o caminho até a loja, a partir da **atribuição** — não
+   * do aceite do pedido, que é anterior e faria a barra encher demais, dizendo
+   * que o entregador está chegando quando ele acabou de sair.
+   *
+   * Na entrega mede da saída até a previsão de chegada. As duas só existem
+   * quando há previsão: sem ela, a barra teria de inventar o denominador.
    */
   const progresso =
     aba === 'coleta'
       ? progressoDoTrecho(
-          entrega?.estado === 'a_caminho' ? pedido.acceptedAt : null,
+          entrega?.estado === 'a_caminho' ? entrega.atribuidoEm : null,
           entrega?.etaLojaMinutos ?? null,
           agora
         )
-      : null
+      : progressoDoTrecho(pedido.dispatchedAt, pedido.deliveryEtaMinutes, agora)
+
+  const mostraNota =
+    entrega?.nota != null &&
+    (entrega.notaDeQuantas ?? 0) >= MINIMO_DE_CORRIDAS_PARA_NOTA
 
   return (
     <li className="rota__linha-item" style={{ '--ordem': String(ordem) } as CSSProperties}>
-      <button
-        type="button"
+      {/*
+        `article`, e não `button`.
+
+        O cartão passou a ter duas ações, e **botão dentro de botão é HTML
+        inválido**: o navegador desfaz o aninhamento, o teclado para de alcançar
+        o de dentro e o clique dispara os dois. O envelope vira um elemento
+        neutro e as ações ficam no rodapé, cada uma com o seu alvo.
+
+        O corpo continua clicável — é a área grande, e a tela é usada com pressa
+        —, e ele equivale a "Acompanhar", que é a pergunta desta tela. Como
+        `div` com `onClick` seria invisível ao teclado, quem navega assim chega
+        pelos dois botões do rodapé, que dizem exatamente o que fazem.
+      */}
+      <article
         className="rota__item"
         data-selecionado={selecionado || undefined}
-        onClick={aoClicar}
+        data-acompanhando={acompanhando || undefined}
       >
-        <span className="rota__linha">
-          <strong className="num">{pedido.code ?? `#${pedido.id}`}</strong>
-          <Selo tom={ORDER_STATUS_TONE[pedido.status as OrderStatus]}>
-            {ORDER_STATUS_LABEL[pedido.status as OrderStatus]}
-          </Selo>
+        <div className="rota__toque" onClick={aoAcompanhar} aria-hidden="true">
+        {/*
+          O avatar, com as iniciais por baixo e a foto por cima.
+          
+          As letras ficam desenhadas embaixo e reaparecem sozinhas quando a
+          imagem não carrega — entregador sem foto cadastrada, ou a internet da
+          loja ruim. Um `onError` faria o mesmo com um estado a mais para manter.
+          
+          Sem ninguém atribuído, o disco não finge um rosto: leva a lupa, que é
+          literalmente o que está acontecendo.
+        */}
+        <span
+          className="rota__avatar"
+          data-tom={corrida?.tom}
+          data-sem-entregador={entrega?.entregador ? undefined : true}
+          aria-hidden="true"
+        >
+          {entrega?.entregador ? (
+            <>
+              {iniciais(entrega.entregador)}
+              {entrega.fotoUrl && (
+                <img src={entrega.fotoUrl} alt="" loading="lazy" decoding="async" />
+              )}
+            </>
+          ) : (
+            <Icone nome={corrida?.icone ?? 'moto'} tamanho={20} />
+          )}
+
+          {corrida && (
+            <span className="rota__selo">
+              <Icone nome={corrida.icone} tamanho={11} />
+            </span>
+          )}
         </span>
 
-        <span className="rota__linha rota__linha--fraca">
-          <span>{pedido.customerLabel ?? 'Cliente não informado'}</span>
-          <span className="num">
-            {distancia === null ? 'sem local' : formatarDistancia(distancia)}
+        <span className="rota__corpo">
+          <span className="rota__linha">
+            <strong className="num">{pedido.code ?? `#${pedido.id}`}</strong>
+            <Selo tom={ORDER_STATUS_TONE[pedido.status as OrderStatus]}>
+              {ORDER_STATUS_LABEL[pedido.status as OrderStatus]}
+            </Selo>
           </span>
-        </span>
 
-        <span className="rota__linha rota__linha--fraca">
-          <span className="rota__quem">
-            {entrega?.entregador ? (
-              <>
-                <Icone nome="capacete" tamanho={12} />
-                {entrega.entregador}
-              </>
-            ) : (
-              (bairro ?? '—')
-            )}
+          {/*
+            Quem está com o pedido, com a nota ao lado. A linha de baixo é o
+            cliente — a ordem responde "quem traz" antes de "para quem", que é a
+            ordem em que se pergunta nesta tela.
+          */}
+          <span className="rota__linha rota__linha--fraca">
+            <span className="rota__quem">
+              {entrega?.entregador ?? corrida?.rotulo ?? 'Sem corrida'}
+              {mostraNota && (
+                <span className="rota__nota num">
+                  <Icone nome="estrela" tamanho={11} />
+                  {entrega!.nota!.toFixed(1).replace('.', ',')}
+                </span>
+              )}
+            </span>
+            <span className="num">
+              {aba === 'coleta' && entrega?.chegouLojaEm
+                ? `balcão há ${decorrido(entrega.chegouLojaEm, agora)}`
+                : `há ${decorrido(pedido.createdAt, agora)}`}
+            </span>
           </span>
-          <span className="num">
-            {aba === 'coleta' && entrega?.chegouLojaEm
-              ? `no balcão há ${decorrido(entrega.chegouLojaEm, agora)}`
-              : `há ${decorrido(pedido.createdAt, agora)}`}
+
+          <span className="rota__linha rota__linha--fraca">
+            <span className="rota__cliente">
+              {pedido.customerLabel ?? 'Cliente não informado'}
+              {bairro && <span className="rota__bairro">{bairro}</span>}
+            </span>
+            <span className="num">
+              {distancia === null ? 'sem local' : formatarDistancia(distancia)}
+            </span>
           </span>
+
+          {/*
+            A barra responde "está chegando?" sem obrigar a ler o mapa. Só
+            aparece quando há previsão — sem ela, inventaria o denominador.
+          */}
+          {progresso !== null && (
+            <span className="rota__trecho" aria-hidden="true">
+              <span style={{ width: `${progresso * 100}%` }} />
+            </span>
+          )}
         </span>
+        </div>
 
         {/*
-          A barra responde "está chegando?" sem obrigar a ler o mapa. Só existe
-          quando há previsão: sem ETA informado, uma barra teria de inventar o
-          denominador.
+          As duas ações, e a hierarquia entre elas.
+
+          "Acompanhar" é primária porque é a pergunta desta tela — onde está e
+          quando chega. "Detalhes" abre o mesmo painel de sempre e continua
+          sendo o caminho para decidir sobre o pedido.
         */}
-        {progresso !== null && (
-          <span className="rota__trecho" aria-hidden="true">
-            <span style={{ width: `${progresso * 100}%` }} />
-          </span>
-        )}
-      </button>
+        <div className="rota__acoes">
+          <button type="button" className="rota__acao" onClick={aoAbrirDetalhe}>
+            <Icone nome="lista" tamanho={14} />
+            Detalhes do pedido
+            <span className="ui-visualmente-oculto">
+              {' '}
+              {pedido.code ?? `#${pedido.id}`}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="rota__acao rota__acao--primaria"
+            data-ativa={acompanhando || undefined}
+            onClick={aoAcompanhar}
+          >
+            <Icone nome="mapa" tamanho={14} />
+            {acompanhando ? 'Acompanhando' : 'Acompanhar'}
+            <span className="ui-visualmente-oculto">
+              {' '}
+              a entrega {pedido.code ?? `#${pedido.id}`}
+            </span>
+          </button>
+        </div>
+      </article>
     </li>
   )
 }

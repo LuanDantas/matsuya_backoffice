@@ -677,6 +677,7 @@ export function Casca({
             unidade={{ nome: nomeDaUnidade, lat: unidade?.lat, lng: unidade?.lng }}
             agora={agora}
             aoAbrirDetalhe={abrirDetalhe}
+            aoAcompanhar={api.acompanharEntrega}
           />
         )}
 

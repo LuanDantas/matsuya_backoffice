@@ -26,11 +26,15 @@ export type EstadoDaCorrida =
 export interface EntregaDoQuadro {
   estado: EstadoDaCorrida
   /**
-   * Nome do entregador — **só a partir da chegada na loja**.
+   * Nome do entregador — **a partir da atribuição**.
    *
-   * A API decide isso, e não o cartão: enquanto ele está na rua o nome não muda
-   * decisão nenhuma; quando há alguém parado no balcão, saber chamar pelo nome
-   * muda. Deixar a regra no servidor mantém as telas que existirem de acordo.
+   * A API decide isso, e não o cartão, para as telas não divergirem. A regra já
+   * foi "só a partir da chegada", pensada para o cartão do quadro, onde o nome
+   * ocupa a única linha de contexto. Caiu quando a tela "Em rota" passou a
+   * existir: lá, "quem está vindo?" é a pergunta, e metade da aba de coleta
+   * ficava sem rosto justamente no trecho em que alguém está a caminho.
+   *
+   * Nulo em `buscando`: ali não há ninguém atribuído.
    */
   entregador: string | null
   /**
@@ -40,14 +44,22 @@ export interface EntregaDoQuadro {
    * Nulo é legítimo, e o chip diz "a caminho" sem minuto.
    */
   etaLojaMinutos: number | null
+  /**
+   * Quando o entregador foi atribuído — o marco zero do trecho até a loja.
+   *
+   * Anda junto do ETA porque um sem o outro não mede nada: o ETA conta **a
+   * partir da atribuição**. Usar o aceite do pedido, que já está no quadro,
+   * mentiria para o lado errado — ele é anterior, e a barra diria que o
+   * entregador está chegando quando ele acabou de sair.
+   */
+  atribuidoEm: string | null
   /** Quando chegou. É daqui que sai o "aguardando há X min". */
   chegouLojaEm: string | null
   /**
    * Foto e nota, como o parceiro de entrega as publica — nada nesta stack as
    * calcula.
    *
-   * Seguem a mesma regra do nome: só a partir da chegada na loja. Rosto e nota
-   * de quem ainda está na rua não mudam decisão nenhuma.
+   * Seguem a mesma regra do nome: a partir da atribuição.
    *
    * `notaDeQuantas` acompanha a média porque uma nota sozinha é ilegível: 5,0
    * com três corridas e 4,7 com oitocentas dizem coisas opostas, e a tela
@@ -190,6 +202,61 @@ export interface EntradaDeTransicao {
   versaoEsperada?: number
 }
 
+
+/**
+ * O acompanhamento de uma entrega — o que a folha inferior do mapa consome.
+ *
+ * **Não vem no quadro, e é de propósito.** O traçado tem algumas centenas de
+ * pontos; mandá-lo em toda sincronização custaria a todos por algo que uma
+ * pessoa pediu ao clicar em "Acompanhar". Buscado sob demanda, e por isso
+ * também mais fresco: o traçado do trecho até a loja só existe depois do
+ * primeiro ping de posição.
+ */
+export interface AcompanhamentoDaEntrega {
+  entrega: EntregaDoQuadro | null
+  /** Para onde ele está indo **agora** — vem do estado, não do traçado guardado. */
+  perna: 'loja' | 'cliente'
+  /*
+   * Loja e destino vêm inline em vez de num tipo `Coordenada` exportado: o Hub
+   * já importa um com esse nome de `@matsuya/utils`, e um segundo homônimo
+   * chegando por outro pacote é confusão de importação sem nenhum ganho.
+   */
+  loja: { lat: number; lng: number } | null
+  destino: { lat: number; lng: number } | null
+  rota: RotaDaEntrega | null
+  /**
+   * Quanto falta.
+   *
+   * `pelaRota` separa duas medidas que não são a mesma: em cidade a linha reta
+   * costuma dar uns 30% a menos que a rua. Sem a marca, a tela apresentaria as
+   * duas com a mesma confiança.
+   */
+  restante: { metros: number; pelaRota: boolean } | null
+  /**
+   * Previsão de chegada, em ISO.
+   *
+   * `null` sempre que não houver traçado — é o roteador que diz quanto tempo o
+   * caminho leva, e sem ele qualquer número seria invenção. A tela mostra o que
+   * sabe e omite o resto.
+   */
+  chegaEm: string | null
+}
+
+export interface RotaDaEntrega {
+  /**
+   * O traçado, **na ordem do GeoJSON**: `[lng, lat]`.
+   *
+   * Já decodificado pela API — o Hub nunca vê polilinha. A ordem é a do
+   * GeoJSON porque o destino final é um `LineString` no mapa, e inverter no
+   * caminho é o erro silencioso clássico do assunto: São Paulo vira um ponto no
+   * deserto da Líbia e nada reclama.
+   */
+  pontos: Array<[number, number]>
+  metros: number
+  segundos: number
+  de: 'loja' | 'cliente'
+}
+
 export function criarApiDePedidos(cliente: ApiClient) {
   return {
     quadroDaLoja: (params: {
@@ -239,6 +306,18 @@ export function criarApiDePedidos(cliente: ApiClient) {
       )
       return respostaDeMudancasSchema.parse(bruto)
     },
+
+    /**
+     * O acompanhamento de uma entrega, no instante em que alguém pergunta.
+     *
+     * Pode demorar alguns segundos na **primeira** vez de cada trecho: se o
+     * traçado ainda não foi buscado, a API o busca agora e espera. Nas
+     * chamadas seguintes ele já está gravado.
+     */
+    acompanharEntrega: (orderId: number, signal?: AbortSignal) =>
+      cliente.requisitar<AcompanhamentoDaEntrega>(`/orders/${orderId}/delivery/tracking`, {
+        signal,
+      }),
 
     transicionar: (entrada: EntradaDeTransicao) =>
       cliente.requisitar<ResultadoDeTransicao>(
