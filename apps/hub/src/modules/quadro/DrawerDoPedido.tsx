@@ -327,47 +327,66 @@ export function DrawerDoPedido({
         )}
       </section>
 
+      {/*
+        Itens e contas num cartão só, como na referência.
+        
+        Eram duas seções, e a separação era arbitrária: o preço de cada linha e
+        a soma delas são a mesma leitura, feita de cima para baixo. Separadas,
+        conferir "o subtotal bate com os itens?" exigia atravessar um vão cinza
+        e recomeçar noutro cartão.
+      */}
       <section className="cartao-d">
-        <Cabecalho icone="sacola" titulo="Itens no pedido">
-          <span className="cartao-d__etiqueta num">
-            {quantidade} {quantidade === 1 ? 'item' : 'itens'}
-          </span>
-        </Cabecalho>
+        <Cabecalho icone="lista" titulo="Itens no pedido" />
 
         <ul className="itens">
           {itens.map((item) => (
             <li key={item.id}>
               {/*
                 Miniatura com o fundo tingido por baixo: é ele que aparece se a
-                foto não carregar, e produto sem foto cadastrada é comum. Um
-                quadrado de ícone quebrado no meio da lista de conferência seria
-                pior do que um quadrado liso com a inicial.
+                foto não carregar, e produto sem foto cadastrada é comum. O selo
+                da quantidade monta em cima da foto, como na referência — assim
+                a quantidade viaja com o produto em vez de morar numa coluna
+                própria, e a linha ganha a largura de volta para o nome.
               */}
               <span className="itens__foto" aria-hidden="true">
                 {item.imageUrl ? (
-                  <img src={item.imageUrl} alt="" width={44} height={44} loading="lazy" decoding="async" />
+                  <img src={item.imageUrl} alt="" width={64} height={64} loading="lazy" decoding="async" />
                 ) : (
-                  <Icone nome="sacola" tamanho={18} />
+                  <Icone nome="sacola" tamanho={22} />
                 )}
+                <span className="itens__selo num">{item.qty}</span>
               </span>
-              <span className="itens__qtd num">{item.qty}×</span>
-              <span className="itens__nome">
-                {item.productName}
+
+              <span className="itens__corpo">
+                <span className="itens__linha">
+                  <span className="itens__nome">
+                    <span className="ui-visualmente-oculto">{item.qty} unidades de </span>
+                    {item.productName}
+                  </span>
+                  <span className="itens__preco num">
+                    {moeda.format(item.lineTotal ?? item.unitPrice * item.qty)}
+                  </span>
+                </span>
+
                 {(item.optionsSnapshot ?? []).length > 0 && (
                   <ul className="itens__opcoes">
                     {item.optionsSnapshot!.map((opcao, i) => (
                       <li key={`${opcao.optionId}-${i}`}>
-                        {opcao.optionName}
-                        {opcao.priceDelta > 0 && (
-                          <span className="num"> +{moeda.format(opcao.priceDelta)}</span>
-                        )}
+                        {/*
+                          A quantidade da opção é a do item: duas caixas do
+                          combinado levam dois salmões. O instantâneo não guarda
+                          quantidade por opção, e repetir a do item é o que a
+                          cozinha realmente monta.
+                        */}
+                        <span className="itens__opcao-qtd num">{item.qty}</span>
+                        <span className="itens__opcao-nome">{opcao.optionName}</span>
+                        <span className="itens__opcao-preco num">
+                          {moeda.format(opcao.priceDelta * item.qty)}
+                        </span>
                       </li>
                     ))}
                   </ul>
                 )}
-              </span>
-              <span className="itens__preco num">
-                {moeda.format(item.lineTotal ?? item.unitPrice * item.qty)}
               </span>
             </li>
           ))}
@@ -378,56 +397,57 @@ export function DrawerDoPedido({
             </li>
           )}
         </ul>
-      </section>
 
-      {/*
-        O total sai da tabela e vira a linha de cima do cartão, no corpo de um
-        título. É o número que a pessoa procura quando desce até aqui, e as
-        três linhas abaixo existem para explicá-lo — a ordem antiga fazia
-        somar com o olho até chegar nele.
-      */}
-      <section className="cartao-d valores">
-        <div className="valores__topo">
-          <span className="valores__total">
-            <small>Total do pedido</small>
-            <strong className="num">{moeda.format(pedido.total)}</strong>
-          </span>
-          {/*
-            O meio de pagamento em disco, com o estado ao lado. São duas
-            perguntas diferentes — "como paga" e "já pagou" — e antes só a
-            segunda tinha resposta visível aqui; a primeira estava três linhas
-            abaixo, na tabela.
-          */}
-          <span
-            className="valores__pagamento"
-            data-pago={pedido.paymentStatus === 'paid' || undefined}
-          >
-            <span className="valores__meio" aria-hidden="true">
-              <Icone nome={ICONE_DO_PAGAMENTO[pedido.paymentMethod] ?? 'dinheiro'} tamanho={16} />
-            </span>
-            <span>
-              <small>{ROTULO_DO_PAGAMENTO[pedido.paymentMethod] ?? pedido.paymentMethod}</small>
-              {pedido.paymentStatus === 'paid' ? 'Pago' : 'A receber'}
-            </span>
-          </span>
-        </div>
+        {/*
+          As contas, em linhas de largura cheia com divisória entre elas — a
+          mesma estrutura da referência. O ícone à esquerda dá à coluna de
+          rótulos a mesma âncora que os cabeçalhos dos cartões têm.
+        */}
+        <dl className="contas">
+          <Conta icone="sacola" rotulo="Subtotal" valor={moeda.format(pedido.subtotal)} />
 
-        <dl className="valores__lista">
-          <Linha rotulo="Subtotal" valor={moeda.format(pedido.subtotal)} />
           {pedido.deliveryFee > 0 && (
-            <Linha rotulo="Taxa de entrega" valor={moeda.format(pedido.deliveryFee)} />
+            <Conta
+              icone="capacete"
+              rotulo="Taxa de entrega"
+              valor={moeda.format(pedido.deliveryFee)}
+            />
           )}
-          <Linha
-            rotulo={ROTULO_DO_PAGAMENTO[pedido.paymentMethod] ?? pedido.paymentMethod}
+
+          <Conta
+            icone="dinheiro"
+            rotulo="Total do pedido"
+            valor={moeda.format(pedido.total)}
+            destaque
+          />
+
+          <Conta
+            icone={ICONE_DO_PAGAMENTO[pedido.paymentMethod] ?? 'dinheiro'}
+            rotulo={`${pedido.paymentStatus === 'paid' ? 'Pago' : 'A receber'} via ${
+              ROTULO_DO_PAGAMENTO[pedido.paymentMethod] ?? pedido.paymentMethod
+            }`}
             descricao={
               pedido.paymentStatus === 'paid'
-                ? 'Já pago — não cobrar na entrega'
-                : 'A receber na entrega'
+                ? 'O valor já foi recebido e será repassado à loja.'
+                : 'O entregador recolhe este valor na entrega.'
             }
-            valor={pedido.paymentStatus === 'paid' ? 'Pago' : 'A receber'}
+            valor={moeda.format(pedido.total)}
           />
         </dl>
+
+        {/*
+          A frase de fecho, como na referência: é a única linha do painel que
+          diz ao operador o que **não** fazer. Um pedido já pago cobrado de novo
+          na porta é o erro que ela existe para evitar.
+        */}
+        <p className="fecho" data-pago={pedido.paymentStatus === 'paid' || undefined}>
+          <Icone nome={pedido.paymentStatus === 'paid' ? 'check' : 'alerta'} tamanho={18} />
+          {pedido.paymentStatus === 'paid'
+            ? 'Pago, não precisa cobrar na entrega'
+            : `Cobrar ${moeda.format(pedido.total)} na entrega`}
+        </p>
       </section>
+
     </Drawer>
   )
 }
@@ -613,21 +633,36 @@ function Cabecalho({
   )
 }
 
-/** Linha de valor: rótulo (com apoio opcional) à esquerda, valor à direita. */
-function Linha({
+/**
+ * Uma linha de conta: ícone, rótulo (com apoio opcional), valor à direita.
+ *
+ * O olho desce pela coluna de ícones à esquerda e cruza para a direita só
+ * quando achou o rótulo — é por isso que a coluna de valores fica encostada na
+ * borda em vez de logo depois do texto.
+ */
+function Conta({
+  icone,
   rotulo,
   descricao,
   valor,
+  destaque = false,
 }: {
+  icone: NomeDoIcone
   rotulo: string
   descricao?: string
   valor: string
+  destaque?: boolean
 }) {
   return (
-    <div className="valores__linha">
+    <div className="contas__linha" data-destaque={destaque || undefined}>
       <dt>
-        {rotulo}
-        {descricao && <small>{descricao}</small>}
+        <span className="contas__icone" aria-hidden="true">
+          <Icone nome={icone} tamanho={20} />
+        </span>
+        <span>
+          {rotulo}
+          {descricao && <small>{descricao}</small>}
+        </span>
       </dt>
       <dd className="num">{valor}</dd>
     </div>

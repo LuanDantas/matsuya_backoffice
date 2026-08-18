@@ -3091,36 +3091,31 @@
 }
 
 /*
- * A linha do item: foto, quantidade, nome, preço.
+ * A linha do item: foto com o selo da quantidade, e ao lado o corpo — nome e
+ * preço numa linha, opções embaixo.
  *
- * `align-items: center` e não `baseline`: com a miniatura de 44 px na primeira
- * coluna, alinhar pela linha de base do texto deixaria a foto pendurada.
- *
- * O realce do ponteiro sangra até a borda do cartão pela margem negativa —
- * numa lista de dez itens com opções, é o que mantém o olho na linha certa ao
- * cruzar do nome para o preço.
+ * Duas colunas e não quatro: a quantidade montou em cima da foto (como na
+ * referência) e o preço passou para dentro do corpo, alinhado à direita. Com
+ * isso as opções nascem **sob o nome**, e não numa terceira coluna, que é o
+ * que faz "2 Salmão" se ler como parte do combinado em vez de outro item.
  */
 .itens li {
   display: grid;
-  grid-template-columns: 44px 34px 1fr auto;
+  grid-template-columns: 64px 1fr;
   gap: var(--e-3);
-  align-items: center;
-  padding: var(--e-2);
+  align-items: start;
+  padding: var(--e-3) var(--e-2);
   margin: 0 calc(var(--e-2) * -1);
   transition: background-color var(--duracao) var(--curva);
 }
 
+/* Realce sob o ponteiro. Numa lista de dez itens com opções, é o que mantém o
+   olho na linha certa ao cruzar do nome para o preço. */
 .itens li:hover {
   background: var(--superficie-3);
 }
 
-/*
- * A divisória é reta, sem canto arredondado.
- *
- * O realce do ponteiro tinha 10 px de raio, e o arredondado sobrava nas pontas
- * da linha divisória logo abaixo — duas curvas soltas onde deveria haver um
- * risco. Uma lista de conferência quer réguas, não fichas empilhadas.
- */
+/* Divisória reta entre itens — lista de conferência quer régua, não ficha. */
 .itens li + li {
   border-top: 1px solid var(--borda);
 }
@@ -3133,13 +3128,13 @@
  * sem isso a lista pula conforme as fotos entram, uma a uma.
  */
 .itens__foto {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  overflow: hidden;
-  border-radius: 10px;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
   background: var(--superficie-3);
   color: var(--texto-fraco);
 }
@@ -3147,206 +3142,230 @@
 .itens__foto img {
   width: 100%;
   height: 100%;
+  border-radius: inherit;
   object-fit: cover;
 }
 
-/* Quantidade em disco: numa lista longa a coluna de números é o que a cozinha
-   confere, e o fundo a mantém alinhada com "1×" e com "12×". */
-.itens__qtd {
+/*
+ * O selo da quantidade, montado no canto da foto.
+ *
+ * Fundo escuro sólido e borda da superfície: a foto por baixo pode ser clara,
+ * escura ou colorida, e sem os dois o número desaparece em alguma delas. É o
+ * único elemento do painel que precisa se ler sobre imagem arbitrária.
+ */
+.itens__selo {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 5px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 3px 0;
+  border: 2px solid var(--superficie-1);
   border-radius: 8px;
-  background: var(--superficie-3);
-  font-weight: var(--peso-forte);
-  font-size: var(--texto-sm);
-  transition:
-    background-color var(--duracao) var(--curva),
-    color var(--duracao) var(--curva);
-}
-
-.itens li:hover .itens__qtd {
-  background: var(--marca-suave);
-  color: var(--marca);
-}
-
-.itens__nome {
-  font-size: var(--texto-base);
-  line-height: var(--linha-normal);
-}
-
-.itens__opcoes {
-  list-style: none;
-  margin: var(--e-1) 0 0;
-  padding: 0 0 0 var(--e-3);
-  border-left: 2px solid var(--borda);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: var(--texto-sm);
-  color: var(--texto-fraco);
-}
-
-.itens__preco {
-  font-size: var(--texto-sm);
-  color: var(--texto-corpo);
-}
-
-.itens__vazio {
-  margin: 0;
-  font-size: var(--texto-sm);
-  color: var(--texto-fraco);
-}
-
-/* ── Valores ────────────────────────────────────────────────────────────── */
-
-/*
- * O total sai da tabela e vira a linha de cima do cartão.
- *
- * É o número que a pessoa procura quando desce até aqui, e as linhas abaixo
- * existem para explicá-lo. Como última linha de uma soma, ele obrigava a
- * atravessar subtotal e taxa antes de chegar no que se queria.
- */
-/*
- * O total num painel próprio dentro do cartão.
- *
- * Uma linha de texto grande sobre branco lia-se como mais um parágrafo — o
- * número era o maior da tela e mesmo assim não parava o olho. O painel tingido
- * o transforma em objeto: tem começo, fim e fundo próprio, e é a única coisa
- * do painel de detalhe que se lê de longe.
- *
- * A forma de pagamento mora **dentro** dele, e não na tabela abaixo, porque as
- * duas perguntas são feitas juntas: quanto é, e como se recebe. Na entrega em
- * dinheiro a distância entre as duas é o troco que sai da gaveta.
- */
-.valores__topo {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--e-3);
-  margin-bottom: var(--e-3);
-  padding: var(--e-3) var(--e-4);
-  border-radius: 12px;
-  background: var(--superficie-3);
-}
-
-.valores__total {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.valores__topo small {
+  background: var(--texto);
+  color: var(--texto-inverso);
   font-size: var(--texto-xs);
-  font-weight: var(--peso-medio);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--texto-fraco);
-}
-
-.valores__topo strong {
-  font-size: var(--texto-2xl);
   font-weight: var(--peso-forte);
-  line-height: var(--linha-apertada);
-  /* Números tabulares: a coluna de valores logo abaixo usa a mesma família, e
-     o total precisa alinhar com ela quando os dois estão na tela. */
-  font-variant-numeric: tabular-nums;
 }
 
-/*
- * Meio de pagamento e estado, juntos.
- *
- * São duas perguntas — "como paga" e "já pagou" — e só a segunda tinha
- * resposta visível aqui; a primeira estava três linhas abaixo, na tabela. Na
- * entrega em dinheiro a diferença entre elas é o troco que sai da gaveta.
- */
-.valores__pagamento {
-  display: inline-flex;
-  align-items: center;
+.itens li:hover .itens__selo {
+  border-color: var(--superficie-3);
+}
+
+.itens__corpo {
+  display: flex;
+  flex-direction: column;
   gap: var(--e-2);
-  padding: var(--e-1) var(--e-3) var(--e-1) var(--e-1);
-  border: 1px solid color-mix(in srgb, var(--atencao) 28%, transparent);
-  border-radius: var(--raio-total);
-  /* Branco por dentro do painel cinza: a pílula precisa se destacar do fundo
-     tingido, e um segundo cinza sobre cinza sumiria. */
-  background: var(--superficie-1);
-  color: var(--atencao);
-  font-size: var(--texto-sm);
-  font-weight: var(--peso-forte);
-  line-height: var(--linha-apertada);
+  min-width: 0;
+  padding-top: 2px;
 }
 
-.valores__pagamento[data-pago] {
-  border-color: color-mix(in srgb, var(--sucesso) 28%, transparent);
-  color: var(--sucesso);
-}
-
-.valores__pagamento > span:last-child {
-  display: flex;
-  flex-direction: column;
-}
-
-.valores__pagamento small {
-  font-size: var(--texto-xs);
-  font-weight: var(--peso-medio);
-  opacity: 0.75;
-}
-
-/* O disco carrega o ícone do meio de pagamento — Pix, cartão ou dinheiro. É o
-   que responde "como se recebe" sem gastar uma palavra, e é a única cor cheia
-   do painel do total. */
-.valores__meio {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: var(--atencao-suave);
-}
-
-.valores__pagamento[data-pago] .valores__meio {
-  background: var(--sucesso-suave);
-}
-
-
-.valores__lista {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.valores__linha {
+.itens__linha {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--e-3);
-  padding: var(--e-2) 0;
 }
 
-.valores__linha + .valores__linha {
-  border-top: 1px solid var(--borda);
+.itens__nome {
+  font-size: var(--texto-base);
+  font-weight: var(--peso-forte);
+  line-height: var(--linha-normal);
 }
 
-.valores__linha dt {
+.itens__preco {
+  flex-shrink: 0;
+  font-size: var(--texto-base);
+  font-weight: var(--peso-forte);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * As opções, recuadas sob o nome.
+ *
+ * Sem a régua vertical que havia antes: com o recuo e o selo cinza da
+ * quantidade, a hierarquia já se lê, e a régua acrescentava um segundo traço
+ * vertical ao lado da divisória horizontal dos itens.
+ */
+.itens__opcoes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  color: var(--texto-corpo);
-  font-size: var(--texto-sm);
+  gap: var(--e-1);
 }
 
-.valores__linha dt small {
+.itens__opcoes li {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: var(--e-2);
+  align-items: center;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.itens__opcao-qtd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--superficie-3);
+  color: var(--texto-corpo);
   font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+}
+
+.itens li:hover .itens__opcao-qtd {
+  background: var(--superficie-2);
+}
+
+.itens__opcao-nome {
+  font-size: var(--texto-sm);
+  color: var(--texto-corpo);
+}
+
+.itens__opcao-preco {
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+  font-variant-numeric: tabular-nums;
+}
+
+.itens__vazio {
+  margin: 0;
+  padding: var(--e-2) 0;
+  font-size: var(--texto-sm);
   color: var(--texto-fraco);
 }
 
-.valores__linha dd {
-  margin: 0;
+/* ── Contas ─────────────────────────────────────────────────────────────── */
+
+/*
+ * As contas moram no mesmo cartão dos itens, em linhas de largura cheia com
+ * divisória entre elas.
+ *
+ * Eram um cartão à parte, e a separação era arbitrária: o preço de cada linha
+ * e a soma delas são a mesma leitura, feita de cima para baixo. Separadas,
+ * conferir "o subtotal bate com os itens?" exigia atravessar um vão cinza e
+ * recomeçar noutro cartão.
+ *
+ * As divisórias sangram até a borda do cartão pela margem negativa — é o que
+ * as faz separar seções em vez de sublinhar texto.
+ */
+.contas {
+  margin: 0 calc(var(--e-4) * -1) calc(var(--e-4) * -1);
+  display: flex;
+  flex-direction: column;
+}
+
+.contas__linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  border-top: 1px solid var(--borda);
+}
+
+.contas__linha dt {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  min-width: 0;
+  font-size: var(--texto-base);
+  font-weight: var(--peso-forte);
+  color: var(--texto);
+}
+
+/* O apoio explica a linha sem competir com ela: peso normal, corpo menor e a
+   cor de texto fraco. É onde mora "o entregador recolhe este valor". */
+.contas__linha dt small {
+  display: block;
+  margin-top: 2px;
   font-size: var(--texto-sm);
+  font-weight: var(--peso-normal);
+  color: var(--texto-fraco);
+}
+
+.contas__icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  flex-shrink: 0;
   color: var(--texto-corpo);
+}
+
+.contas__linha dd {
+  margin: 0;
+  flex-shrink: 0;
+  font-size: var(--texto-base);
+  font-weight: var(--peso-forte);
+  font-variant-numeric: tabular-nums;
+}
+
+/* O total sobe de corpo. É o número que a pessoa procura ao descer até aqui, e
+   as linhas acima existem para explicá-lo. */
+.contas__linha[data-destaque] dd {
+  font-size: var(--texto-xl);
+}
+
+/* ── Fecho do pagamento ─────────────────────────────────────────────────── */
+
+/*
+ * A única linha do painel que diz o que **não** fazer.
+ *
+ * Um pedido já pago cobrado de novo na porta é o erro que ela existe para
+ * evitar — e é um erro que o operador comete lendo o valor certo. Por isso ela
+ * fica depois do total, em faixa própria, e não como mais uma linha de conta.
+ */
+.fecho {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  margin: 0 calc(var(--e-4) * -1) calc(var(--e-4) * -1);
+  padding: var(--e-3) var(--e-4);
+  border-top: 1px solid var(--borda);
+  border-radius: 0 0 15px 15px;
+  background: var(--atencao-suave);
+  color: var(--atencao);
+  font-size: var(--texto-base);
+  font-weight: var(--peso-forte);
+  line-height: var(--linha-normal);
+}
+
+.fecho[data-pago] {
+  background: var(--sucesso-suave);
+  color: var(--sucesso);
+}
+
+.fecho svg {
+  flex-shrink: 0;
 }
 
 /* Empurra as ações de fluxo para a direita, deixando "Imprimir" sozinho na
