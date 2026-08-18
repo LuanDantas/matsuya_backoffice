@@ -5332,11 +5332,9 @@
 
 /* ── Cardápio e ajustes ─────────────────────────────────────────────────── */
 
-/* Conversas saiu desta regra: ela virou mestre/detalhe de duas colunas, e uma
-   coluna única de 900 px não comporta lista e conversa lado a lado. As outras
-   duas continuam como estavam. */
-.cardapio,
-.ajustes {
+/* Conversas e Ajustes saíram desta regra: as duas viraram mestre/detalhe, e uma
+   coluna única de 900 px não comporta lista e painel lado a lado. */
+.cardapio {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -5385,17 +5383,10 @@
   color: var(--texto-fraco);
 }
 
-.ajustes__linha {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--e-4);
-  padding: var(--e-3) var(--e-2);
-  border-bottom: 1px solid var(--borda);
-}
-
-.ajustes__linha:last-child { border-bottom: 0; }
-
+/* A regra de `.ajustes__linha` mudou de lugar, para junto do resto da tela de
+   duas colunas no fim do arquivo. Duas definições do mesmo seletor a três mil
+   linhas de distância é como alguém edita uma e não entende por que nada muda.
+   O `strong` continua aqui: quem ainda o usa é o `Dispositivos`. */
 .ajustes__linha strong {
   font-size: var(--texto-base);
 }
@@ -5404,13 +5395,6 @@
   margin: 2px 0 0;
   font-size: var(--texto-sm);
   color: var(--texto-fraco);
-}
-
-.ajustes__nota {
-  margin: 0;
-  padding: 0 var(--e-2) var(--e-2);
-  font-size: var(--texto-sm);
-  color: var(--atencao);
 }
 
 /* ── Cartão selecionado ─────────────────────────────────────────────────── */
@@ -6937,13 +6921,6 @@
 
 /* ── Agentes de impressão (Ajustes) ─────────────────────────────────────── */
 
-.ajustes__acoes {
-  display: flex;
-  align-items: center;
-  gap: var(--e-2);
-  flex-shrink: 0;
-}
-
 /*
  * A lista de impressoras de um agente. Cada linha carrega um selo de estado à
  * esquerda, porque é o estado que se procura ao olhar — o nome só confirma
@@ -6967,17 +6944,6 @@
 
 .ajustes__papel {
   color: var(--texto-fraco);
-}
-
-.ajustes__registro {
-  display: flex;
-  align-items: flex-end;
-  gap: var(--e-3);
-  padding: var(--e-3) var(--e-2);
-}
-
-.ajustes__registro .ui-campo {
-  flex: 1;
 }
 
 /*
@@ -8358,4 +8324,872 @@
   min-height: 36px;
   padding: 0 var(--e-3);
   font-size: var(--texto-xs);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Ajustes — lista de páginas e painel
+
+   Mesmo desenho de "Em rota" e "Conversas": mestre à esquerda, detalhe à
+   direita. A largura é menor porque a lista aqui é de rótulos curtos, não de
+   cartões.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.ajustes {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: var(--e-3);
+  padding: var(--e-3);
+}
+
+@media (max-width: 1100px) {
+  .ajustes {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+}
+
+.ajustes__lateral {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--e-4) 0;
+  border: 1px solid var(--borda);
+  border-radius: 16px;
+  background: var(--superficie-1);
+}
+
+.ajustes__marca {
+  margin: 0;
+  padding: 0 var(--e-4);
+  font-size: var(--texto-xl);
+  font-weight: var(--peso-forte);
+}
+
+.ajustes__paginas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-4);
+}
+
+.ajustes__grupo {
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * Rótulo do grupo: pequeno, em caixa alta, apagado.
+ *
+ * Ele organiza a lista para quem enxerga e **não é um destino** — daí o
+ * `role="presentation"` no markup. Sem isso o leitor de tela contaria cinco
+ * páginas e três títulos como oito itens navegáveis.
+ */
+.ajustes__grupo-rotulo {
+  margin: 0 0 var(--e-2);
+  padding: 0 var(--e-4);
+  font-size: 11px;
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texto-apagado);
+}
+
+/*
+ * A marca de saúde no item da lista.
+ *
+ * Aparece só no Diagnóstico e só quando há algo errado — um ponto permanente
+ * em cada item vira ruído e para de ser lido. Cor **mais** um texto no `title`
+ * e um rótulo para leitor de tela: a bolinha sozinha não diz nada.
+ */
+.ajustes__marca-saude {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--raio-total);
+  flex: none;
+  margin-left: auto;
+}
+
+.ajustes__marca-saude[data-saude='atencao'] {
+  background: var(--atencao);
+}
+
+.ajustes__marca-saude[data-saude='ruim'] {
+  background: var(--perigo);
+}
+
+.ajustes__pagina {
+  /* 44 px: a lista é tocada em tablete, e é navegação, não ajuste fino. */
+  min-height: var(--alvo);
+  padding: 0 var(--e-4);
+  display: flex;
+  align-items: center;
+  /* A barra de "você está aqui" mora na borda esquerda, como no menu do
+     aplicativo — transparente aqui para o texto não deslizar ao selecionar. */
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--texto-corpo);
+  font: inherit;
+  font-size: var(--texto-sm);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--duracao-rapida) var(--curva),
+    color var(--duracao-rapida) var(--curva);
+}
+
+.ajustes__pagina:hover[aria-selected='false'] {
+  background: var(--superficie-3);
+  color: var(--texto);
+}
+
+/*
+ * A corrente: fundo cinza **e** barra vermelha na borda — o mesmo idioma do
+ * menu lateral. Duas pistas, porque cor sozinha não sobrevive a contraluz nem
+ * a daltonismo.
+ */
+.ajustes__pagina[aria-selected='true'] {
+  background: var(--superficie-3);
+  border-left-color: var(--marca);
+  color: var(--texto);
+  font-weight: var(--peso-forte);
+}
+
+/* ── O painel ───────────────────────────────────────────────────────────── */
+
+.ajustes__painel {
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--e-5) var(--e-6);
+  border: 1px solid var(--borda);
+  border-radius: 16px;
+  background: var(--superficie-1);
+}
+
+.ajustes__painel:focus {
+  outline: none;
+}
+
+.ajustes__painel:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: -2px;
+}
+
+.ajustes__cabecalho {
+  margin-bottom: var(--e-6);
+}
+
+.ajustes__cabecalho h2 {
+  margin: 0 0 var(--e-2);
+  font-size: var(--texto-xl);
+  font-weight: var(--peso-forte);
+}
+
+.ajustes__cabecalho p {
+  margin: 0;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.ajustes__secao {
+  margin-bottom: var(--e-8);
+}
+
+.ajustes__secao:last-child {
+  margin-bottom: 0;
+}
+
+/* Rótulo de seção: mesma família do rótulo de grupo da lateral, para as duas
+   caixas altas da tela lerem como o mesmo nível de informação. */
+.ajustes__rotulo {
+  margin: 0 0 var(--e-2);
+  padding-bottom: var(--e-2);
+  border-bottom: 1px solid var(--borda);
+  font-size: 11px;
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--texto-apagado);
+}
+
+/* ── A linha de ajuste ──────────────────────────────────────────────────── */
+
+.ajustes__linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-5);
+  padding: var(--e-4) 0;
+  border-bottom: 1px solid var(--borda);
+}
+
+.ajustes__linha:last-child {
+  border-bottom: 0;
+}
+
+/* Ação destrutiva não encosta no resto: a divisória mais grossa é o espaço
+   que separa "sair" de "olhar os dados da conta". */
+.ajustes__linha--separada {
+  margin-top: var(--e-4);
+  padding-top: var(--e-5);
+  border-top: 1px solid var(--borda-forte);
+}
+
+.ajustes__sobre {
+  min-width: 0;
+  /* Medida de leitura: descrição de ajuste é texto corrido, e linha larga
+     demais num painel de 900 px cansa. */
+  max-width: 62ch;
+}
+
+.ajustes__titulo {
+  margin: 0 0 2px;
+  font-size: var(--texto-base);
+  font-weight: var(--peso-medio);
+}
+
+.ajustes__descricao {
+  margin: 0;
+  font-size: var(--texto-sm);
+  line-height: var(--linha-normal);
+  color: var(--texto-fraco);
+}
+
+.ajustes__controle {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+}
+
+.ajustes__aviso {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  margin: var(--e-3) 0 0;
+  padding: var(--e-2) var(--e-3);
+  border-radius: var(--raio-1);
+  background: var(--superficie-2);
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+/* ── O volume ───────────────────────────────────────────────────────────── */
+
+/*
+ * `input[type=range]` nativo, estilizado.
+ *
+ * Recriar um deslizante custaria teclado (setas, Home/End), leitor de tela e
+ * arrasto por toque — tudo que o nativo já traz. É o controle que mais se erra
+ * ao reimplementar, e não há nada de marca a ganhar aqui.
+ */
+.ajustes__faixa {
+  /*
+   * Largura e **altura** generosas: a caixa do input é a área de arraste, e a
+   * versão anterior era uma tira de 160×20 px em que era preciso acertar um
+   * carrinho de 16 px. A altura extra é invisível — o trilho continua fino — e
+   * é ela que faz o controle ser pego de primeira.
+   */
+  width: 200px;
+  height: 36px;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* O trilho engrossou de 4 para 6 px: além de mais visível, ele é alvo de
+   clique por si só — clicar nele salta o valor para aquele ponto. */
+.ajustes__faixa::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: var(--raio-total);
+  /* `--preenchido` vem do componente — ver o comentário lá. */
+  background: linear-gradient(
+    to right,
+    var(--marca) 0 var(--preenchido, 0%),
+    var(--superficie-3) var(--preenchido, 0%) 100%
+  );
+}
+
+.ajustes__faixa::-moz-range-track {
+  height: 6px;
+  border-radius: var(--raio-total);
+  background: linear-gradient(
+    to right,
+    var(--marca) 0 var(--preenchido, 0%),
+    var(--superficie-3) var(--preenchido, 0%) 100%
+  );
+}
+
+.ajustes__faixa::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  /* Centra o carrinho no trilho: (6 − 20) ÷ 2. Errar esta conta desalinha o
+     desenho do ponto que o ponteiro realmente pega. */
+  margin-top: -7px;
+  border: 2px solid var(--superficie-1);
+  border-radius: var(--raio-total);
+  background: var(--marca);
+  /* Anel de sombra: sobre o trilho claro, a borda branca sozinha some. */
+  box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
+  transition: transform var(--duracao-rapida) var(--curva);
+}
+
+.ajustes__faixa::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--superficie-1);
+  border-radius: var(--raio-total);
+  background: var(--marca);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
+  transition: transform var(--duracao-rapida) var(--curva);
+}
+
+/* Cresce sob o ponteiro e ao arrastar: é a resposta que diz "isto se pega". */
+.ajustes__faixa:hover::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+
+.ajustes__faixa:hover::-moz-range-thumb {
+  transform: scale(1.15);
+}
+
+.ajustes__faixa:active::-webkit-slider-thumb {
+  transform: scale(1.25);
+}
+
+.ajustes__faixa:active::-moz-range-thumb {
+  transform: scale(1.25);
+}
+
+.ajustes__faixa:active {
+  cursor: grabbing;
+}
+
+.ajustes__faixa:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
+  border-radius: var(--raio-total);
+}
+
+.ajustes__faixa:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ajustes__faixa::-webkit-slider-thumb,
+  .ajustes__faixa::-moz-range-thumb {
+    transition: none;
+  }
+}
+
+/* ── A prévia ───────────────────────────────────────────────────────────── */
+
+.ajustes__previa {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-total);
+  background: var(--superficie-1);
+  color: var(--texto-fraco);
+  cursor: pointer;
+  transition:
+    background-color var(--duracao-rapida) var(--curva),
+    color var(--duracao-rapida) var(--curva);
+}
+
+.ajustes__previa:hover:not(:disabled) {
+  background: var(--marca-suave);
+  border-color: var(--marca);
+  color: var(--marca);
+}
+
+.ajustes__previa:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Agentes de impressão ───────────────────────────────────────────────── */
+
+.agentes__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+}
+
+/*
+ * Cartão, e não linha de ajuste.
+ *
+ * O resto da tela é "um rótulo e um controle". Aqui cada item é uma **coisa**
+ * com nome, estado, impressoras e uma ação destrutiva — cartão comporta isso
+ * sem espremer tudo numa linha, e separa visualmente o que se configura do que
+ * existe lá na loja.
+ */
+.agentes__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-3);
+  padding: var(--e-4);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-2);
+  background: var(--superficie-1);
+}
+
+/*
+ * Offline: tingido e borda na cor do alerta, sem barra lateral.
+ *
+ * O tingido é o que permite achar o agente quebrado descendo a lista sem ler
+ * nada, e ele só funciona porque o botão de revogar deixou de ser vermelho —
+ * com os dois, o cartão virava um bloco vermelho em que nada se destacava.
+ *
+ * A cor **não é o único sinal**: o selo escreve "Offline", o texto de estado
+ * fica vermelho e o ladrilho inverte. São quatro pistas, e três delas
+ * sobrevivem sem enxergar cor.
+ */
+.agentes__item[data-offline] {
+  border-color: var(--perigo);
+  background: var(--perigo-suave);
+}
+
+/* O ladrilho ancora o olho, como o avatar na lista de conversas. */
+.agentes__ladrilho {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--raio-2);
+  background: var(--superficie-3);
+  color: var(--texto-fraco);
+}
+
+.agentes__item[data-offline] .agentes__ladrilho {
+  background: var(--superficie-1);
+  color: var(--perigo);
+}
+
+.agentes__corpo {
+  flex: 1;
+  min-width: 0;
+}
+
+.agentes__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
+}
+
+.agentes__nome {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-width: 0;
+  font-size: var(--texto-base);
+}
+
+.agentes__nome strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * Revogar: quieto na lista, vermelho sob o ponteiro.
+ *
+ * Menor que o piso de 44 px do sistema — a mesma exceção consciente do "Ver
+ * pedido" na tela de conversas, e pelo mesmo motivo: aquele piso foi calibrado
+ * para as ações do quadro, apertadas com pressa. Aqui é uma ação rara, atrás de
+ * uma confirmação, e o alvo continua bem acima do mínimo de 24×24 do WCAG.
+ */
+.agentes__topo .ui-botao {
+  min-height: 34px;
+  min-width: 0;
+  padding: 0 var(--e-3);
+  background: transparent;
+  border-color: var(--borda);
+  color: var(--texto-fraco);
+  font-size: var(--texto-xs);
+}
+
+.agentes__topo .ui-botao:hover:not(:disabled) {
+  border-color: var(--perigo);
+  background: var(--superficie-1);
+  color: var(--perigo);
+}
+
+.agentes__item[data-offline] .agentes__topo .ui-botao:hover:not(:disabled) {
+  /* No cartão já tingido, o branco é que destaca — repetir o rosa não faria
+     diferença nenhuma. */
+  background: var(--superficie-1);
+}
+
+.agentes__estado {
+  margin: var(--e-1) 0 0;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.agentes__item[data-offline] .agentes__estado {
+  color: var(--perigo);
+}
+
+/* As impressoras viram pastilhas em linha: são poucas, e uma lista vertical
+   dava três linhas de altura a uma informação de uma palavra cada. */
+.agentes__impressoras {
+  list-style: none;
+  margin: var(--e-3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+}
+
+.agentes__impressoras li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  padding: 3px var(--e-3) 3px var(--e-2);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-total);
+  background: var(--superficie-1);
+  font-size: var(--texto-xs);
+}
+
+/* O ponto na pastilha é o estado daquela impressora — separado do estado do
+   agente, porque um agente online pode ter uma impressora sem resposta. */
+.agentes__ponto {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--raio-total);
+  background: var(--sucesso);
+}
+
+.agentes__impressoras li[data-offline] {
+  border-color: var(--perigo);
+  color: var(--perigo);
+}
+
+.agentes__impressoras li[data-offline] .agentes__ponto {
+  background: var(--perigo);
+}
+
+.agentes__papel {
+  color: var(--texto-fraco);
+}
+
+.agentes__impressoras li[data-offline] .agentes__papel {
+  color: inherit;
+}
+
+.agentes__token {
+  margin: var(--e-3) 0 0;
+  font-size: var(--texto-xs);
+  color: var(--texto-apagado);
+}
+
+.agentes__esqueleto {
+  display: block;
+  height: 116px;
+  border-radius: var(--raio-2);
+  background: linear-gradient(
+    90deg,
+    var(--superficie-2) 25%,
+    var(--superficie-3) 50%,
+    var(--superficie-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: agentes-pulsa 1400ms linear infinite;
+}
+
+@keyframes agentes-pulsa {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+.agentes__registro {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--e-3);
+}
+
+.agentes__registro .ui-campo {
+  flex: 1;
+  max-width: 420px;
+}
+
+.agentes__ajuda {
+  margin: var(--e-2) 0 0;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+.agentes__token-caixa {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-2);
+}
+
+.agentes__token-caixa textarea {
+  flex: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agentes__esqueleto {
+    animation: none;
+  }
+}
+
+/* ── Diagnóstico ────────────────────────────────────────────────────────── */
+
+.diag__cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
+}
+
+/* O rótulo da seção perde a divisória quando divide a linha com o botão: o
+   traço passando por baixo dos dois somava peso sem separar nada. */
+.diag__cabecalho .ajustes__rotulo {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.diag__cabecalho .ui-botao {
+  min-height: 36px;
+  padding: 0 var(--e-3);
+  font-size: var(--texto-xs);
+}
+
+/*
+ * Dois por linha, e não quatro.
+ *
+ * A frase de cada cartão é a informação — ela diz o que fazer —, e em quatro
+ * colunas ela quebraria em cinco linhas de duas palavras. Dois cartões por
+ * linha deixam a frase respirar num painel de ~700 px.
+ */
+.diag__cartoes {
+  list-style: none;
+  margin: var(--e-4) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--e-3);
+}
+
+@media (max-width: 900px) {
+  .diag__cartoes {
+    grid-template-columns: 1fr;
+  }
+}
+
+.diag__cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--e-4);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-2);
+  background: var(--superficie-1);
+}
+
+.diag__topo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  margin-bottom: var(--e-1);
+}
+
+/*
+ * A marca de saúde: disco com ícone dentro.
+ *
+ * **Ícone e não só cor** — verde e vermelho como único sinal não sobrevivem a
+ * contraluz nem a daltonismo, e o estado escrito logo abaixo é a terceira pista.
+ */
+.diag__marca {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--raio-total);
+  background: var(--superficie-3);
+  color: var(--texto-fraco);
+}
+
+.diag__cartao[data-saude='ok'] .diag__marca {
+  background: var(--sucesso-suave);
+  color: var(--sucesso);
+}
+
+.diag__cartao[data-saude='atencao'] .diag__marca {
+  background: var(--atencao-suave);
+  color: var(--atencao);
+}
+
+.diag__cartao[data-saude='ruim'] .diag__marca {
+  background: var(--perigo-suave);
+  color: var(--perigo);
+}
+
+/* Só o cartão em falha ganha borda tingida. Pintar o de atenção também faria a
+   página inteira parecer em alarme num dia em que só há uma fila drenando. */
+.diag__cartao[data-saude='ruim'] {
+  border-color: var(--perigo);
+  background: var(--perigo-suave);
+}
+
+.diag__rotulo {
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--texto-apagado);
+}
+
+.diag__estado {
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-forte);
+  line-height: var(--linha-apertada);
+}
+
+.diag__frase {
+  font-size: var(--texto-sm);
+  line-height: var(--linha-normal);
+  color: var(--texto-fraco);
+}
+
+.diag__cartao[data-saude='ruim'] .diag__frase {
+  color: var(--texto-corpo);
+}
+
+/* Aparece só quando a área de transferência foi negada. */
+.diag__texto {
+  width: 100%;
+  margin-top: var(--e-3);
+  padding: var(--e-3);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-1);
+  background: var(--superficie-base);
+  color: var(--texto);
+  font-family: var(--fonte-numero);
+  font-size: var(--texto-xs);
+  resize: vertical;
+}
+
+/* ── Os detalhes, recolhidos ────────────────────────────────────────────── */
+
+.diag__detalhes {
+  margin-top: var(--e-6);
+  border-top: 1px solid var(--borda);
+  padding-top: var(--e-4);
+}
+
+.diag__detalhes > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-height: var(--alvo);
+  color: var(--texto-fraco);
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+  /* O triângulo padrão do `details` é feio e não acompanha o tema; o `::before`
+     abaixo o substitui. */
+  list-style: none;
+}
+
+.diag__detalhes > summary::-webkit-details-marker {
+  display: none;
+}
+
+.diag__detalhes > summary::before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 5px 0 5px 6px;
+  border-color: transparent transparent transparent currentColor;
+  transition: transform var(--duracao-rapida) var(--curva);
+}
+
+.diag__detalhes[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.diag__detalhes > summary:hover {
+  color: var(--texto);
+}
+
+.diag__detalhes > summary:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
+  border-radius: var(--raio-1);
+}
+
+.diag__lista {
+  margin: var(--e-2) 0 0;
+}
+
+.diag__lista > div {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: var(--e-4);
+  padding: var(--e-3) 0;
+  border-top: 1px solid var(--borda);
+}
+
+@media (max-width: 720px) {
+  .diag__lista > div {
+    grid-template-columns: 1fr;
+    gap: var(--e-1);
+  }
+}
+
+.diag__lista dt {
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  color: var(--texto-fraco);
+}
+
+.diag__lista dd {
+  margin: 0;
+  font-size: var(--texto-sm);
+  overflow-wrap: anywhere;
+}
+
+/*
+ * A ressalva de cada linha.
+ *
+ * Ela existe porque dois números aqui prometeriam mais do que entregam: o
+ * desvio de relógio é medido e **não** aplicado, e o cursor é um instantâneo
+ * que não anda com os eventos. Sem a nota, os dois enganam.
+ */
+.diag__nota {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--texto-xs);
+  color: var(--texto-apagado);
+}
+
+.diag__cursor {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--e-2);
+  margin-right: var(--e-4);
 }

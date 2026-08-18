@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { PedidoDoQuadro } from '@matsuya/api-client'
+import type { SomDePedidoNovo, TipoDeAlerta } from './alertas'
 import { alertas, type EstadoDoSom } from './alertas'
 
 /**
@@ -61,9 +62,30 @@ export function useAlertas(pedidos: PedidoDoQuadro[], habilitado: boolean) {
 
   return {
     estado,
+    /*
+     * Volume e chaves são lidos do singleton a cada render, e não guardados em
+     * estado do React.
+     *
+     * O `observar` do `alertas` reanuncia a cada mudança de preferência — é ele
+     * que provoca o render —, então ler aqui devolve sempre o valor corrente. Um
+     * `useState` paralelo seria uma segunda cópia da verdade, e as duas
+     * divergiriam no dia em que algo mudasse a preferência sem passar por esta
+     * tela: o botão da barra do topo, por exemplo.
+     */
+    volume: alertas.volume,
+    eventos: alertas.eventos,
+    somDePedidoNovo: alertas.somDePedidoNovo,
+
     destravar: () => alertas.destravar(),
     silenciar: () => alertas.silenciar(),
     religar: () => alertas.religar(),
+    definirVolume: (v: number) => alertas.definirVolume(v),
+    definirEvento: (tipo: TipoDeAlerta, ligado: boolean) =>
+      alertas.definirEvento(tipo, ligado),
+    definirSomDePedidoNovo: (som: SomDePedidoNovo) => alertas.definirSomDePedidoNovo(som),
+
     tocarErro: () => alertas.tocar('erro'),
+    /** Prévia dos ajustes: soa mesmo com o evento desligado — ver `tocar`. */
+    ouvir: (tipo: TipoDeAlerta) => alertas.tocar(tipo, true),
   }
 }

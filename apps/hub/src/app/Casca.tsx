@@ -847,9 +847,26 @@ export function Casca({
             saudeDoAgente={saudeDoAgente}
             unityId={unidadeFoco}
             apiDeImpressao={apiDeImpressao}
-            conexao={ROTULO_DA_CONEXAO[quadro.conexao] ?? quadro.conexao}
+            conexao={quadro.conexao}
+            /*
+             * `sincronia` era calculada a cada evento e **renderizada em lugar
+             * nenhum**. Ela responde outra pergunta que não a da conexão: o
+             * cabeçalho diz "Ao vivo" enquanto o cursor pode estar se
+             * recuperando de uma lacuna.
+             */
+            sincronia={quadro.sincronia}
+            /*
+             * Desvio do relógio contra o servidor. Medido a cada batida e, até
+             * aqui, sem nenhum consumidor — `agoraDoServidor` nunca foi chamado
+             * por ninguém.
+             */
+            desvioMs={quadro.agoraDoServidor() - Date.now()}
+            fila={{ pendentes: fila.pendentes.length, disponivel: fila.disponivel }}
             cursores={quadro.cursores}
             nomesDasUnidades={nomesDasUnidades}
+            identidade={sessao.identidade ?? null}
+            permissoes={sessao.permissoes}
+            aoSair={sessao.sair}
           />
         )}
       </div>
