@@ -63,6 +63,13 @@
   --borda-forte: #d4d4d4;      /* campo, botão com borda */
 
   /*
+   * O polegar da barra de rolagem. O trilho fica transparente, então este
+   * cinza precisa se sustentar sobre TODAS as superfícies em que há rolagem —
+   * e o pior caso não é o branco do cartão, é o cinza do painel da coluna.
+   */
+  --rolagem: #808080;
+
+  /*
    * Escala de texto.
    *
    * A referência usa #717171 para texto secundário e #9e9e9e para texto
@@ -328,6 +335,7 @@
 
   --borda: #2a3441;
   --borda-forte: #3a4757;
+  --rolagem: #6b7a8c;
 
   --texto: #e6edf3;
   --texto-corpo: #cbd6e2;
@@ -554,4 +562,40 @@ body {
 .num {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
+}
+
+/*
+ * Rolagem sem trilho.
+ *
+ * O padrão do navegador desenha um trilho branco de ponta a ponta, e ele não
+ * segue superfície nenhuma: sobre o painel cinza da coluna e sobre o fundo do
+ * detalhe do pedido, aquilo vira uma faixa clara vertical que o olho lê como
+ * divisória — uma borda que ninguém desenhou, sempre no lugar errado.
+ *
+ * Fica só o polegar. Ele carrega toda a informação que a barra tem a dar (onde
+ * estou, quanto falta); o trilho só marca onde ela poderia estar.
+ *
+ * Dois caminhos de propósito: as propriedades padrão valem no Chrome e no
+ * Safari 18.2+, e os pseudoelementos `-webkit-` cobrem o Safari anterior. Não
+ * se atropelam — quando `scrollbar-color` é entendido, o Chrome ignora os
+ * pseudoelementos, e o resultado é o mesmo dos dois lados.
+ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rolagem) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--rolagem);
+  border-radius: var(--raio-total);
 }

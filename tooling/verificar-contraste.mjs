@@ -87,6 +87,14 @@ const PARES = [
   ['anel de foco sobre superfície 1', 'foco', 'superficie-1', 3],
   ['borda forte sobre superfície 1', 'borda-forte', 'superficie-1', 1.3],
 
+  // O polegar da rolagem, agora que o trilho é transparente. É um controle,
+  // não texto: mínimo de elemento gráfico. Aferido nas TRÊS superfícies que
+  // rolam — e o pior caso é o painel da coluna, o mais escuro dos três, não o
+  // branco do cartão.
+  ['polegar da rolagem sobre o painel da coluna', 'rolagem', 'superficie-2', 3],
+  ['polegar da rolagem sobre o cartão', 'rolagem', 'superficie-1', 3],
+  ['polegar da rolagem sobre a página', 'rolagem', 'superficie-base', 3],
+
   // Acrescentados no redesenho sobre as referências.
   ['texto de corpo sobre superfície 1', 'texto-corpo', 'superficie-1', 4.5],
   ['texto de corpo sobre superfície 3 (pílula)', 'texto-corpo', 'superficie-3', 4.5],
