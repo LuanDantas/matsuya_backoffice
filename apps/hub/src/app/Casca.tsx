@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Botao, Drawer, Faixa, Icone, Selo } from '@matsuya/ui'
+import { Botao, Faixa, Icone, Selo } from '@matsuya/ui'
 import {
   criarApiDeImpressao,
   criarApiDePedidos,
@@ -36,7 +36,7 @@ import { Ferramentas, normalizar, type ModoDoQuadro } from '../modules/quadro/Fe
 import { ConfirmacaoDeAcao } from '../modules/quadro/ConfirmacaoDeAcao'
 import { DrawerDoPedido } from '../modules/quadro/DrawerDoPedido'
 import { DrawerDeChat } from '../modules/chat/DrawerDeChat'
-import { Excecoes, apurarExcecoes } from '../modules/excecoes/Excecoes'
+import { DrawerDeExcecoes, apurarExcecoes } from '../modules/excecoes/Excecoes'
 import { Inicio } from '../modules/inicio/Inicio'
 import { EmRota } from '../modules/rota/EmRota'
 import { Conversas } from '../modules/conversas/Conversas'
@@ -741,22 +741,16 @@ export function Casca({
       )}
 
       {excecoesAbertas && (
-        <Drawer
-          aberto
-          rotuloAcessivel="Pedidos que precisam de atenção"
-          titulo={<h2>Exceções</h2>}
-          subtitulo="Atrasados, com falha de entrega ou alterados depois do aceite."
+        <DrawerDeExcecoes
+          excecoes={excecoes}
+          agora={agora}
+          carregando={quadro.carregando}
           aoFechar={() => definirExcecoesAbertas(false)}
-        >
-          <Excecoes
-            excecoes={excecoes}
-            agora={agora}
-            aoAbrir={(pedido) => {
-              definirExcecoesAbertas(false)
-              abrirDetalhe(pedido)
-            }}
-          />
-        </Drawer>
+          aoAbrir={(pedido) => {
+            definirExcecoesAbertas(false)
+            abrirDetalhe(pedido)
+          }}
+        />
       )}
 
       {fila.reconciliacao && (

@@ -788,28 +788,88 @@
 
 /* ── Exceções ───────────────────────────────────────────────────────────── */
 
-.excecoes {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
+/*
+ * O painel segue o mesmo desenho do detalhe do pedido: fundo cinza, conteúdo
+ * em cartões brancos. É a mesma natureza de conteúdo — uma pilha de blocos
+ * independentes que se lê de cima a baixo — e duas gramáticas diferentes para
+ * dois painéis que abrem do mesmo lado custam um reajuste de olho a cada troca.
+ */
+.ui-drawer[data-variante='excecoes'] .ui-drawer__corpo {
+  background: var(--superficie-base);
+  gap: var(--e-3);
 }
 
-.excecoes .ui-painel {
-  flex: 1;
-  min-height: 0;
-}
-
-.excecoes .ui-painel__corpo {
+.excecoes__chips {
+  /*
+   * Gruda no topo ao rolar. A contagem por motivo é a resposta para "o que está
+   * acontecendo hoje", e ela não pode sair de vista assim que a pessoa desce
+   * dois cartões — é justamente descendo que a dúvida aparece.
+   */
+  position: sticky;
+  top: calc(var(--e-4) * -1);
+  z-index: 1;
+  margin: calc(var(--e-4) * -1) calc(var(--e-4) * -1) 0;
+  padding: var(--e-4) var(--e-4) var(--e-3);
+  background: var(--superficie-base);
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: var(--e-2);
-  overflow-y: auto;
+}
+
+.excecoes__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-height: var(--alvo);
+  padding: 0 var(--e-3);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-total);
+  background: var(--superficie-1);
+  color: var(--texto-corpo);
+  font: inherit;
+  font-size: var(--texto-sm);
+  cursor: pointer;
+  transition:
+    background-color var(--duracao-rapida) var(--curva),
+    border-color var(--duracao-rapida) var(--curva),
+    color var(--duracao-rapida) var(--curva);
+}
+
+.excecoes__chip:hover[aria-pressed='false'] {
+  background: var(--superficie-3);
+  border-color: var(--texto-apagado);
+}
+
+/*
+ * Marcado é preenchimento, não cor.
+ *
+ * Tingir o chip do motivo faria a faixa inteira virar um arco-íris de estados,
+ * e aí a cor deixa de dizer "este é o filtro ativo" e passa a dizer só "aqui
+ * tem cor". Invertido — tinta escura, texto claro — o chip ativo se destaca
+ * dos outros pelo peso, e continua legível sem depender de matiz nenhuma.
+ */
+.excecoes__chip[aria-pressed='true'] {
+  background: var(--texto);
+  border-color: var(--texto);
+  color: var(--texto-inverso);
+  font-weight: var(--peso-medio);
+}
+
+.excecoes__chip-contagem {
+  padding: 1px var(--e-2);
+  border-radius: var(--raio-total);
+  background: var(--superficie-3);
+  color: var(--texto-corpo);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+}
+
+.excecoes__chip[aria-pressed='true'] .excecoes__chip-contagem {
+  background: rgb(255 255 255 / 0.22);
+  color: var(--texto-inverso);
 }
 
 .excecoes__lista {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -818,31 +878,117 @@
   gap: var(--e-2);
 }
 
+/*
+ * Entrada escalonada, 40 ms entre cartões — o mesmo compasso do corpo do
+ * detalhe do pedido e da escolha de unidade.
+ *
+ * `--ordem` vem do componente e satura no oitavo item: numa fila ruim de vinte
+ * exceções, o escalonamento deixaria de dar ritmo e passaria a fazer esperar.
+ * A lista é remontada a cada troca de filtro, então esta mesma animação também
+ * é a transição entre um filtro e outro.
+ */
 .excecoes__item {
+  animation: excecoes-entra 260ms var(--curva) both;
+  animation-delay: calc(var(--ordem, 0) * 40ms);
+}
+
+@keyframes excecoes-entra {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/*
+ * O cartão herda `.cartao-d` — borda que escurece no hover sem levantar — e
+ * acrescenta só o que muda: ele é clicável, e o de leitura não é.
+ *
+ * Fora a borda colorida de 3px na lateral esquerda que este item tinha. É o
+ * mesmo recurso que já saiu do cartão do entregador e da observação do cliente,
+ * pelo mesmo motivo: uma tarja de cor na borda não é lida como categoria, é
+ * lida como sujeira na margem — e a categoria já está escrita no selo, no
+ * ícone e no disco.
+ */
+.excecoes__cartao {
   width: 100%;
-  min-height: var(--alvo);
-  padding: var(--e-2) var(--e-3);
+  min-height: 72px;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  border: 1px solid var(--borda);
-  border-left: 3px solid var(--borda-forte);
-  border-radius: var(--raio-1);
-  background: var(--superficie-1);
+  align-items: flex-start;
+  gap: var(--e-3);
   color: inherit;
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background-color var(--duracao-rapida) var(--curva);
+  transition:
+    border-color var(--duracao) var(--curva),
+    transform var(--duracao-rapida) var(--curva);
 }
 
-.excecoes__item:hover {
-  background: var(--superficie-3);
+.excecoes__cartao:active {
+  transform: translateY(1px);
 }
 
-.excecoes__item[data-motivo='sla'] { border-left-color: var(--urgente); }
-.excecoes__item[data-motivo='entrega'] { border-left-color: var(--perigo); }
-.excecoes__item[data-motivo='parcial'] { border-left-color: var(--atencao); }
+.excecoes__cartao:hover .excecoes__seta,
+.excecoes__cartao:focus-visible .excecoes__seta {
+  transform: translateX(3px);
+}
+
+/*
+ * O disco tingido por motivo — e os três separados por PESO, não por matiz.
+ *
+ * Dois dos três motivos são vermelhos. Empilhados em tinta cheia, viram a mesma
+ * queixa da coluna "Em preparo": tudo vermelho, tudo parecendo a mesma coisa.
+ * Aqui só o SLA estourado leva preenchimento sólido — é o único em que o
+ * cliente está esperando uma resposta que nunca veio —, e os outros dois ficam
+ * em tinta pálida. O vermelho forte fica concentrado num quadrado de 32px, onde
+ * marca em vez de alarmar.
+ */
+.excecoes__disco[data-motivo='sla'] {
+  background: var(--alarme-fundo);
+  color: var(--alarme-texto);
+}
+
+.excecoes__disco[data-motivo='entrega'] {
+  background: var(--perigo-suave);
+  color: var(--perigo);
+}
+
+.excecoes__disco[data-motivo='parcial'] {
+  background: var(--atencao-suave);
+  color: var(--atencao);
+}
+
+/*
+ * O disco não muda no hover, e as três regras abaixo existem só para dizer isso.
+ *
+ * `.cartao-d:hover .cartao-d__disco` tinge o disco de marca — faz sentido no
+ * cartão de leitura, onde o disco é só âncora. Aqui ele carrega o motivo, e
+ * trocar a cor ao passar o ponteiro apagaria a informação. A regra genérica tem
+ * especificidade maior que a do motivo, então a reafirmação precisa ser
+ * explícita.
+ */
+.excecoes__cartao:hover .excecoes__disco[data-motivo='sla'] {
+  background: var(--alarme-fundo);
+  color: var(--alarme-texto);
+}
+
+.excecoes__cartao:hover .excecoes__disco[data-motivo='entrega'] {
+  background: var(--perigo-suave);
+  color: var(--perigo);
+}
+
+.excecoes__cartao:hover .excecoes__disco[data-motivo='parcial'] {
+  background: var(--atencao-suave);
+  color: var(--atencao);
+}
+
+.excecoes__corpo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-1);
+}
 
 .excecoes__linha {
   display: flex;
@@ -857,10 +1003,54 @@
   color: var(--texto-fraco);
 }
 
+/* Reticências em vez de segunda linha: o nome do cliente é o único campo de
+   comprimento imprevisível aqui, e uma quebra dele desalinha o valor da coluna
+   da direita, que é o que se varre. */
+.excecoes__cliente {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .excecoes__abrir {
   display: inline-flex;
   align-items: center;
   gap: 2px;
+  flex-shrink: 0;
+}
+
+.excecoes__seta {
+  transition: transform var(--duracao-rapida) var(--curva);
+}
+
+/*
+ * O esqueleto reaproveita `.esqueleto` inteiro — mesma borda, mesma entrada,
+ * mesmo brilho dos cartões do quadro. Uma segunda linguagem de carregamento só
+ * ensinaria que existem dois tipos de espera.
+ *
+ * As três faixas têm a altura das três linhas do cartão de verdade, e o mínimo
+ * é o mesmo: quando o dado chega, nada muda de lugar.
+ */
+.excecoes__esqueleto {
+  min-height: 72px;
+  border-radius: 16px;
+}
+
+.excecoes__esqueleto .esqueleto__bloco:nth-child(1) { width: 60%; height: 16px; }
+.excecoes__esqueleto .esqueleto__bloco:nth-child(2) { width: 85%; height: 12px; }
+.excecoes__esqueleto .esqueleto__bloco:nth-child(3) { width: 45%; height: 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .excecoes__item {
+    animation: none;
+  }
+
+  .excecoes__cartao:active,
+  .excecoes__cartao:hover .excecoes__seta,
+  .excecoes__cartao:focus-visible .excecoes__seta {
+    transform: none;
+  }
 }
 
 /* ── Detalhe do pedido ──────────────────────────────────────────────────── */
