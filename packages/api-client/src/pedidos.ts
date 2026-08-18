@@ -42,6 +42,20 @@ export interface EntregaDoQuadro {
   etaLojaMinutos: number | null
   /** Quando chegou. É daqui que sai o "aguardando há X min". */
   chegouLojaEm: string | null
+  /**
+   * Foto e nota, como o parceiro de entrega as publica — nada nesta stack as
+   * calcula.
+   *
+   * Seguem a mesma regra do nome: só a partir da chegada na loja. Rosto e nota
+   * de quem ainda está na rua não mudam decisão nenhuma.
+   *
+   * `notaDeQuantas` acompanha a média porque uma nota sozinha é ilegível: 5,0
+   * com três corridas e 4,7 com oitocentas dizem coisas opostas, e a tela
+   * precisa poder omitir a primeira.
+   */
+  fotoUrl: string | null
+  nota: number | null
+  notaDeQuantas: number | null
 }
 
 export interface PedidoDoQuadro {
@@ -115,6 +129,13 @@ export interface PedidoDoQuadro {
      * ou pedido cujo produto foi removido do catálogo depois.
      */
     imageUrl?: string | null
+    /**
+     * Observação **deste item** — "sem cebola nesta, com cebola na outra".
+     *
+     * Coexiste com `notes` do pedido, que vale para o pedido inteiro. Nula é o
+     * caso comum: só existe quando o cliente escreveu algo naquela linha.
+     */
+    notes?: string | null
     /** Opções escolhidas, congeladas no momento do pedido. */
     optionsSnapshot?: Array<{
       groupId: number

@@ -84,6 +84,16 @@ function iniciais(nome: string): string {
   return (primeira + ultima).toUpperCase()
 }
 
+/**
+ * Quantas entregas avaliadas a média precisa ter para ser mostrada.
+ *
+ * Abaixo disso o número engana quem decide olhando: "5,0" de quem fez quatro
+ * corridas e "4,7" de quem fez oitocentas são do mesmo tamanho na tela e
+ * dizem coisas opostas. Trinta é o ponto em que uma entrega ruim deixa de
+ * mover a média meio ponto.
+ */
+const MINIMO_DE_CORRIDAS_PARA_NOTA = 30
+
 const VERBO_DO_PRAZO: Record<'aceite' | 'preparo', string> = {
   aceite: 'Aceitar',
   preparo: 'Preparar',
@@ -270,7 +280,17 @@ export function DrawerDoPedido({
             */}
             {pedido.entrega.entregador ? (
               <span className="corrida__avatar" aria-hidden="true">
+                {/*
+                  A foto por cima das iniciais, e não no lugar delas: as letras
+                  ficam desenhadas por baixo e aparecem sozinhas quando a
+                  imagem não carrega — que é o caso de todo entregador sem foto
+                  cadastrada, e da loja com a internet ruim. Um `onError` faria
+                  a mesma coisa com um estado a mais para manter.
+                */}
                 {iniciais(pedido.entrega.entregador)}
+                {pedido.entrega.fotoUrl && (
+                  <img src={pedido.entrega.fotoUrl} alt="" loading="lazy" decoding="async" />
+                )}
                 <span className="corrida__selo">
                   <Icone nome={corrida.icone} tamanho={12} />
                 </span>
@@ -283,9 +303,31 @@ export function DrawerDoPedido({
 
             <span className="corrida__dizer">
               <strong>{pedido.entrega.entregador ?? corrida.titulo}</strong>
-              <span className="corrida__estado">
-                <Icone nome={corrida.icone} tamanho={13} />
-                {pedido.entrega.entregador ? corrida.titulo : 'Corrida em andamento'}
+
+              <span className="corrida__marcas">
+                <span className="corrida__estado">
+                  <Icone nome={corrida.icone} tamanho={13} />
+                  {pedido.entrega.entregador ? corrida.titulo : 'Corrida em andamento'}
+                </span>
+
+                {/*
+                  A nota só aparece com corridas suficientes para significar
+                  algo. "5,0" de quem fez quatro entregas e "4,7" de quem fez
+                  oitocentas são números do mesmo tamanho dizendo coisas
+                  opostas, e o primeiro engana quem decide olhando.
+                */}
+                {pedido.entrega.nota !== null &&
+                  (pedido.entrega.notaDeQuantas ?? 0) >= MINIMO_DE_CORRIDAS_PARA_NOTA && (
+                    <span
+                      className="corrida__nota"
+                      title={`${pedido.entrega.notaDeQuantas} entregas avaliadas`}
+                    >
+                      <Icone nome="estrela" tamanho={13} />
+                      <span className="num">
+                        {pedido.entrega.nota.toFixed(1).replace('.', ',')}
+                      </span>
+                    </span>
+                  )}
               </span>
             </span>
 
@@ -411,6 +453,21 @@ export function DrawerDoPedido({
                     {moeda.format(item.lineTotal ?? item.unitPrice * item.qty)}
                   </span>
                 </span>
+
+                {/*
+                  A observação do item, no chip cinza da referência.
+                  
+                  Fica **dentro** da linha do produto, e não no cartão de
+                  observação do pedido, porque é isto que ela diz: vale para
+                  esta linha. "Sem cebola" num pedido com dois yakisobas
+                  precisa dizer em qual, e no bilhete geral do pedido não dizia.
+                */}
+                {item.notes && (
+                  <span className="itens__nota">
+                    <Icone nome="balao" tamanho={14} />
+                    {item.notes}
+                  </span>
+                )}
 
                 {(item.optionsSnapshot ?? []).length > 0 && (
                   <ul className="itens__opcoes">

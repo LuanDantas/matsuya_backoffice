@@ -49,8 +49,12 @@ export type NomeDoIcone =
   | 'cartao'
   | 'pix'
   | 'dinheiro'
+  | 'estrela'
 
 const CAMINHOS: Record<NomeDoIcone, string> = {
+  // Preenchida na tela onde é usada (a nota do entregador) — o `fill` vem de
+  // quem chama, como nos demais: o desenho aqui é sempre só o contorno.
+  estrela: 'm12 3.2 2.6 5.4 5.9.9-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9L5.5 9.5l5.9-.9z',
   cartao: 'M2 8a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3zM2 10h20M6 15h3',
   // O losango do Pix, com as quatro pontas — é a forma que a marca registrou
   // e a única coisa dela que se reconhece em 16px.

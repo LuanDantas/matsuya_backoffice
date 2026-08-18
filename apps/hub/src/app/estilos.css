@@ -2867,6 +2867,38 @@
   line-height: var(--linha-apertada);
 }
 
+/* Estado e nota lado a lado, sob o nome. */
+.corrida__marcas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-2);
+}
+
+/*
+ * A nota, como o parceiro de entrega a publica.
+ *
+ * Estrela preenchida e número tabular. Sem barra de cinco estrelas: ela ocupa
+ * cinco vezes o espaço para dizer o mesmo que "4,8", e numa linha que já tem
+ * nome, estado e tempo não sobra largura para um gráfico.
+ */
+.corrida__nota {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px var(--e-2);
+  border-radius: var(--raio-total);
+  background: var(--superficie-3);
+  color: var(--texto-corpo);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+  font-variant-numeric: tabular-nums;
+}
+
+.corrida__nota svg {
+  fill: currentColor;
+}
+
 /* O estado numa pílula tingida, colada ao nome que ela qualifica. */
 .corrida__estado {
   display: inline-flex;
@@ -2925,12 +2957,33 @@
   font-size: var(--texto-base);
   font-weight: var(--peso-forte);
   letter-spacing: 0.02em;
+  /* As iniciais ficam por baixo; a foto entra por cima quando existe. Recorta
+     a imagem no círculo. */
+  overflow: hidden;
+}
+
+/*
+ * A foto cobre as iniciais em vez de substituí-las.
+ *
+ * As letras ficam desenhadas por baixo e reaparecem sozinhas quando a imagem
+ * não carrega — entregador sem foto cadastrada, ou a internet da loja ruim.
+ * Um `onError` faria o mesmo com um estado a mais para manter.
+ */
+.corrida__avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
 }
 
 /* O selo do estado no canto do avatar: quem é a pessoa e o que ela está
    fazendo são duas informações, e empilhá-las no mesmo círculo é o que faz a
-   linha caber numa altura em vez de duas. */
+   linha caber numa altura em vez de duas. Fora do recorte da foto, por isso o
+   `z-index`. */
 .corrida__selo {
+  z-index: 1;
   position: absolute;
   right: -2px;
   bottom: -2px;
@@ -3111,6 +3164,36 @@
   font-size: var(--texto-base);
   font-weight: var(--peso-forte);
   font-variant-numeric: tabular-nums;
+}
+
+/*
+ * A observação do item, no chip cinza da referência.
+ *
+ * Cinza e não âmbar: âmbar neste painel é a observação do **pedido**, que a
+ * cozinha lê uma vez antes de montar tudo. Esta vale para uma linha só, e
+ * pintá-la da mesma cor faria a lista inteira parecer cheia de avisos quando
+ * três itens trazem instruções banais.
+ *
+ * Largura cheia sob o nome, e não ao lado: é texto livre do cliente, pode ter
+ * o comprimento que for, e espremido numa coluna quebraria em quatro linhas de
+ * duas palavras.
+ */
+.itens__nota {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-2);
+  padding: var(--e-2) var(--e-3);
+  border-radius: 10px;
+  background: var(--superficie-3);
+  color: var(--texto-corpo);
+  font-size: var(--texto-sm);
+  line-height: var(--linha-normal);
+}
+
+.itens__nota svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--texto-fraco);
 }
 
 /*
