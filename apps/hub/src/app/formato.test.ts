@@ -6,6 +6,34 @@ const daqui = (segundos: number) => new Date(AGORA + segundos * 1000).toISOStrin
 const atras = (segundos: number) => new Date(AGORA - segundos * 1000).toISOString()
 
 describe('duração nos rótulos do quadro', () => {
+  describe('acima de um dia', () => {
+    /**
+     * "1320h" é correto e ilegível — ninguém converte isso para "quase dois
+     * meses" de relance. Apareceu no bloco "o mais antigo" da home, com um
+     * pedido em aberto havia 55 dias.
+     */
+    it('troca a unidade para dia', () => {
+      expect(decorrido(atras(24 * 3600), AGORA)).toBe('1d')
+      expect(decorrido(atras(55 * 24 * 3600), AGORA)).toBe('55d')
+    })
+
+    it('mantém o resto em horas na primeira semana', () => {
+      expect(decorrido(atras(26 * 3600), AGORA)).toBe('1d2h')
+      expect(decorrido(atras((3 * 24 + 7) * 3600), AGORA)).toBe('3d7h')
+    })
+
+    /** Depois de uma semana, hora é precisão sobre um número que já a perdeu. */
+    it('deixa as horas de fora depois de uma semana', () => {
+      expect(decorrido(atras((7 * 24 + 9) * 3600), AGORA)).toBe('7d')
+      expect(decorrido(atras((30 * 24 + 13) * 3600), AGORA)).toBe('30d')
+    })
+
+    it('não muda nada abaixo de um dia', () => {
+      expect(decorrido(atras(23 * 3600), AGORA)).toBe('23h')
+      expect(decorrido(atras(3 * 3600 + 7 * 60), AGORA)).toBe('3h07min')
+    })
+  })
+
   describe('quanto falta', () => {
     it('mostra minutos, não m:ss', () => {
       expect(restante(daqui(120), AGORA)).toBe('2min')

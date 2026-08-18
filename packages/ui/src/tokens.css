@@ -70,6 +70,23 @@
   --rolagem: #808080;
 
   /*
+   * A cor do dado, e o cinza que serve de régua.
+   *
+   * O sistema não tinha família de cor para gráfico — hue aqui sempre
+   * significou estado. Estes dois existem para a curva do mês, e só.
+   *
+   * Não é `--info`: aquele token é o mesmo `#1d4ed8` do `--foco`, e a linha do
+   * gráfico ficaria idêntica ao anel de foco do teclado. E no tema escuro o
+   * `--info` (#60a5fa) reprova a faixa de luminosidade exigida para marca de
+   * dado — por isso o tom escuro é um degrau próprio, e não o mesmo token.
+   *
+   * Ambos aferidos com o validador de paleta: faixa de luminosidade, piso de
+   * croma e contraste ≥3:1 contra as superfícies reais dos dois temas.
+   */
+  --grafico-linha: #1d4ed8;
+  --grafico-contexto: #8a8a8a;
+
+  /*
    * Escala de texto.
    *
    * A referência usa #717171 para texto secundário e #9e9e9e para texto
@@ -336,6 +353,8 @@
   --borda: #2a3441;
   --borda-forte: #3a4757;
   --rolagem: #6b7a8c;
+  --grafico-linha: #3b82f6;
+  --grafico-contexto: #7c8ea1;
 
   --texto: #e6edf3;
   --texto-corpo: #cbd6e2;

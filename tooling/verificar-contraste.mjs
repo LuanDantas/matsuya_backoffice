@@ -95,6 +95,12 @@ const PARES = [
   ['polegar da rolagem sobre o cartão', 'rolagem', 'superficie-1', 3],
   ['polegar da rolagem sobre a página', 'rolagem', 'superficie-base', 3],
 
+  // A curva do mês. Marca de dado, não texto: mínimo de elemento gráfico.
+  // O cinza de contexto é aferido junto porque ele **é** uma das duas séries,
+  // e não decoração — um mês anterior invisível não compara nada.
+  ['linha do gráfico sobre o cartão', 'grafico-linha', 'superficie-1', 3],
+  ['mês anterior sobre o cartão', 'grafico-contexto', 'superficie-1', 3],
+
   // Acrescentados no redesenho sobre as referências.
   ['texto de corpo sobre superfície 1', 'texto-corpo', 'superficie-1', 4.5],
   ['texto de corpo sobre superfície 3 (pílula)', 'texto-corpo', 'superficie-3', 4.5],

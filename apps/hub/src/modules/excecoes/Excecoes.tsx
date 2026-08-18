@@ -226,7 +226,7 @@ export function DrawerDeExcecoes({
       ) : (
         <>
           {chips.length > 1 && (
-            <div className="excecoes__chips" role="group" aria-label="Filtrar por motivo">
+            <div className="chips" role="group" aria-label="Filtrar por motivo">
               <Chip
                 marcado={ativo === 'todas'}
                 contagem={excecoes.length}
@@ -343,14 +343,14 @@ function Chip({
   return (
     <button
       type="button"
-      className="excecoes__chip"
+      className="chip"
       data-motivo={motivo}
       aria-pressed={marcado}
       onClick={aoClicar}
     >
       {motivo && <Icone nome={ICONE_DO_MOTIVO[motivo]} tamanho={14} />}
       {children}
-      <span className="excecoes__chip-contagem num">{contagem}</span>
+      <span className="chip__contagem num">{contagem}</span>
     </button>
   )
 }

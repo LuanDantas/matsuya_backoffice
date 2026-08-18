@@ -799,7 +799,7 @@
   gap: var(--e-3);
 }
 
-.excecoes__chips {
+.chips {
   /*
    * Gruda no topo ao rolar. A contagem por motivo é a resposta para "o que está
    * acontecendo hoje", e ela não pode sair de vista assim que a pessoa desce
@@ -816,7 +816,7 @@
   gap: var(--e-2);
 }
 
-.excecoes__chip {
+.chip {
   display: inline-flex;
   align-items: center;
   gap: var(--e-2);
@@ -835,7 +835,7 @@
     color var(--duracao-rapida) var(--curva);
 }
 
-.excecoes__chip:hover[aria-pressed='false'] {
+.chip:hover[aria-pressed='false'] {
   background: var(--superficie-3);
   border-color: var(--texto-apagado);
 }
@@ -848,14 +848,14 @@
  * tem cor". Invertido — tinta escura, texto claro — o chip ativo se destaca
  * dos outros pelo peso, e continua legível sem depender de matiz nenhuma.
  */
-.excecoes__chip[aria-pressed='true'] {
+.chip[aria-pressed='true'] {
   background: var(--texto);
   border-color: var(--texto);
   color: var(--texto-inverso);
   font-weight: var(--peso-medio);
 }
 
-.excecoes__chip-contagem {
+.chip__contagem {
   padding: 1px var(--e-2);
   border-radius: var(--raio-total);
   background: var(--superficie-3);
@@ -864,7 +864,7 @@
   font-weight: var(--peso-forte);
 }
 
-.excecoes__chip[aria-pressed='true'] .excecoes__chip-contagem {
+.chip[aria-pressed='true'] .chip__contagem {
   background: rgb(255 255 255 / 0.22);
   color: var(--texto-inverso);
 }
@@ -2250,17 +2250,138 @@
 
 /* ── Home da unidade ────────────────────────────────────────────────────── */
 
+/*
+ * Largura cheia, e não uma coluna de 1100px centrada.
+ *
+ * Esta tela é gateada por `reports:read`, que o atendente de balcão não tem —
+ * o público dela é gerente e regional, quase sempre num monitor grande. Numa
+ * tela de 1920 a coluna antiga deixava metade do espaço em margem, com a curva
+ * do mês espremida no meio.
+ */
 .inicio {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-4);
   padding: var(--e-5) var(--e-4);
   padding-bottom: max(var(--e-5), env(safe-area-inset-bottom));
 }
 
+/*
+ * Atualizar não recomeça: a tela fica, esmaecida.
+ *
+ * Trocar o conteúdo por esqueleto a cada atualização apaga o número que a
+ * pessoa estava lendo e faz a página saltar. Opacidade reduzida diz "estou
+ * conferindo" sem tirar nada de vista.
+ *
+ * **O cabeçalho fica fora do esmaecimento.** É lá que estão o giro do botão e
+ * o "lendo…" — apagar junto com o dado tiraria de vista justamente os dois
+ * sinais que dizem que algo está acontecendo.
+ */
+.inicio__faixa,
+.inicio__colunas {
+  transition: opacity var(--duracao) var(--curva);
+}
+
+.inicio[data-atualizando] .inicio__faixa,
+.inicio[data-atualizando] .inicio__colunas {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/*
+ * De quando são estes números.
+ *
+ * A home mostra uma fotografia e nunca dizia de quando. Sem isto, atualizar
+ * com o dado inalterado — que é o caso comum — não muda um pixel, e o botão
+ * parece quebrado. O relógio muda a cada leitura porque o que mudou de fato
+ * foi a idade da informação, e isso é dado, não efeito.
+ */
+.inicio__lido-em {
+  font-variant-numeric: tabular-nums;
+  color: var(--texto-apagado);
+}
+
+/*
+ * Cabeçalho em duas colunas que não se atropelam.
+ *
+ * Era `flex-wrap: wrap` com `space-between`: a coluna da esquerda crescia com a
+ * lista de lojas selecionadas e, ao passar da metade, jogava "Atualizar" e
+ * "Abrir o quadro" para a linha de baixo. Agora a esquerda tem `min-width: 0`
+ * e quebra dentro de si mesma; os botões têm coluna própria e não saem do
+ * lugar por causa de texto ao lado.
+ *
+ * A quebra em duas linhas volta abaixo de 700px, onde as duas colunas de fato
+ * não cabem lado a lado.
+ */
 .inicio__saudacao {
-  max-width: 1100px;
-  margin: 0 auto var(--e-5);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--e-4);
+}
+
+.inicio__saudacao > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 700px) {
+  .inicio__saudacao {
+    flex-wrap: wrap;
+  }
+}
+
+/* ── Os selos das lojas ─────────────────────────────────────────────────── */
+
+.inicio__selos {
+  list-style: none;
+  margin: var(--e-3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+}
+
+/*
+ * Os selos ganharam peso quando a saudação parou de nomear a loja.
+ *
+ * Antes o nome da loja era o `<h1>` e o selo era apoio. Agora a saudação é para
+ * a pessoa, e estes selos são o **único** lugar da tela que diz de qual loja
+ * são os números — informação dessa importância não cabe em corpo de nota de
+ * rodapé.
+ */
+.inicio__selo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  min-height: 28px;
+  padding: 0 var(--e-3);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-total);
+  background: var(--superficie-1);
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  color: var(--texto);
+  white-space: nowrap;
+}
+
+/*
+ * O ponto tingido, e não o selo inteiro.
+ *
+ * Nove selos preenchidos com nove tons transformam o cabeçalho num mosaico que
+ * disputa atenção com os números. Concentrada num ponto de 8px, a mesma cor
+ * identifica sem gritar — é o argumento que já valeu para o disco do seletor
+ * de lojas.
+ */
+.inicio__selo-ponto {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--tom);
 }
 
 .inicio__saudacao h1 {
@@ -2280,64 +2401,135 @@
   color: var(--texto-fraco);
 }
 
-.inicio__grade {
+.inicio__acoes {
+  display: flex;
+  gap: var(--e-2);
+  flex-shrink: 0;
+}
+
+/* ── A faixa do agora ───────────────────────────────────────────────────── */
+
+.inicio__faixa {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  /* Quatro numa tela larga, dois num tablet, um num celular — sem media query:
+     o mínimo de 220px decide sozinho quantos cabem. */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--e-3);
-  max-width: 1100px;
-  margin: 0 auto;
 }
 
-/* Ocupa a linha inteira, como o cartão de pedidos do mês na referência. */
-.inicio__largo {
-  grid-column: 1 / -1;
-}
-
-.inicio__conteudo,
-.inicio__avaliacoes {
+.inicio__bloco {
   display: flex;
   flex-direction: column;
-  gap: var(--e-3);
-  padding: 0 var(--e-2) var(--e-2);
+  gap: var(--e-1);
 }
 
-.inicio__avaliacoes {
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: var(--e-5);
-  align-items: flex-start;
+.inicio__bloco-disco {
+  margin-bottom: var(--e-2);
 }
 
-.inicio__linha-de-numeros {
-  display: flex;
-  gap: var(--e-8);
-}
-
-.inicio__linha-de-numeros > div,
-.inicio__destaque,
-.inicio__comparacao {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.inicio__bloco-rotulo {
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  color: var(--texto-corpo);
 }
 
 /*
- * A escala de números da home é maior que a do quadro de propósito: aqui se lê
- * sentado, uma vez, para decidir; lá se lê de pé, o tempo todo, para agir.
+ * O valor do bloco.
+ *
+ * Figuras proporcionais, não `.num`: `tabular-nums` dá a todo dígito a largura
+ * do zero, e em corpo grande isso deixa "121" com um vão no meio. O tabular
+ * fica onde ele serve — eixo, tabela e cronômetro, onde as linhas precisam se
+ * alinhar verticalmente.
  */
-.inicio__numero {
-  font-size: 34px;
+.inicio__bloco-valor {
+  font-size: 40px;
   font-weight: var(--peso-forte);
   line-height: 1;
   letter-spacing: -0.02em;
   color: var(--texto);
 }
 
-.inicio__numero--grande { font-size: 56px; }
-.inicio__numero--medio { font-size: 34px; color: var(--texto-fraco); }
+/* Tinge o disco, não a faixa inteira: o valor continua legível, e a cor marca
+   o bloco sem transformar a linha num semáforo de quatro luzes. */
+.inicio__bloco[data-tom='alarme'] .inicio__bloco-disco,
+.inicio__bloco[data-tom='alarme']:hover .inicio__bloco-disco {
+  background: var(--alarme-fundo);
+  color: var(--alarme-texto);
+}
 
-.inicio__linha-de-numeros > div[data-alerta] .inicio__numero {
-  color: var(--perigo);
+.inicio__bloco[data-tom='alarme'] .inicio__bloco-valor {
+  color: var(--alarme-fundo);
+}
+
+.inicio__bloco[data-tom='atencao'] .inicio__bloco-disco,
+.inicio__bloco[data-tom='atencao']:hover .inicio__bloco-disco {
+  background: var(--atencao-suave);
+  color: var(--atencao);
+}
+
+/* ── As duas colunas ────────────────────────────────────────────────────── */
+
+/*
+ * Duas colunas explícitas, e não `auto-fit`.
+ *
+ * Com `auto-fit` mais um `span 2` no cartão do mês, uma tela de 1920 abriria
+ * quatro trilhas e sobraria uma vazia à direita. Duas trilhas nomeadas —
+ * dois terços para o mês, um terço para as avaliações — dão à curva a largura
+ * de que ela precisa sem deixar buraco.
+ */
+.inicio__colunas {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--e-3);
+  align-items: start;
+}
+
+@media (min-width: 1100px) {
+  .inicio__colunas {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  }
+}
+
+.inicio__mes {
+  min-width: 0;
+}
+
+.inicio__numeros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--e-6);
+  margin-bottom: var(--e-5);
+}
+
+.inicio__heroi,
+.inicio__lado > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.inicio__lado {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-6);
+}
+
+/* A figura herói da tela — uma só. Dinheiro, porque é a pergunta do gerente. */
+.inicio__heroi-valor {
+  font-size: 52px;
+  font-weight: var(--peso-forte);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--texto);
+}
+
+.inicio__medio {
+  font-size: 30px;
+  font-weight: var(--peso-forte);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--texto);
 }
 
 .inicio__rotulo {
@@ -2345,46 +2537,67 @@
   color: var(--texto-fraco);
 }
 
-.inicio__nota {
-  display: flex;
+/* ── A variação ─────────────────────────────────────────────────────────── */
+
+.inicio__delta {
+  display: inline-flex;
   align-items: center;
   gap: var(--e-1);
-  margin: 0;
-  font-size: var(--texto-sm);
-  color: var(--texto-fraco);
-}
-
-.inicio__conteudo .ui-botao {
   align-self: flex-start;
-}
-
-.inicio__comparacao {
-  padding-top: var(--e-3);
-  border-top: 1px solid var(--borda);
-}
-
-.inicio__variacao {
-  align-self: flex-start;
-  margin-top: var(--e-1);
+  margin-top: var(--e-2);
   padding: 2px var(--e-2);
   border-radius: var(--raio-total);
   font-size: var(--texto-xs);
   font-weight: var(--peso-forte);
 }
 
-.inicio__variacao[data-sentido='alta'] {
-  background: var(--marca-suave);
-  color: var(--marca);
+/* Verde para cima e vermelho para baixo porque nestes três números — dinheiro,
+   pedidos, ticket — subir é bom. Num indicador onde subir é ruim, este selo
+   mentiria, e a direção teria de virar propriedade. */
+.inicio__delta[data-sentido='alta'] {
+  background: var(--sucesso-suave);
+  color: var(--sucesso);
 }
 
-.inicio__variacao[data-sentido='baixa'] {
+.inicio__delta[data-sentido='baixa'] {
   background: var(--perigo-suave);
   color: var(--perigo);
 }
 
+.inicio__delta[data-sentido='baixa'] svg {
+  transform: rotate(180deg);
+}
+
+.inicio__delta[data-sentido='igual'] {
+  background: var(--superficie-3);
+  color: var(--texto-fraco);
+  font-weight: var(--peso-normal);
+}
+
+.inicio__delta-fracao {
+  padding-left: var(--e-1);
+  border-left: 1px solid currentColor;
+}
+
+/* ── Avaliações ─────────────────────────────────────────────────────────── */
+
+.inicio__avaliacoes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  min-width: 0;
+}
+
+.inicio__nota {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .inicio__comentarios {
-  flex: 1;
-  min-width: 260px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: var(--e-2);
@@ -2393,9 +2606,8 @@
 .inicio__comentario {
   margin: 0;
   padding: var(--e-3);
-  background: var(--superficie-1);
-  border: 1px solid var(--borda);
-  border-radius: var(--raio-1);
+  background: var(--superficie-base);
+  border-radius: var(--raio-2);
 }
 
 .inicio__comentario p {
@@ -2405,9 +2617,293 @@
 }
 
 .inicio__comentario footer {
-  margin-top: var(--e-1);
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  margin-top: var(--e-2);
   font-size: var(--texto-xs);
   color: var(--texto-fraco);
+}
+
+.inicio__nota-do-comentario {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--atencao);
+  font-weight: var(--peso-forte);
+}
+
+.inicio__nota-do-comentario svg {
+  fill: currentColor;
+}
+
+.inicio__rodape-nota {
+  margin: 0;
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+/* ── A curva do mês ─────────────────────────────────────────────────────── */
+
+.curva {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+}
+
+/* Os controles numa linha só, acima do gráfico — nunca dentro dele. */
+.curva__medidas {
+  display: flex;
+  gap: var(--e-2);
+}
+
+.curva__legenda {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  margin: 0;
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+/*
+ * Chave em traço, não em quadrado.
+ *
+ * Na densidade de uma legenda, o quadrado é tinta com peso de dado fazendo o
+ * trabalho de um rótulo. E o texto nunca veste a cor da série: identidade vem
+ * desta marca ao lado, senão um tom claro vira texto ilegível.
+ */
+.curva__chave {
+  display: inline-block;
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+.curva__chave[data-serie='atual'] { background: var(--grafico-linha); }
+.curva__chave[data-serie='anterior'] { background: var(--grafico-contexto); }
+
+.curva__caixa {
+  position: relative;
+}
+
+.curva__desenho {
+  display: block;
+  width: 100%;
+  height: 180px;
+  overflow: visible;
+}
+
+/* Linha de cabelo sólida. Tracejada compete com o dado pelo mesmo canal. */
+.curva__grade {
+  stroke: var(--borda);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.curva__linha {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.curva__linha[data-serie='atual'] { stroke: var(--grafico-linha); }
+.curva__linha[data-serie='anterior'] { stroke: var(--grafico-contexto); }
+
+/* Lavagem, nunca bloco saturado. */
+.curva__area {
+  fill: color-mix(in srgb, var(--grafico-linha) 10%, transparent);
+  stroke: none;
+}
+
+/* O anel na cor da superfície mantém a ponta legível onde ela cruza a grade. */
+.curva__ponta {
+  fill: var(--grafico-linha);
+  stroke: var(--superficie-1);
+  stroke-width: 2;
+}
+
+.curva__prumo {
+  stroke: var(--texto-apagado);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+/*
+ * As áreas de toque, uma faixa por dia.
+ *
+ * Mirar num ponto de 8px é precisão que ninguém acerta com o ponteiro e
+ * ninguém alcança com o dedo. A faixa inteira da coluna responde, e como são
+ * botões de verdade o teclado chega aos mesmos valores.
+ */
+.curva__alvos {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+
+.curva__alvo {
+  flex: 1;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.curva__alvo:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: -3px;
+  border-radius: var(--raio-1);
+}
+
+.curva__balao {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--e-2) var(--e-3);
+  border-radius: var(--raio-2);
+  background: var(--dica-escura-fundo);
+  color: var(--dica-escura-texto);
+  font-size: var(--texto-xs);
+  pointer-events: none;
+}
+
+/* Valor primeiro, série depois: aqui a pessoa já sabe qual série procura e
+   quer o número — a hierarquia da legenda, invertida. */
+.curva__balao b {
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-forte);
+}
+
+.curva__balao span {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+}
+
+.curva__eixo {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  font-size: var(--texto-xs);
+  color: var(--texto-apagado);
+}
+
+.curva__vazio {
+  margin: 0;
+  padding: var(--e-6) var(--e-4);
+  border: 1px dashed var(--borda-forte);
+  border-radius: var(--raio-2);
+  text-align: center;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+/*
+ * A tabela não é acessório.
+ *
+ * O balão enriquece; ele nunca é a única porta para o número. Quem não usa
+ * ponteiro, quem imprime e quem quer conferir valor a valor entram por aqui.
+ */
+.curva__tabela summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--alvo);
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+  cursor: pointer;
+}
+
+.curva__tabela table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--texto-sm);
+}
+
+.curva__tabela th,
+.curva__tabela td {
+  padding: var(--e-1) var(--e-2);
+  text-align: right;
+  border-bottom: 1px solid var(--borda);
+}
+
+.curva__tabela thead th {
+  color: var(--texto-fraco);
+  font-weight: var(--peso-medio);
+}
+
+.curva__tabela tbody th {
+  text-align: left;
+  font-weight: var(--peso-normal);
+  color: var(--texto-fraco);
+}
+
+/* ── Entrada e esqueleto ────────────────────────────────────────────────── */
+
+/*
+ * Entrada escalonada de 40 ms, o mesmo compasso do corpo do detalhe do pedido,
+ * da escolha de unidade e da fila de exceções.
+ */
+.inicio__bloco,
+.inicio__mes,
+.inicio__avaliacoes {
+  animation: inicio-entra 260ms var(--curva) both;
+  animation-delay: calc(var(--ordem, 0) * 40ms);
+}
+
+@keyframes inicio-entra {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* O traço se desenha da esquerda para a direita, uma vez. É a leitura do mês:
+   o tempo anda nessa direção, e a linha anda com ele. */
+.curva__linha[data-serie='atual'] {
+  stroke-dasharray: 2000;
+  animation: curva-traca 420ms var(--curva) both;
+}
+
+@keyframes curva-traca {
+  from { stroke-dashoffset: 2000; }
+  to { stroke-dashoffset: 0; }
+}
+
+/* O esqueleto tem a forma do resultado: quando o dado chega, nada se move. */
+.inicio__bloco-esqueleto {
+  min-height: 132px;
+  border-radius: 16px;
+}
+
+.inicio__cartao-esqueleto {
+  min-height: 280px;
+  border-radius: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inicio__bloco,
+  .inicio__mes,
+  .inicio__avaliacoes {
+    animation: none;
+  }
+
+  /* Sem meia animação: a curva aparece inteira, imediatamente. */
+  .curva__linha[data-serie='atual'] {
+    animation: none;
+    stroke-dasharray: none;
+  }
+
+  .inicio__faixa,
+  .inicio__colunas {
+    transition: none;
+  }
 }
 
 /* ── Menu lateral ───────────────────────────────────────────────────────── */
@@ -5768,4 +6264,303 @@
   border-radius: var(--raio-2);
   background: var(--superficie-2);
   color: var(--texto);
+}
+
+/* ── Quebra por loja no painel ──────────────────────────────────────────── */
+
+.lojas {
+  min-width: 0;
+  /*
+   * Sem o respiro lateral do cartão: a tabela vai de borda a borda, e as
+   * células trazem o próprio recuo. Uma tabela recuada dentro de um cartão
+   * recuado ganha duas molduras e perde largura útil.
+   *
+   * **Sem `overflow: hidden` aqui.** Cheguei a pôr, para o recorte do cartão
+   * arredondar a faixa do total. Foi o que sumiu com a tabela — e a lição é
+   * a de sempre: recorte é a propriedade cujo trabalho é esconder, e não vale
+   * arriscar o conteúdo por um canto curvo. A faixa termina reta, e o recuo
+   * de baixo do cartão continua ali para ela não encostar na borda.
+   */
+  padding-inline: 0;
+  animation: inicio-entra 260ms var(--curva) both;
+  animation-delay: calc(var(--ordem, 0) * 40ms);
+}
+
+.lojas .cartao-d__cabecalho {
+  padding-inline: var(--e-4);
+}
+
+.lojas__contagem {
+  margin-left: auto;
+  padding: 1px var(--e-2);
+  border-radius: var(--raio-total);
+  background: var(--contagem-fundo);
+  color: var(--contagem-texto);
+  font-size: var(--texto-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A tabela rola dentro do cartão, e não a página de lado: rolagem horizontal
+   da página é o jeito mais rápido de perder o cabeçalho de vista. */
+.lojas__rolagem {
+  overflow-x: auto;
+}
+
+.lojas__tabela {
+  width: 100%;
+  /*
+   * `collapse`, e não `separate`.
+   *
+   * Cheguei a trocar para `separate` só para poder arredondar a célula do
+   * total — `collapse` faz o navegador ignorar `border-radius` em célula. Mas
+   * `separate` também troca o algoritmo de largura da tabela, e aí o
+   * `width: 100%` do botão de ordenar (percentual dentro de célula de largura
+   * automática, que é circular) fez as colunas colapsarem.
+   *
+   * O canto arredondado sai de graça pelo recorte do cartão: `overflow: hidden`
+   * em `.lojas` com o raio de 16px já curva a faixa do total, sem tocar na
+   * tabela.
+   */
+  border-collapse: collapse;
+  font-size: var(--texto-sm);
+}
+
+.lojas__tabela th,
+.lojas__tabela td {
+  padding: var(--e-3) var(--e-4);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.lojas__tabela td,
+.lojas__tabela th[data-numero] {
+  text-align: right;
+}
+
+/*
+ * Linha sem divisória, com fundo alternado.
+ *
+ * Cinco colunas de números pedem trilho para o olho não pular de linha. A
+ * régua pode ser um traço ou um degrau de fundo, e o degrau ganha: traço em
+ * toda linha é tinta que compete com a barra de faturamento, que é o único
+ * elemento aqui que deveria chamar atenção.
+ */
+.lojas__tabela tbody tr:nth-child(odd) {
+  background: var(--superficie-base);
+}
+
+.lojas__tabela tbody tr {
+  transition: background-color var(--duracao-rapida) var(--curva);
+}
+
+.lojas__tabela tbody tr:hover {
+  background: var(--superficie-3);
+}
+
+/* ── O nome da loja ─────────────────────────────────────────────────────── */
+
+.lojas__nome {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+}
+
+.lojas__nome span {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.lojas__nome strong {
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  color: var(--texto);
+}
+
+.lojas__nome small {
+  font-size: 11px;
+  color: var(--texto-apagado);
+}
+
+.lojas__ponto {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+/* ── O cabeçalho, que é botão ───────────────────────────────────────────── */
+
+/*
+ * Ordenar é ação, e ação chega pelo teclado. Um `th` com `onClick` fica fora da
+ * ordem de tabulação e invisível para quem não usa ponteiro — a tabela ficaria
+ * ordenável só para metade das pessoas.
+ */
+.lojas__tabela thead th {
+  padding: 0;
+  color: var(--texto-fraco);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--borda-forte);
+}
+
+.lojas__tabela thead button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  width: 100%;
+  min-height: var(--alvo);
+  padding: 0 var(--e-4);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: color var(--duracao-rapida) var(--curva);
+}
+
+.lojas__tabela thead th[data-numero] button {
+  justify-content: flex-end;
+}
+
+.lojas__tabela thead button:hover {
+  color: var(--texto);
+}
+
+/*
+ * Anel de foco por dentro.
+ *
+ * O padrão desenha 3px com 2px de folga **para fora** do botão, e estes botões
+ * vivem dentro de um contêiner que rola — `overflow-x: auto` recorta também no
+ * eixo vertical, por regra do CSS, e comeria a parte de cima do anel.
+ */
+.lojas__tabela thead button:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: -3px;
+  border-radius: var(--raio-1);
+}
+
+/* A coluna que ordena fica em tinta cheia — é o estado ativo da tabela, e ele
+   precisa de mais que uma seta de 12px para ser visto. */
+.lojas__tabela thead th:not([aria-sort='none']) {
+  color: var(--texto);
+  border-bottom-color: var(--texto);
+}
+
+.lojas__seta {
+  opacity: 0.3;
+  transition: opacity var(--duracao-rapida) var(--curva);
+}
+
+.lojas__seta[data-ativa] {
+  opacity: 1;
+}
+
+.lojas__tabela th[aria-sort='ascending'] .lojas__seta {
+  transform: rotate(180deg);
+}
+
+/* ── O faturamento, com a barra de participação ─────────────────────────── */
+
+.lojas__valor {
+  display: block;
+  font-weight: var(--peso-medio);
+  color: var(--texto);
+}
+
+/*
+ * A barra codifica a mesma grandeza do número acima dela.
+ *
+ * Não é enfeite: é o que transforma cinco colunas de números numa tabela que se
+ * varre — dá para ver quem responde por metade do resultado sem ler valor
+ * nenhum. Por isso não leva rótulo nem precisa de contraste de texto; o valor
+ * exato está logo acima, e a barra nunca é a única forma de saber.
+ *
+ * Uma cor só, mais-é-mais-longo. Uma escala de matizes aqui gastaria o canal de
+ * identidade para repetir o que o comprimento já diz.
+ */
+.lojas__barra {
+  display: block;
+  width: 100%;
+  max-width: 120px;
+  height: 4px;
+  margin-left: auto;
+  margin-top: 5px;
+  border-radius: var(--raio-total);
+  background: var(--superficie-2);
+  overflow: hidden;
+}
+
+.lojas__barra > span {
+  display: block;
+  height: 100%;
+  border-radius: var(--raio-total);
+  background: var(--grafico-linha);
+}
+
+/* ── O total ────────────────────────────────────────────────────────────── */
+
+/*
+ * A faixa do total: fecho, e não mais uma linha.
+ *
+ * Uma divisória fina e negrito não bastavam — com nove lojas em fundo
+ * alternado, a última linha da soma virava só mais uma listra. Três coisas a
+ * separam: **fundo próprio**, **régua grossa em tinta cheia** (a regra dupla
+ * da contabilidade, resumida a um traço) e **corpo maior no valor**.
+ *
+ * O fundo assenta no canto do cartão, como o `.fecho` do detalhe do pedido:
+ * uma faixa que termina antes da borda parece que sobrou, não que fecha.
+ */
+.lojas__tabela tfoot tr {
+  background: var(--superficie-2);
+}
+
+.lojas__tabela tfoot th,
+.lojas__tabela tfoot td {
+  padding: var(--e-3) var(--e-4);
+  border-top: 2px solid var(--texto);
+  font-weight: var(--peso-forte);
+  color: var(--texto);
+}
+
+.lojas__tabela tfoot th {
+  display: table-cell;
+  font-size: var(--texto-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
+}
+
+/* Quantas lojas entraram na soma — o denominador do total. */
+.lojas__tabela tfoot th small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: var(--peso-normal);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--texto-apagado);
+}
+
+.lojas__total-valor {
+  font-size: var(--texto-lg);
+  letter-spacing: -0.01em;
+}
+
+.lojas__tabela td[data-alarme] {
+  color: var(--alarme-fundo);
+  font-weight: var(--peso-forte);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lojas {
+    animation: none;
+  }
+
+  /* A seta invertida é estado, não movimento — continua girada. */
+  .lojas__tabela th[aria-sort='ascending'] .lojas__seta {
+    transform: rotate(180deg);
+  }
 }

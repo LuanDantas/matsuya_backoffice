@@ -146,6 +146,23 @@ export function Casca({
   const unidade = sessao.identidade?.units.find((u) => u.id === unidadeFoco)
   const nomeDaUnidade = unidade?.name ?? `Unidade ${unidadeFoco}`
 
+  /**
+   * As lojas selecionadas, com nome, para a home.
+   *
+   * O painel reflete a seleção inteira e não a unidade em foco: quem marcou
+   * três lojas no seletor quer os números das três. `unidadeFoco` continua
+   * valendo para as telas que operam **uma** loja — cardápio, conversas,
+   * ajustes —, onde somar não faria sentido nenhum.
+   */
+  const unidadesDoPainel = useMemo(
+    () =>
+      lojas.map((id) => ({
+        id,
+        nome: nomesDasUnidades.get(id) ?? `Unidade ${id}`,
+      })),
+    [lojas, nomesDasUnidades]
+  )
+
   /** Lojas com pedido em aberto, para a linha de apoio do seletor. */
   const lojasComPedidos = useMemo(
     () => new Set(quadro.pedidos.map((p) => p.unityId)),
@@ -615,8 +632,7 @@ export function Casca({
         */}
         {tela === 'inicio' && (
           <Inicio
-            unityId={unidadeFoco}
-            nomeDaUnidade={nomeDaUnidade}
+            unidades={unidadesDoPainel}
             nomeDoUsuario={sessao.identidade?.user.name ?? ''}
             token={sessao.token}
             agora={agora}

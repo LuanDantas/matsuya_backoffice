@@ -34,6 +34,24 @@ function duracao(segundos: number): string {
   if (minutos < 60) return `${minutos}min`
 
   const h = Math.floor(minutos / 60)
+
+  /*
+   * Acima de um dia, a unidade vira dia.
+   *
+   * "1320h" é aritmeticamente correto e ilegível: ninguém converte isso para
+   * "quase dois meses" de relance. O caso apareceu no bloco "o mais antigo" da
+   * home, com um pedido em aberto havia 55 dias — mas vale em qualquer lugar,
+   * porque o problema é a unidade, não a tela.
+   *
+   * O resto em horas some depois de uma semana: em "12d", as horas seriam
+   * precisão sobre um número que já perdeu a precisão como decisão.
+   */
+  if (h >= 24) {
+    const d = Math.floor(h / 24)
+    const resto = h % 24
+    return d >= 7 || resto === 0 ? `${d}d` : `${d}d${resto}h`
+  }
+
   const m = minutos % 60
   return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}min`
 }

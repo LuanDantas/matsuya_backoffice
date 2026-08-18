@@ -9,17 +9,41 @@ import type { ApiClient } from './cliente'
  * oferecê-la e deixar a API recusar.
  */
 
+/** Um dia da curva. `dia` é o dia do mês, 1..31 — a chave que alinha as séries. */
+export interface PontoDoDia {
+  dia: number
+  pedidos: number
+  faturado: number
+}
+
+export interface MesDaUnidade {
+  atual: number
+  /** Mesmo intervalo de dias no mês anterior, não o mês fechado. */
+  mesmoPeriodoMesAnterior: number
+  faturado: number
+  faturadoMesmoPeriodoMesAnterior: number
+  /**
+   * `null` com zero pedidos concluídos.
+   *
+   * Média de nada não é zero: "R$ 0,00 de ticket médio" afirma que os pedidos
+   * saíram de graça, quando na verdade não houve pedido. A divisão é feita na
+   * API, e não aqui — dividir dois valores já arredondados dá resultado
+   * diferente de arredondar a divisão.
+   */
+  ticketMedio: number | null
+  ticketMedioMesmoPeriodoMesAnterior: number | null
+  /** Só os dias com pedido; quem consome preenche as lacunas com zero. */
+  porDia: PontoDoDia[]
+  porDiaMesAnterior: PontoDoDia[]
+}
+
 export interface PainelDaUnidade {
   operacao: {
     emAberto: number
     atrasados: number
     maisAntigoEm: string | null
   }
-  mes: {
-    atual: number
-    /** Mesmo intervalo de dias no mês anterior, não o mês fechado. */
-    mesmoPeriodoMesAnterior: number
-  }
+  mes: MesDaUnidade
   avaliacoes: {
     media: number | null
     total: number

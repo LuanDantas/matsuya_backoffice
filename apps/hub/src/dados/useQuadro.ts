@@ -5,6 +5,7 @@ import { criarCliente } from './cliente'
 import type { EstadoDeSincronia } from '@matsuya/realtime'
 import { Conexao, type EstadoDaConexao } from './conexao'
 import { config } from '../app/config'
+import { PISO_DE_CARREGAMENTO_MS, espera } from './piso'
 
 /**
  * O estado do quadro, de uma ou de várias lojas.
@@ -49,24 +50,6 @@ export interface EstadoDoQuadro {
   completar: (id: number) => void
 }
 
-/**
- * Tempo mínimo com o quadro em estado de carregamento.
- *
- * O piso vale para o **indicador**, não para a busca: os pedidos são escritos
- * no cache assim que a resposta chega, e ficam prontos esperando a bandeira
- * cair. Sem ele, numa rede boa a resposta volta em 40 ms e o esqueleto vira um
- * tremor na tela — quem apertou "atualizar" não vê nada acontecer e aperta de
- * novo.
- *
- * Três segundos é escolha de produto, pedida para o carregamento ter presença.
- * Vale saber o que ela custa: é tempo em que o quadro mostra blocos cinzas
- * embora os dados já estejam em memória, e recarregar durante um pico atrasa
- * em três segundos a leitura de uma fila que mudou. Se um dia isso incomodar
- * no balcão, é este número que se mexe — nada mais depende dele.
- */
-const PISO_DE_CARREGAMENTO_MS = 3000
-
-const espera = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 export function useQuadro(unityIds: number[], token: string | null): EstadoDoQuadro {
   const [pedidos, definirPedidos] = useState<PedidoDoQuadro[]>([])
