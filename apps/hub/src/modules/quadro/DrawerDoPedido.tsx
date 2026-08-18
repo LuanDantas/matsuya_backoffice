@@ -251,10 +251,16 @@ export function DrawerDoPedido({
         />
       )}
 
+      {/*
+        O cartão do entregador é o único sem cabeçalho.
+
+        O avatar com as iniciais e o selo do veículo já dizem que a linha é
+        sobre uma pessoa que entrega — e o nome dela está logo ao lado. Um
+        título "Entregador" acima repetiria em palavra o que a linha inteira já
+        mostra, e empurraria para baixo a única informação que muda.
+      */}
       {corrida && pedido.entrega && (
         <section className="cartao-d" data-tom={corrida.tom}>
-          <Cabecalho icone="moto" titulo="Entregador" />
-
           <div className="corrida">
             {/*
               Avatar com iniciais quando há nome; a medalha do estado quando não

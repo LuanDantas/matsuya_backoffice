@@ -3297,7 +3297,9 @@
    * cada um.
    */
   margin: var(--e-6) calc(var(--e-4) * -1) calc(var(--e-4) * -1);
-  padding: var(--e-4);
+  /* Menos altura que uma linha de conta: a faixa é uma frase só, e o espaço
+     vertical de sobra a fazia parecer uma seção nova em vez do fecho de uma. */
+  padding: var(--e-3) var(--e-4);
   border-top: 1px solid var(--borda);
   border-radius: 0 0 15px 15px;
   background: var(--atencao-suave);
