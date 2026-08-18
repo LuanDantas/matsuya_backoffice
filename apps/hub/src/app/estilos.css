@@ -2560,14 +2560,12 @@
 /*
  * O cartão que muda sozinho enquanto o painel está aberto — e por isso o
  * primeiro. Anel do prazo em cima, linha do tempo embaixo.
+ *
+ * A forma vem de `.cartao-d`: mesma borda, mesmo raio, mesmo cabeçalho com
+ * disco. Ele tinha caixa própria e destoava de todos os outros por dois pixels
+ * de espaçamento — diferença pequena demais para significar algo e grande o
+ * bastante para se notar.
  */
-.pulso {
-  padding: var(--e-4);
-  border: 1px solid var(--borda);
-  border-radius: 16px;
-  background: var(--superficie-1);
-}
-
 .pulso__topo {
   display: flex;
   align-items: center;
@@ -2622,8 +2620,8 @@
   color: var(--pulso-cor);
 }
 
-.pulso__dizer h3 {
-  margin: 0;
+.pulso__dizer strong {
+  display: block;
   font-size: var(--texto-xl);
   font-weight: var(--peso-forte);
   line-height: var(--linha-apertada);
@@ -2654,8 +2652,11 @@
 .trilha {
   display: flex;
   list-style: none;
-  margin: var(--e-4) 0 0;
-  padding: var(--e-4) 0 0;
+  /* Sangra até a borda do cartão: a divisória separa duas leituras — "quanto
+     falta" e "por onde passou" — e uma régua que para antes da borda sublinha
+     texto em vez de separar seções. */
+  margin: var(--e-4) calc(var(--e-4) * -1) calc(var(--e-4) * -1);
+  padding: var(--e-4);
   border-top: 1px solid var(--borda);
 }
 
@@ -2774,66 +2775,6 @@
   color: var(--texto-fraco);
 }
 
-/* ── Avisos ─────────────────────────────────────────────────────────────── */
-
-/*
- * A observação do cliente.
- *
- * É a linha que a cozinha erra, e ela precisa parar o olho que está descendo
- * o painel. Duas coisas fazem isso sem gritar: o fundo âmbar inteiro — que
- * nenhum outro bloco do painel tem — e o texto no corpo do texto normal, e não
- * no tamanho de nota. O disco do ícone dá ao bloco a mesma âncora à esquerda
- * que os cartões têm.
- *
- * Sem faixa colorida na lateral: o cartão do entregador saiu dela pelo mesmo
- * motivo, e manter uma aqui deixaria de novo um único bloco do painel com
- * borda assimétrica — que se lê como desalinhamento antes de se ler como
- * ênfase. O fundo já é a ênfase.
- *
- * Âmbar e não vermelho: uma observação não é um alarme, é uma instrução. O
- * vermelho deste sistema está reservado para o que deu errado.
- */
-.aviso-d {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--e-3);
-  margin: 0;
-  padding: var(--e-4);
-  border: 1px solid color-mix(in srgb, var(--atencao) 30%, transparent);
-  border-radius: 16px;
-  background: var(--atencao-suave);
-  color: var(--atencao);
-  font-size: var(--texto-base);
-  line-height: var(--linha-normal);
-}
-
-.aviso-d__icone {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--atencao) 18%, transparent);
-}
-
-.aviso-d span:last-child {
-  display: flex;
-  flex-direction: column;
-  gap: var(--e-1);
-  min-width: 0;
-  padding-top: 2px;
-}
-
-.aviso-d small {
-  font-size: var(--texto-xs);
-  font-weight: var(--peso-forte);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  opacity: 0.8;
-}
-
 /* ── Cartão de seção ────────────────────────────────────────────────────── */
 
 .cartao-d {
@@ -2882,74 +2823,56 @@
   color: var(--marca);
 }
 
-/* Empurrada para a direita: carrega o número da seção — quantos itens, que
-   horas — que antes obrigava a entrar no cartão para saber se valia entrar. */
-.cartao-d__etiqueta {
-  margin-left: auto;
-  padding: 2px var(--e-2);
-  border-radius: var(--raio-total);
-  background: var(--superficie-3);
-  color: var(--texto-corpo);
-  font-size: var(--texto-xs);
-  font-weight: var(--peso-medio);
+/* Tingido só onde o assunto do cartão já é um aviso — a observação do cliente.
+   Nos demais o disco é neutro, senão a coluna de ícones deixa de ser âncora e
+   vira semáforo. */
+.cartao-d__disco[data-tom='atencao'] {
+  background: var(--atencao-suave);
+  color: var(--atencao);
 }
 
-.cartao-d__texto {
-  margin: 0;
-  font-size: var(--texto-sm);
-  line-height: var(--linha-normal);
-}
-
-.cartao-d__texto--fraco {
-  color: var(--texto-fraco);
+.cartao-d:hover .cartao-d__disco[data-tom='atencao'] {
+  background: color-mix(in srgb, var(--atencao) 22%, transparent);
+  color: var(--atencao);
 }
 
 /* ── Corrida ────────────────────────────────────────────────────────────── */
 
 /*
- * O cartão do entregador tem tom próprio porque é o único assunto do painel
- * que muda por conta de alguém que não está aqui: ele chega, sai, some. A cor
- * à esquerda é onde essa mudança aparece.
+ * A linha do entregador, dentro do cartão padrão.
+ *
+ * Era um cartão com forma própria — outra borda, outro espaçamento, faixa
+ * colorida na lateral. Num painel de cartões iguais, o único diferente se lê
+ * como erro de montagem antes de se ler como destaque. Agora ele é um cartão
+ * como os outros, e o que muda é o conteúdo: avatar à esquerda, nome e estado
+ * no meio, tempo encostado na direita.
  */
 .corrida {
   display: flex;
   align-items: center;
   gap: var(--e-3);
-  padding: var(--e-4);
-  border: 1px solid var(--borda);
-  border-radius: 16px;
-  background: var(--superficie-1);
-  transition: border-color var(--duracao) var(--curva);
-}
-
-.corrida:hover {
-  border-color: var(--borda-forte);
 }
 
 .corrida__dizer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-1);
   min-width: 0;
+  flex: 1;
 }
 
-.corrida h3 {
-  margin: 0;
+.corrida__dizer strong {
   font-size: var(--texto-lg);
   font-weight: var(--peso-forte);
   line-height: var(--linha-apertada);
 }
 
-.corrida__linha {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--e-2);
-  margin: var(--e-2) 0 0;
-}
-
-/* O estado numa pílula tingida, colada no nome que ela qualifica. */
+/* O estado numa pílula tingida, colada ao nome que ela qualifica. */
 .corrida__estado {
   display: inline-flex;
   align-items: center;
   gap: var(--e-1);
+  align-self: flex-start;
   padding: 2px var(--e-2);
   border-radius: var(--raio-total);
   background: var(--superficie-3);
@@ -2958,11 +2881,25 @@
   font-weight: var(--peso-forte);
 }
 
-.corrida__apoio {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--e-1);
-  font-size: var(--texto-sm);
+/*
+ * O tempo na direita, na mesma coluna em que os valores do cartão de itens
+ * ficam. É o que faz o painel ter uma margem direita de números, e não um
+ * número perdido no meio de cada cartão.
+ */
+.corrida__tempo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-forte);
+  line-height: var(--linha-apertada);
+  font-variant-numeric: tabular-nums;
+}
+
+.corrida__tempo small {
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-normal);
   color: var(--texto-fraco);
 }
 
@@ -2991,8 +2928,8 @@
 }
 
 /* O selo do estado no canto do avatar: quem é a pessoa e o que ela está
-   fazendo são duas informações, e empilhá-las no mesmo círculo é o que faz o
-   cartão caber numa linha em vez de duas. */
+   fazendo são duas informações, e empilhá-las no mesmo círculo é o que faz a
+   linha caber numa altura em vez de duas. */
 .corrida__selo {
   position: absolute;
   right: -2px;
@@ -3020,64 +2957,41 @@
   color: var(--texto-corpo);
 }
 
-.corrida[data-tom='sucesso'] .corrida__estado {
+.cartao-d[data-tom='sucesso'] .corrida__avatar,
+.cartao-d[data-tom='sucesso'] .corrida__medalha {
   background: var(--sucesso-suave);
   color: var(--sucesso);
 }
 
-.corrida[data-tom='atencao'] .corrida__estado {
+.cartao-d[data-tom='atencao'] .corrida__avatar,
+.cartao-d[data-tom='atencao'] .corrida__medalha {
   background: var(--atencao-suave);
   color: var(--atencao);
 }
 
-.corrida[data-tom='critico'] .corrida__estado {
+.cartao-d[data-tom='critico'] .corrida__avatar,
+.cartao-d[data-tom='critico'] .corrida__medalha {
   background: var(--alarme-suave);
   color: var(--alarme-suave-texto);
 }
 
-.corrida[data-tom='sucesso'] .corrida__avatar,
-.corrida[data-tom='sucesso'] .corrida__medalha {
+.cartao-d[data-tom='sucesso'] .corrida__selo { background: var(--sucesso); }
+.cartao-d[data-tom='atencao'] .corrida__selo { background: var(--atencao); }
+.cartao-d[data-tom='critico'] .corrida__selo { background: var(--alarme-fundo); }
+
+.cartao-d[data-tom='sucesso'] .corrida__estado {
   background: var(--sucesso-suave);
   color: var(--sucesso);
 }
 
-.corrida[data-tom='atencao'] .corrida__avatar,
-.corrida[data-tom='atencao'] .corrida__medalha {
+.cartao-d[data-tom='atencao'] .corrida__estado {
   background: var(--atencao-suave);
   color: var(--atencao);
 }
 
-.corrida[data-tom='critico'] .corrida__avatar,
-.corrida[data-tom='critico'] .corrida__medalha {
+.cartao-d[data-tom='critico'] .corrida__estado {
   background: var(--alarme-suave);
   color: var(--alarme-suave-texto);
-}
-
-.corrida[data-tom='sucesso'] .corrida__selo { background: var(--sucesso); }
-.corrida[data-tom='atencao'] .corrida__selo { background: var(--atencao); }
-.corrida[data-tom='critico'] .corrida__selo { background: var(--alarme-fundo); }
-
-/* ── Endereço ───────────────────────────────────────────────────────────── */
-
-.endereco {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin: 0;
-  font-size: var(--texto-sm);
-  line-height: var(--linha-normal);
-  color: var(--texto-corpo);
-}
-
-/* A rua e o número no peso do texto: é a linha que se lê em voz alta ao
-   telefone, e as outras duas são contexto dela. */
-.endereco strong {
-  font-size: var(--texto-base);
-  color: var(--texto);
-}
-
-.endereco span {
-  color: var(--texto-fraco);
 }
 
 /* ── Itens ──────────────────────────────────────────────────────────────── */
@@ -3258,24 +3172,24 @@
 /* ── Contas ─────────────────────────────────────────────────────────────── */
 
 /*
- * As contas moram no mesmo cartão dos itens, em linhas de largura cheia com
- * divisória entre elas.
+ * A linha de fato: ícone à esquerda, rótulo em negrito com apoio opcional,
+ * valor encostado na borda direita.
  *
- * Eram um cartão à parte, e a separação era arbitrária: o preço de cada linha
- * e a soma delas são a mesma leitura, feita de cima para baixo. Separadas,
- * conferir "o subtotal bate com os itens?" exigia atravessar um vão cinza e
- * recomeçar noutro cartão.
+ * É o padrão de linha do painel inteiro — contas, endereço, previsão. O olho
+ * desce pela coluna de ícones e cruza para a direita só quando achou o rótulo;
+ * é por isso que o valor fica na borda e não logo depois do texto.
  *
- * As divisórias sangram até a borda do cartão pela margem negativa — é o que
- * as faz separar seções em vez de sublinhar texto.
+ * As divisórias sangram até a borda do cartão pela margem negativa do
+ * contêiner — é o que as faz separar seções em vez de sublinhar texto.
  */
-.contas {
+.contas,
+.linhas {
   margin: 0 calc(var(--e-4) * -1) calc(var(--e-4) * -1);
   display: flex;
   flex-direction: column;
 }
 
-.contas__linha {
+.linha-d {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -3284,10 +3198,11 @@
   border-top: 1px solid var(--borda);
 }
 
-.contas__linha dt {
+.linha-d__rotulo {
   display: flex;
   align-items: center;
   gap: var(--e-3);
+  margin: 0;
   min-width: 0;
   font-size: var(--texto-base);
   font-weight: var(--peso-forte);
@@ -3296,24 +3211,27 @@
 
 /* O apoio explica a linha sem competir com ela: peso normal, corpo menor e a
    cor de texto fraco. É onde mora "o entregador recolhe este valor". */
-.contas__linha dt small {
+.linha-d__rotulo small {
   display: block;
   margin-top: 2px;
   font-size: var(--texto-sm);
   font-weight: var(--peso-normal);
+  line-height: var(--linha-normal);
   color: var(--texto-fraco);
 }
 
-.contas__icone {
+.linha-d__icone {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 28px;
   flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 1px;
   color: var(--texto-corpo);
 }
 
-.contas__linha dd {
+.linha-d__valor {
   margin: 0;
   flex-shrink: 0;
   font-size: var(--texto-base);
@@ -3323,7 +3241,7 @@
 
 /* O total sobe de corpo. É o número que a pessoa procura ao descer até aqui, e
    as linhas acima existem para explicá-lo. */
-.contas__linha[data-destaque] dd {
+.linha-d[data-destaque] .linha-d__valor {
   font-size: var(--texto-xl);
 }
 
@@ -3340,7 +3258,7 @@
  * parecer o mesmo bloco. O que separa dois blocos com fundos diferentes é o
  * branco entre eles, não a divisória.
  */
-.contas__linha:last-of-type {
+.contas .linha-d:last-child {
   padding-bottom: var(--e-8);
 }
 
@@ -3353,12 +3271,23 @@
  * evitar — e é um erro que o operador comete lendo o valor certo. Por isso ela
  * fica depois do total, em faixa própria, e não como mais uma linha de conta.
  */
+/*
+ * A faixa de fecho: última linha do cartão, tingida, colada nas bordas.
+ *
+ * É a peça que carrega o que **muda o que se faz** — "não cobre de novo", "o
+ * pedido não sai enquanto isso", a observação do cliente. Fica no rodapé e não
+ * no corpo porque é a última coisa lida antes de agir, e o fundo é o que a
+ * separa do que veio acima sem precisar de outro título.
+ *
+ * Herdada por quatro cartões, então mora fora deles: mesma peça, mesmo lugar,
+ * mesmo peso, qualquer que seja o assunto.
+ */
 .fecho {
   display: flex;
   align-items: center;
   gap: var(--e-3);
   margin: 0 calc(var(--e-4) * -1) calc(var(--e-4) * -1);
-  padding: var(--e-3) var(--e-4);
+  padding: var(--e-4);
   border-top: 1px solid var(--borda);
   border-radius: 0 0 15px 15px;
   background: var(--atencao-suave);
@@ -3368,9 +3297,15 @@
   line-height: var(--linha-normal);
 }
 
-.fecho[data-pago] {
+.fecho[data-pago],
+.fecho[data-tom='sucesso'] {
   background: var(--sucesso-suave);
   color: var(--sucesso);
+}
+
+.fecho[data-tom='critico'] {
+  background: var(--alarme-suave);
+  color: var(--alarme-suave-texto);
 }
 
 .fecho svg {

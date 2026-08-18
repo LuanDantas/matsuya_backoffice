@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties } from 'react'
+import { useMemo, type CSSProperties, type ReactNode } from 'react'
 import { Botao, Drawer, Icone, type NomeDoIcone } from '@matsuya/ui'
 import {
   ORDER_ACTION_INFO,
@@ -252,79 +252,117 @@ export function DrawerDoPedido({
       )}
 
       {corrida && pedido.entrega && (
-        <section className="corrida" data-tom={corrida.tom}>
-          {/*
-            Avatar com iniciais quando há nome; a medalha do estado quando não
-            há. A API só manda o nome depois que o entregador chega na loja —
-            antes disso não existe pessoa a apresentar, e um círculo com "?"
-            seria um espaço reservado fingindo ser informação.
-          */}
-          {pedido.entrega.entregador ? (
-            <span className="corrida__avatar" aria-hidden="true">
-              {iniciais(pedido.entrega.entregador)}
-              <span className="corrida__selo">
-                <Icone nome={corrida.icone} tamanho={12} />
+        <section className="cartao-d" data-tom={corrida.tom}>
+          <Cabecalho icone="moto" titulo="Entregador" />
+
+          <div className="corrida">
+            {/*
+              Avatar com iniciais quando há nome; a medalha do estado quando não
+              há. A API só manda o nome depois que o entregador chega na loja —
+              antes disso não existe pessoa a apresentar, e um círculo com "?"
+              seria um espaço reservado fingindo ser informação.
+            */}
+            {pedido.entrega.entregador ? (
+              <span className="corrida__avatar" aria-hidden="true">
+                {iniciais(pedido.entrega.entregador)}
+                <span className="corrida__selo">
+                  <Icone nome={corrida.icone} tamanho={12} />
+                </span>
               </span>
-            </span>
-          ) : (
-            <span className="corrida__medalha" aria-hidden="true">
-              <Icone nome={corrida.icone} tamanho={22} />
-            </span>
-          )}
+            ) : (
+              <span className="corrida__medalha" aria-hidden="true">
+                <Icone nome={corrida.icone} tamanho={22} />
+              </span>
+            )}
 
-          <div className="corrida__dizer">
-            <h3>{pedido.entrega.entregador ?? corrida.titulo}</h3>
-
-            <p className="corrida__linha">
-              {/*
-                O estado vira pílula tingida, e não uma borda colorida na
-                lateral do cartão. A borda pintava uma faixa de 4 px longe do
-                texto que ela qualificava, e num painel de cartões brancos
-                empilhados só o cartão do entregador tinha lateral colorida —
-                lia-se como defeito de alinhamento antes de ler como estado.
-              */}
+            <span className="corrida__dizer">
+              <strong>{pedido.entrega.entregador ?? corrida.titulo}</strong>
               <span className="corrida__estado">
                 <Icone nome={corrida.icone} tamanho={13} />
-                {pedido.entrega.entregador ? corrida.titulo : 'Corrida'}
+                {pedido.entrega.entregador ? corrida.titulo : 'Corrida em andamento'}
               </span>
+            </span>
 
-              <span className="corrida__apoio">
-                <Icone nome="relogio" tamanho={13} />
+            <span className="corrida__tempo num">
+              {pedido.entrega.chegouLojaEm
+                ? decorrido(pedido.entrega.chegouLojaEm, agora)
+                : pedido.entrega.etaLojaMinutos !== null
+                  ? `${pedido.entrega.etaLojaMinutos} min`
+                  : '—'}
+              <small>
                 {pedido.entrega.chegouLojaEm
-                  ? `Na loja há ${decorrido(pedido.entrega.chegouLojaEm, agora)}`
+                  ? 'na loja'
                   : pedido.entrega.etaLojaMinutos !== null
-                    ? `Chega em ${pedido.entrega.etaLojaMinutos} min`
-                    : 'Sem previsão de chegada'}
-              </span>
-            </p>
+                    ? 'para chegar'
+                    : 'sem previsão'}
+              </small>
+            </span>
           </div>
+
+          {/*
+            A faixa só aparece quando há o que fazer. Um entregador a caminho
+            não pede nada de ninguém; um parado no balcão há minutos é fila
+            travada nas duas pontas, e uma corrida sem entregador precisa de
+            alguém agindo agora.
+          */}
+          {corrida.tom !== 'neutro' && corrida.tom !== 'sucesso' && (
+            <p className="fecho" data-tom={corrida.tom}>
+              <Icone nome="alerta" tamanho={18} />
+              {pedido.entrega.estado === 'falhou'
+                ? 'Sem entregador — peça outra pessoa entregadora'
+                : 'Procurando entregador — o pedido não sai enquanto isso'}
+            </p>
+          )}
         </section>
       )}
 
       <section className="cartao-d">
-        <Cabecalho icone={retirada ? 'casa' : 'mapa'} titulo={retirada ? 'Retirada' : 'Entrega'}>
-          {!retirada && pedido.estimatedDeliveryAt && (
-            <span className="cartao-d__etiqueta num">
-              prevista {horario.format(new Date(pedido.estimatedDeliveryAt))}
-            </span>
-          )}
-        </Cabecalho>
+        <Cabecalho icone={retirada ? 'casa' : 'mapa'} titulo={retirada ? 'Retirada' : 'Entrega'} />
 
-        {retirada ? (
-          <p className="cartao-d__texto">O cliente retira no balcão.</p>
-        ) : endereco ? (
-          <p className="endereco">
-            <strong>{[endereco.street, endereco.number].filter(Boolean).join(', ')}</strong>
-            {endereco.complement && <>{endereco.complement}</>}
-            {(endereco.district || endereco.city) && (
-              <span>{[endereco.district, endereco.city].filter(Boolean).join(' · ')}</span>
-            )}
-          </p>
-        ) : (
-          <p className="cartao-d__texto cartao-d__texto--fraco">
-            Endereço não informado neste pedido.
-          </p>
-        )}
+        <div className="linhas">
+          {retirada ? (
+            <Fato
+              icone="casa"
+              rotulo="Retirada no balcão"
+              descricao="O cliente vem buscar. Não há corrida para este pedido."
+            />
+          ) : endereco ? (
+            /*
+              A rua e o número no rótulo, o resto no apoio: é a linha que se lê
+              em voz alta ao telefone, e bairro e cidade são contexto dela.
+            */
+            <Fato
+              icone="mapa"
+              rotulo={[endereco.street, endereco.number].filter(Boolean).join(', ')}
+              descricao={
+                <>
+                  {endereco.complement && (
+                    <>
+                      {endereco.complement}
+                      <br />
+                    </>
+                  )}
+                  {[endereco.district, endereco.city].filter(Boolean).join(' · ')}
+                </>
+              }
+            />
+          ) : (
+            <Fato
+              icone="mapa"
+              rotulo="Endereço não informado"
+              descricao="Este pedido entrou sem endereço no instantâneo."
+            />
+          )}
+
+          {!retirada && pedido.estimatedDeliveryAt && (
+            <Fato
+              icone="relogio"
+              rotulo="Entrega prevista"
+              descricao="Prazo da zona, congelado no fechamento do pedido."
+              valor={horario.format(new Date(pedido.estimatedDeliveryAt))}
+            />
+          )}
+        </div>
       </section>
 
       {/*
@@ -521,7 +559,9 @@ function Pulso({
   const tom: Tom = !temPrazo ? 'neutro' : venceu ? 'critico' : fracao <= 0.33 ? 'atencao' : 'sucesso'
 
   return (
-    <section className="pulso" data-tom={tom}>
+    <section className="cartao-d pulso" data-tom={tom}>
+      <Cabecalho icone="relogio" titulo="Andamento do pedido" />
+
       <div className="pulso__topo">
         <span
           className="pulso__anel"
@@ -543,7 +583,7 @@ function Pulso({
         </span>
 
         <div className="pulso__dizer">
-          <h3>{ORDER_STATUS_LABEL[pedido.status]}</h3>
+          <strong>{ORDER_STATUS_LABEL[pedido.status]}</strong>
           <p>
             {temPrazo
               ? venceu
@@ -592,15 +632,17 @@ function Pulso({
  */
 function Aviso({ rotulo, texto }: { rotulo: string; texto: string }) {
   return (
-    <p className="aviso-d">
-      <span className="aviso-d__icone" aria-hidden="true">
-        <Icone nome="alerta" tamanho={18} />
-      </span>
-      <span>
-        <small>{rotulo}</small>
-        {texto}
-      </span>
-    </p>
+    <section className="cartao-d">
+      <Cabecalho icone="alerta" titulo={rotulo} tom="atencao" />
+      {/*
+        O texto na faixa tingida, e não no corpo do cartão.
+        
+        É a mesma peça que fecha o cartão de itens — a linha que muda o que se
+        faz. O cabeçalho diz o que é; a faixa carrega as palavras, e o fundo
+        âmbar é o que faz o olho parar antes de continuar descendo o painel.
+      */}
+      <p className="fecho">{texto}</p>
+    </section>
   )
 }
 
@@ -616,15 +658,18 @@ function Aviso({ rotulo, texto }: { rotulo: string; texto: string }) {
 function Cabecalho({
   icone,
   titulo,
+  tom,
   children,
 }: {
   icone: NomeDoIcone
   titulo: string
-  children?: React.ReactNode
+  /** Tinge o disco. Só onde o assunto do cartão já é um aviso. */
+  tom?: 'atencao'
+  children?: ReactNode
 }) {
   return (
     <h3 className="cartao-d__cabecalho">
-      <span className="cartao-d__disco" aria-hidden="true">
+      <span className="cartao-d__disco" data-tom={tom} aria-hidden="true">
         <Icone nome={icone} tamanho={16} />
       </span>
       {titulo}
@@ -654,9 +699,9 @@ function Conta({
   destaque?: boolean
 }) {
   return (
-    <div className="contas__linha" data-destaque={destaque || undefined}>
-      <dt>
-        <span className="contas__icone" aria-hidden="true">
+    <div className="linha-d" data-destaque={destaque || undefined}>
+      <dt className="linha-d__rotulo">
+        <span className="linha-d__icone" aria-hidden="true">
           <Icone nome={icone} tamanho={20} />
         </span>
         <span>
@@ -664,7 +709,42 @@ function Conta({
           {descricao && <small>{descricao}</small>}
         </span>
       </dt>
-      <dd className="num">{valor}</dd>
+      <dd className="linha-d__valor num">{valor}</dd>
+    </div>
+  )
+}
+
+/**
+ * A mesma linha, fora de uma lista de definição.
+ *
+ * `Conta` vive num `<dl>` porque ali cada linha é mesmo um par termo/valor.
+ * O endereço e o horário não são: são fatos com rótulo, sem contraparte. Mesma
+ * aparência, marcação honesta — um `<dl>` com `<dd>` vazio para o endereço
+ * mentiria para o leitor de tela.
+ */
+function Fato({
+  icone,
+  rotulo,
+  descricao,
+  valor,
+}: {
+  icone: NomeDoIcone
+  rotulo: string
+  descricao?: ReactNode
+  valor?: string
+}) {
+  return (
+    <div className="linha-d">
+      <p className="linha-d__rotulo">
+        <span className="linha-d__icone" aria-hidden="true">
+          <Icone nome={icone} tamanho={20} />
+        </span>
+        <span>
+          {rotulo}
+          {descricao && <small>{descricao}</small>}
+        </span>
+      </p>
+      {valor && <span className="linha-d__valor num">{valor}</span>}
     </div>
   )
 }
