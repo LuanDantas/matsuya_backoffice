@@ -351,6 +351,32 @@ export function Casca({
   }, [quadro.conexao, conversas.revalidar])
 
   /*
+   * Trocar de tela fecha os painéis.
+   *
+   * `conversa` e `detalhe` são estado de **painel**, e viviam mais que a tela
+   * que os abriu — os dois drawers são montados fora do contêiner das telas, de
+   * propósito, para poderem sobrepor qualquer uma delas.
+   *
+   * Sem isto, `conversa` mudava de significado ao navegar. Em Conversas ele
+   * quer dizer "a linha escolhida na coluna da direita"; em qualquer outra tela,
+   * "o drawer de chat está aberto" — porque é o `tela !== 'conversas'` que
+   * decide qual dos dois. Então escolher uma conversa e ir para Ajustes abria o
+   * chat por cima dos ajustes, que é o defeito relatado.
+   *
+   * O mesmo valia para `detalhe`, sem ninguém ter notado: abrir um pedido no
+   * quadro e navegar deixava o painel dele aberto sobre a tela nova. Um efeito
+   * resolve os dois, porque é o mesmo defeito.
+   *
+   * Não guardamos a seleção para a volta: o `Conversas` é montado por condição,
+   * então aba, busca e pino já se perdem ao sair. Preservar só a linha
+   * escolhida devolveria um estado pela metade.
+   */
+  useEffect(() => {
+    definirConversa(null)
+    definirDetalhe(null)
+  }, [tela])
+
+  /*
    * Avisa o cache de conversas qual está aberta.
    *
    * `abrir` limpa a marca de novidade, busca a conversa e a protege da poda —
