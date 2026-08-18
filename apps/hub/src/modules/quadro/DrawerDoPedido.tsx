@@ -273,21 +273,29 @@ export function DrawerDoPedido({
           )}
 
           <div className="corrida__dizer">
-            {pedido.entrega.entregador ? (
-              <>
-                <h3>{pedido.entrega.entregador}</h3>
-                <p className="corrida__estado">{corrida.titulo}</p>
-              </>
-            ) : (
-              <h3>{corrida.titulo}</h3>
-            )}
-            <p className="corrida__apoio">
-              <Icone nome="relogio" tamanho={13} />
-              {pedido.entrega.chegouLojaEm
-                ? `Na loja há ${decorrido(pedido.entrega.chegouLojaEm, agora)}`
-                : pedido.entrega.etaLojaMinutos !== null
-                  ? `Chega em ${pedido.entrega.etaLojaMinutos} min`
-                  : 'Sem previsão de chegada'}
+            <h3>{pedido.entrega.entregador ?? corrida.titulo}</h3>
+
+            <p className="corrida__linha">
+              {/*
+                O estado vira pílula tingida, e não uma borda colorida na
+                lateral do cartão. A borda pintava uma faixa de 4 px longe do
+                texto que ela qualificava, e num painel de cartões brancos
+                empilhados só o cartão do entregador tinha lateral colorida —
+                lia-se como defeito de alinhamento antes de ler como estado.
+              */}
+              <span className="corrida__estado">
+                <Icone nome={corrida.icone} tamanho={13} />
+                {pedido.entrega.entregador ? corrida.titulo : 'Corrida'}
+              </span>
+
+              <span className="corrida__apoio">
+                <Icone nome="relogio" tamanho={13} />
+                {pedido.entrega.chegouLojaEm
+                  ? `Na loja há ${decorrido(pedido.entrega.chegouLojaEm, agora)}`
+                  : pedido.entrega.etaLojaMinutos !== null
+                    ? `Chega em ${pedido.entrega.etaLojaMinutos} min`
+                    : 'Sem previsão de chegada'}
+              </span>
             </p>
           </div>
         </section>
@@ -380,7 +388,7 @@ export function DrawerDoPedido({
       */}
       <section className="cartao-d valores">
         <div className="valores__topo">
-          <span>
+          <span className="valores__total">
             <small>Total do pedido</small>
             <strong className="num">{moeda.format(pedido.total)}</strong>
           </span>

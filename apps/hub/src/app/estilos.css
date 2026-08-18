@@ -2912,10 +2912,13 @@
   gap: var(--e-3);
   padding: var(--e-4);
   border: 1px solid var(--borda);
-  border-left: 4px solid var(--borda-forte);
   border-radius: 16px;
   background: var(--superficie-1);
   transition: border-color var(--duracao) var(--curva);
+}
+
+.corrida:hover {
+  border-color: var(--borda-forte);
 }
 
 .corrida__dizer {
@@ -2929,17 +2932,31 @@
   line-height: var(--linha-apertada);
 }
 
+.corrida__linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e-2);
+  margin: var(--e-2) 0 0;
+}
+
+/* O estado numa pílula tingida, colada no nome que ela qualifica. */
 .corrida__estado {
-  margin: 2px 0 0;
-  font-size: var(--texto-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  padding: 2px var(--e-2);
+  border-radius: var(--raio-total);
+  background: var(--superficie-3);
   color: var(--texto-corpo);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
 }
 
 .corrida__apoio {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: var(--e-1);
-  margin: var(--e-1) 0 0;
   font-size: var(--texto-sm);
   color: var(--texto-fraco);
 }
@@ -2998,9 +3015,20 @@
   color: var(--texto-corpo);
 }
 
-.corrida[data-tom='sucesso'] { border-left-color: var(--sucesso); }
-.corrida[data-tom='atencao'] { border-left-color: var(--atencao); }
-.corrida[data-tom='critico'] { border-left-color: var(--alarme-fundo); }
+.corrida[data-tom='sucesso'] .corrida__estado {
+  background: var(--sucesso-suave);
+  color: var(--sucesso);
+}
+
+.corrida[data-tom='atencao'] .corrida__estado {
+  background: var(--atencao-suave);
+  color: var(--atencao);
+}
+
+.corrida[data-tom='critico'] .corrida__estado {
+  background: var(--alarme-suave);
+  color: var(--alarme-suave-texto);
+}
 
 .corrida[data-tom='sucesso'] .corrida__avatar,
 .corrida[data-tom='sucesso'] .corrida__medalha {
@@ -3175,18 +3203,34 @@
  * existem para explicá-lo. Como última linha de uma soma, ele obrigava a
  * atravessar subtotal e taxa antes de chegar no que se queria.
  */
+/*
+ * O total num painel próprio dentro do cartão.
+ *
+ * Uma linha de texto grande sobre branco lia-se como mais um parágrafo — o
+ * número era o maior da tela e mesmo assim não parava o olho. O painel tingido
+ * o transforma em objeto: tem começo, fim e fundo próprio, e é a única coisa
+ * do painel de detalhe que se lê de longe.
+ *
+ * A forma de pagamento mora **dentro** dele, e não na tabela abaixo, porque as
+ * duas perguntas são feitas juntas: quanto é, e como se recebe. Na entrega em
+ * dinheiro a distância entre as duas é o troco que sai da gaveta.
+ */
 .valores__topo {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--e-3);
-  padding-bottom: var(--e-3);
-  border-bottom: 1px solid var(--borda);
+  margin-bottom: var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  border-radius: 12px;
+  background: var(--superficie-3);
 }
 
-.valores__topo > span:first-child {
+.valores__total {
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
 .valores__topo small {
@@ -3201,6 +3245,9 @@
   font-size: var(--texto-2xl);
   font-weight: var(--peso-forte);
   line-height: var(--linha-apertada);
+  /* Números tabulares: a coluna de valores logo abaixo usa a mesma família, e
+     o total precisa alinhar com ela quando os dois estão na tela. */
+  font-variant-numeric: tabular-nums;
 }
 
 /*
@@ -3215,12 +3262,20 @@
   align-items: center;
   gap: var(--e-2);
   padding: var(--e-1) var(--e-3) var(--e-1) var(--e-1);
+  border: 1px solid color-mix(in srgb, var(--atencao) 28%, transparent);
   border-radius: var(--raio-total);
-  background: var(--atencao-suave);
+  /* Branco por dentro do painel cinza: a pílula precisa se destacar do fundo
+     tingido, e um segundo cinza sobre cinza sumiria. */
+  background: var(--superficie-1);
   color: var(--atencao);
   font-size: var(--texto-sm);
   font-weight: var(--peso-forte);
   line-height: var(--linha-apertada);
+}
+
+.valores__pagamento[data-pago] {
+  border-color: color-mix(in srgb, var(--sucesso) 28%, transparent);
+  color: var(--sucesso);
 }
 
 .valores__pagamento > span:last-child {
@@ -3234,27 +3289,24 @@
   opacity: 0.75;
 }
 
+/* O disco carrega o ícone do meio de pagamento — Pix, cartão ou dinheiro. É o
+   que responde "como se recebe" sem gastar uma palavra, e é a única cor cheia
+   do painel do total. */
 .valores__meio {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--atencao) 18%, transparent);
+  background: var(--atencao-suave);
 }
 
 .valores__pagamento[data-pago] .valores__meio {
-  background: color-mix(in srgb, var(--sucesso) 18%, transparent);
+  background: var(--sucesso-suave);
 }
 
-/* Pago é conclusão de etapa, não ação pendente — o mesmo verde do chip de
-   "chegou na loja" no cartão do quadro. */
-.valores__pagamento[data-pago] {
-  background: var(--sucesso-suave);
-  color: var(--sucesso);
-}
 
 .valores__lista {
   margin: 0;

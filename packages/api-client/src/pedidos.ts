@@ -166,6 +166,17 @@ export function criarApiDePedidos(cliente: ApiClient) {
       }),
 
     /**
+     * Um pedido só, completo.
+     *
+     * O resumo que chega pelo socket é enxuto de propósito — sem itens e sem
+     * endereço. Um pedido que entra no quadro por evento, e não pelo snapshot,
+     * chega sem os dois, e o painel de detalhe fica sem o que mostrar. Isto
+     * completa a linha, e só quando o painel abre.
+     */
+    pedido: (id: number, signal?: AbortSignal) =>
+      cliente.requisitar<PedidoDoQuadro>(`/orders/${id}`, { signal }),
+
+    /**
      * O intervalo de mudanças desde um cursor.
      *
      * Validado com zod na chegada: é a resposta de que depende a correção do

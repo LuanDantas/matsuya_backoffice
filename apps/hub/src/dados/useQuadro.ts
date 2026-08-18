@@ -40,6 +40,13 @@ export interface EstadoDoQuadro {
   versaoDasLojas: number
   agoraDoServidor: () => number
   recarregar: () => void
+  /**
+   * Completa um pedido que entrou no quadro pelo socket.
+   *
+   * Ver `completar` na implementação: é uma requisição por leitura, e só quando
+   * a linha está incompleta.
+   */
+  completar: (id: number) => void
 }
 
 /**
@@ -184,6 +191,39 @@ export function useQuadro(unityIds: number[], token: string | null): EstadoDoQua
     }
   }, [api, aplicar, carregarLoja, carregarTudo, token, lojas])
 
+  /*
+   * Completa uma linha que veio do socket.
+   *
+   * O resumo do evento é enxuto de propósito — sem itens e sem endereço —, e o
+   * quadro insere a linha do jeito que ela chega quando o pedido é novo para o
+   * cliente. O cartão vive bem assim; o painel de detalhe, não: ele mostrava
+   * "itens não vieram neste carregamento" e endereço vazio.
+   *
+   * Recarregar o quadro para resolver seria a rajada que o resumo existe para
+   * evitar. Uma busca por pedido, disparada quando o painel abre, custa uma
+   * requisição por leitura — e nenhuma no caminho quente.
+   *
+   * A versão é conferida na volta: se um evento chegou enquanto a busca corria,
+   * o que o socket trouxe é mais novo e vence.
+   */
+  const completar = useCallback(
+    (id: number) => {
+      void api
+        .pedido(id)
+        .then((completo) => {
+          definirPedidos((atuais) =>
+            atuais.map((p) =>
+              p.id === id && completo.version >= p.version ? { ...p, ...completo } : p
+            )
+          )
+        })
+        // Silencioso de propósito: o painel já mostra o que tem, e um erro aqui
+        // não impede ler o pedido nem agir sobre ele.
+        .catch(() => {})
+    },
+    [api]
+  )
+
   const agoraDoServidor = useCallback(() => conexaoRef.current?.agora() ?? Date.now(), [])
 
   return {
@@ -196,5 +236,6 @@ export function useQuadro(unityIds: number[], token: string | null): EstadoDoQua
     versaoDasLojas,
     agoraDoServidor,
     recarregar: () => void carregarTudo(),
+    completar,
   }
 }

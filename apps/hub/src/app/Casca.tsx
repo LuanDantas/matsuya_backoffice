@@ -231,10 +231,21 @@ export function Casca({
     [acoes]
   )
 
-  const abrirDetalhe = useCallback((pedido: PedidoDoQuadro) => {
-    definirConversa(null)
-    definirDetalhe(pedido.id)
-  }, [])
+  const abrirDetalhe = useCallback(
+    (pedido: PedidoDoQuadro) => {
+      definirConversa(null)
+      definirDetalhe(pedido.id)
+
+      /*
+       * Um pedido que entrou no quadro pelo socket vem sem itens e sem
+       * endereço — o resumo do evento é enxuto de propósito. O painel abre
+       * na hora com o que existe e se completa quando a busca volta, em vez
+       * de segurar a abertura por uma requisição.
+       */
+      if (!pedido.items) quadro.completar(pedido.id)
+    },
+    [quadro]
+  )
 
   /**
    * Entrega o quadro à impressão e sai do caminho.
