@@ -1601,74 +1601,236 @@
   font-weight: var(--peso-forte);
 }
 
-.escolha {
-  max-width: 560px;
-  margin: 0 auto;
-  padding: var(--e-8) var(--e-4);
-  padding-top: max(var(--e-8), env(safe-area-inset-top));
-  display: flex;
-  flex-direction: column;
-  gap: var(--e-5);
-}
+/* ── Escolha de unidade ─────────────────────────────────────────────────── */
 
-.escolha__cabecalho {
+/*
+ * A barra da entrada passa a ter dois lados.
+ *
+ * No login ela só carrega a marca; aqui carrega também a saída, que antes
+ * disputava a linha do `<h1>` — um botão "Sair" ao lado da pergunta principal
+ * dá a duas coisas de peso muito diferente o mesmo destaque.
+ */
+.entrada__barra {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--e-4);
 }
 
-.escolha__cabecalho h1 {
-  margin: 0;
-  font-size: var(--texto-2xl);
-  line-height: var(--linha-apertada);
+/*
+ * A coluna abre de 380 para 440.
+ *
+ * 380 foi medido para dois campos empilhados. O cartão de loja é outra coisa:
+ * disco de 44, nome em corpo grande e seta na mesma linha. Em 380 "Vila
+ * Mariana" e a seta começam a disputar o mesmo espaço.
+ */
+.entrada[data-tela='escolha'] .entrada__conteudo {
+  max-width: 440px;
 }
 
-.escolha__nota {
-  margin: var(--e-1) 0 0;
-  font-size: var(--texto-sm);
+.escolha {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-4);
+}
+
+.escolha__busca {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+.escolha__contagem {
+  margin: 0;
+  font-size: var(--texto-xs);
   color: var(--texto-fraco);
 }
 
 .escolha__lista {
   list-style: none;
   margin: 0;
-  padding: 0;
+  /* 2px à direita para o polegar da rolagem não encostar na borda do cartão. */
+  padding: 0 2px 0 0;
   display: flex;
   flex-direction: column;
   gap: var(--e-2);
+  /*
+   * A lista rola dentro da coluna, e não a coluna dentro da página: com trinta
+   * e cinco lojas, deixar a página crescer empurraria a barra da marca e a
+   * pergunta para fora da tela, e a pessoa rolaria para cima para lembrar o que
+   * estava respondendo.
+   */
+  max-height: min(56vh, 520px);
+  overflow-y: auto;
+}
+
+/*
+ * Entrada escalonada, 40 ms entre cartões — o mesmo compasso das seções do
+ * detalhe do pedido, para as duas telas terem o mesmo andamento.
+ *
+ * `--ordem` vem do componente e satura no oitavo item. Sem o teto, a trigésima
+ * quinta loja apareceria um segundo e meio depois da primeira: o escalonamento
+ * deixaria de dar ritmo e passaria a fazer esperar.
+ */
+.escolha__item {
+  animation: escolha-entra 260ms var(--curva) both;
+  animation-delay: calc(var(--ordem, 0) * 40ms);
+}
+
+@keyframes escolha-entra {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 }
 
 .escolha__opcao {
   width: 100%;
-  /* 60 px: acima do mínimo, porque esta é uma escolha feita uma vez por turno,
-     muitas vezes com a mão ocupada. */
-  min-height: 60px;
+  /*
+   * 72 px. O mínimo de toque é 44, mas esta é a primeira escolha do turno,
+   * feita muitas vezes com a mão ocupada — e o cartão agora carrega duas
+   * linhas de texto ao lado de um disco de 44.
+   */
+  min-height: 72px;
   display: flex;
   align-items: center;
   gap: var(--e-3);
-  padding: 0 var(--e-4);
-  border: 1px solid var(--borda);
+  padding: var(--e-2) var(--e-4) var(--e-2) var(--e-2);
+  border: 1px solid var(--borda-forte);
   border-radius: var(--raio-2);
   background: var(--superficie-1);
-  color: var(--texto-fraco);
+  color: var(--texto-apagado);
   font: inherit;
+  text-align: left;
   cursor: pointer;
   transition:
     background-color var(--duracao-rapida) var(--curva),
-    border-color var(--duracao-rapida) var(--curva);
+    border-color var(--duracao-rapida) var(--curva),
+    opacity var(--duracao) var(--curva),
+    transform var(--duracao-rapida) var(--curva);
 }
 
-.escolha__opcao:hover {
-  background: var(--superficie-2);
-  border-color: var(--marca);
+.escolha__opcao:hover:not(:disabled) {
+  background: var(--superficie-3);
+  /* Cinza e não marca: vermelho na borda diria "algo aconteceu" onde só diz
+     "o ponteiro está em cima" — a mesma regra dos botões do cabeçalho. */
+  border-color: var(--texto-apagado);
+}
+
+.escolha__opcao:hover:not(:disabled) .escolha__seta,
+.escolha__opcao:focus-visible .escolha__seta {
+  transform: translateX(3px);
+}
+
+.escolha__opcao:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.escolha__opcao:disabled {
+  cursor: default;
+}
+
+/*
+ * O disco.
+ *
+ * A cor vem do nome (`corDaLoja`) e por isso é a mesma em qualquer tema — o
+ * hash não sabe se está claro ou escuro. O conteúdo dele precisa seguir a
+ * mesma regra: `--texto-inverso` viraria tinta escura no tema escuro, sobre um
+ * disco que continuou médio-escuro. Branco cravado é o correto aqui, e é a
+ * exceção justamente porque o fundo também não é token.
+ *
+ * Dentro vai ícone, não letra. As nove lojas se chamam `MATSUYA <bairro>`, e a
+ * inicial seria "M" nove vezes — decoração fingindo ser identificação. O ícone
+ * também baixa a exigência de contraste de 4,5:1 (texto) para 3:1 (elemento
+ * gráfico), que estes tons sustentam em qualquer matiz; a versão com letra
+ * não sustenta.
+ */
+.escolha__disco {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: var(--raio-2);
+  color: #ffffff;
+  transition: background-color var(--duracao) var(--curva);
 }
 
 .escolha__nome {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.escolha__nome strong {
   font-size: var(--texto-lg);
-  font-weight: var(--peso-medio);
+  font-weight: 600;
+  line-height: var(--linha-apertada);
   color: var(--texto);
+  /* Sem quebra: em 440 px cabe, e se um dia não couber, reticências desalinham
+     menos que uma segunda linha empurrando o disco para cima. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.escolha__nome small {
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+.escolha__seta {
+  flex-shrink: 0;
+  transition: transform var(--duracao-rapida) var(--curva);
+}
+
+/*
+ * A confirmação.
+ *
+ * O disco escolhido troca a cor da loja pela marca e o ícone pelo check — a
+ * confirmação ocupa o elemento que já estava lá, em vez de acrescentar um
+ * segundo ao lado dele. As outras lojas esbatem: a decisão precisa parecer
+ * tomada, não pendente, nos 240 ms até o quadro montar.
+ */
+.escolha__opcao[data-escolhida] {
+  border-color: var(--marca);
+  background: var(--marca-suave);
+}
+
+.escolha__opcao[data-esbatida] {
+  opacity: 0.4;
+}
+
+.escolha__vazio {
+  margin: 0;
+  padding: var(--e-6) var(--e-4);
+  border: 1px dashed var(--borda-forte);
+  border-radius: var(--raio-2);
+  text-align: center;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .escolha__item {
+    animation: none;
+  }
+
+  .escolha__opcao:hover:not(:disabled) .escolha__seta,
+  .escolha__opcao:focus-visible .escolha__seta,
+  .escolha__opcao:active:not(:disabled) {
+    transform: none;
+  }
+
+  /* Com movimento reduzido a escolha vai direto para o quadro, sem os 240 ms
+     de confirmação — então o esbatimento não chega a ser lido, e apagar meia
+     tela por um quadro é pior do que não apagar. */
+  .escolha__opcao[data-esbatida] {
+    opacity: 1;
+  }
 }
 
 /* ── Reconciliação da fila offline ──────────────────────────────────────── */

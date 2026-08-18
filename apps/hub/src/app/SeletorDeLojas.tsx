@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Botao, Icone } from '@matsuya/ui'
 import type { EstadoDaLoja, Identidade } from '@matsuya/api-client'
+import { corDaLoja } from './loja'
 
 /**
  * Seleção de lojas do cabeçalho.
@@ -14,19 +15,6 @@ import type { EstadoDaLoja, Identidade } from '@matsuya/api-client'
  * `unity` não tem campo de imagem, e um espaço reservado cinza para todas seria
  * ruído em vez de identificação.
  */
-
-/**
- * Cor estável a partir do nome.
- *
- * Determinística de propósito: a mesma loja tem sempre a mesma cor, em qualquer
- * tablet e depois de qualquer recarga. Cor sorteada faria o operador reaprender
- * a associação toda vez.
- */
-function corDaLoja(nome: string): string {
-  let soma = 0
-  for (let i = 0; i < nome.length; i += 1) soma = (soma + nome.charCodeAt(i)) % 360
-  return `hsl(${soma} 45% 38%)`
-}
 
 const inicial = (nome: string) => nome.trim().charAt(0).toUpperCase()
 

@@ -3,7 +3,13 @@ import { Icone, Marca } from '@matsuya/ui'
 import { useFonteDaEntrada } from './fonteDaEntrada'
 
 /**
- * O layout das telas de autenticação — entrada e recuperação de senha.
+ * O layout das telas de entrada — login, recuperação de senha e escolha da loja.
+ *
+ * A escolha da loja entrou depois, e é o motivo de existirem `acao`, `rodape` e
+ * `variante`: ela acontece com a pessoa já autenticada, precisa de uma saída na
+ * barra e não precisa mais da frase que apresenta o produto. Sem a moldura
+ * comum, quem acabava de entrar caía num `<ul>` cinza um segundo depois de uma
+ * tela de duas colunas — o mesmo fluxo parecendo dois produtos.
  *
  * Formulário à esquerda, com a marca numa barra no topo; painel decorativo à
  * direita. O painel some abaixo de 1024px, e some inteiro em vez de encolher:
@@ -25,16 +31,25 @@ import { useFonteDaEntrada } from './fonteDaEntrada'
 export function LayoutDeEntrada({
   titulo,
   subtitulo,
+  acao,
+  rodape,
+  variante,
   children,
 }: {
   titulo: string
   subtitulo: string
+  /** Ação da barra do topo, ao lado da marca. Hoje só a saída da escolha de loja. */
+  acao?: ReactNode
+  /** Substitui o texto do painel. Sem isto, vale a frase que apresenta o produto. */
+  rodape?: ReactNode
+  /** Vira `data-tela` na raiz, para o CSS variar sem afetar as outras entradas. */
+  variante?: string
   children: ReactNode
 }) {
   useFonteDaEntrada()
 
   return (
-    <div className="entrada">
+    <div className="entrada" data-tela={variante}>
       <div className="entrada__coluna">
         <header className="entrada__barra">
           <span className="entrada__marca">
@@ -44,6 +59,7 @@ export function LayoutDeEntrada({
               <small>Matsuya</small>
             </span>
           </span>
+          {acao}
         </header>
 
         <main className="entrada__area">
@@ -74,8 +90,8 @@ export function LayoutDeEntrada({
         </div>
 
         <p className="entrada__rodape">
-          O quadro que a loja opera: pedidos ao vivo, entregas e comandas no
-          mesmo lugar, com prazo que cobra sozinho.
+          {rodape ??
+            'O quadro que a loja opera: pedidos ao vivo, entregas e comandas no mesmo lugar, com prazo que cobra sozinho.'}
         </p>
       </aside>
     </div>
