@@ -62,6 +62,28 @@ const ROTULO_DO_PAGAMENTO: Record<string, string> = {
   on_delivery: 'Na entrega',
 }
 
+const ICONE_DO_PAGAMENTO: Record<string, NomeDoIcone> = {
+  pix: 'pix',
+  card: 'cartao',
+  on_delivery: 'dinheiro',
+}
+
+/**
+ * Iniciais do entregador, para o avatar.
+ *
+ * Iniciais e não foto porque **a API não tem foto de entregador**. Um
+ * `placeholder` genérico de silhueta diria menos do que duas letras, que ao
+ * menos pertencem a esta pessoa e ajudam a distinguir dois entregadores na
+ * mesma loja.
+ */
+function iniciais(nome: string): string {
+  const partes = nome.trim().split(/\s+/).filter(Boolean)
+  if (partes.length === 0) return '?'
+  const primeira = partes[0]![0]!
+  const ultima = partes.length > 1 ? partes[partes.length - 1]![0]! : ''
+  return (primeira + ultima).toUpperCase()
+}
+
 const VERBO_DO_PRAZO: Record<'aceite' | 'preparo', string> = {
   aceite: 'Aceitar',
   preparo: 'Preparar',
@@ -129,7 +151,13 @@ export function DrawerDoPedido({
       titulo={
         <div className="capa__identidade">
           <span className="capa__codigo num">{pedido.code ?? `#${pedido.id}`}</span>
-          {pedido.customerLabel && <h2>{pedido.customerLabel}</h2>}
+          {/*
+            Com reserva: sem o nome a capa mostrava só um número, e o painel
+            perdia a única coisa que diz de quem é o pedido. "Cliente não
+            identificado" é pior do que um nome e melhor do que nada — e
+            deixa claro que falta o dado, em vez de parecer um espaço vazio.
+          */}
+          <h2>{pedido.customerLabel ?? 'Cliente não identificado'}</h2>
         </div>
       }
       subtitulo={
@@ -137,14 +165,17 @@ export function DrawerDoPedido({
           <span>
             <Icone nome="loja" tamanho={14} />
             {nomeDaUnidade}
+            <span aria-hidden="true">·</span>
+            Feito às {horario.format(new Date(pedido.createdAt))}
           </span>
-          <span>
-            <Icone nome="relogio" tamanho={14} />
-            {horario.format(new Date(pedido.createdAt))} · há{' '}
-            {decorrido(pedido.createdAt, agora)}
-          </span>
-          <span className="capa__modo">
-            <Icone nome={retirada ? 'casa' : 'moto'} tamanho={14} />
+
+          {/*
+            O modo vira crachá com peso próprio: é o que muda o que a loja faz
+            com o pedido pronto — chamar o entregador ou o cliente no balcão —
+            e antes era mais uma palavra cinza no meio da linha de metadados.
+          */}
+          <span className="capa__modo" data-modo={retirada ? 'retirada' : 'entrega'}>
+            <Icone nome={retirada ? 'casa' : 'moto'} tamanho={15} />
             {retirada ? 'Retirada' : 'Entrega'}
           </span>
         </>
@@ -194,7 +225,9 @@ export function DrawerDoPedido({
             return (
               <Botao
                 key={acao}
-                enfase={info.enfase}
+                /* `tom` sobrepõe a cor sem tirar o papel de ação primária —
+                   ver `DescricaoDaAcao` nos contratos. */
+                enfase={info.tom ?? info.enfase}
                 carregando={ocupado}
                 onClick={() => aoPedirAcao(acao)}
               >
@@ -219,17 +252,37 @@ export function DrawerDoPedido({
       )}
 
       {corrida && pedido.entrega && (
-        <section className="cartao-d cartao-d--corrida" data-tom={corrida.tom}>
-          <span className="cartao-d__medalha" aria-hidden="true">
-            <Icone nome={corrida.icone} tamanho={22} />
-          </span>
+        <section className="corrida" data-tom={corrida.tom}>
+          {/*
+            Avatar com iniciais quando há nome; a medalha do estado quando não
+            há. A API só manda o nome depois que o entregador chega na loja —
+            antes disso não existe pessoa a apresentar, e um círculo com "?"
+            seria um espaço reservado fingindo ser informação.
+          */}
+          {pedido.entrega.entregador ? (
+            <span className="corrida__avatar" aria-hidden="true">
+              {iniciais(pedido.entrega.entregador)}
+              <span className="corrida__selo">
+                <Icone nome={corrida.icone} tamanho={12} />
+              </span>
+            </span>
+          ) : (
+            <span className="corrida__medalha" aria-hidden="true">
+              <Icone nome={corrida.icone} tamanho={22} />
+            </span>
+          )}
 
-          <div>
-            <h3>{corrida.titulo}</h3>
-            {pedido.entrega.entregador && (
-              <p className="cartao-d__quem">{pedido.entrega.entregador}</p>
+          <div className="corrida__dizer">
+            {pedido.entrega.entregador ? (
+              <>
+                <h3>{pedido.entrega.entregador}</h3>
+                <p className="corrida__estado">{corrida.titulo}</p>
+              </>
+            ) : (
+              <h3>{corrida.titulo}</h3>
             )}
-            <p className="cartao-d__apoio">
+            <p className="corrida__apoio">
+              <Icone nome="relogio" tamanho={13} />
               {pedido.entrega.chegouLojaEm
                 ? `Na loja há ${decorrido(pedido.entrega.chegouLojaEm, agora)}`
                 : pedido.entrega.etaLojaMinutos !== null
@@ -276,6 +329,19 @@ export function DrawerDoPedido({
         <ul className="itens">
           {itens.map((item) => (
             <li key={item.id}>
+              {/*
+                Miniatura com o fundo tingido por baixo: é ele que aparece se a
+                foto não carregar, e produto sem foto cadastrada é comum. Um
+                quadrado de ícone quebrado no meio da lista de conferência seria
+                pior do que um quadrado liso com a inicial.
+              */}
+              <span className="itens__foto" aria-hidden="true">
+                {item.imageUrl ? (
+                  <img src={item.imageUrl} alt="" width={44} height={44} loading="lazy" decoding="async" />
+                ) : (
+                  <Icone nome="sacola" tamanho={18} />
+                )}
+              </span>
               <span className="itens__qtd num">{item.qty}×</span>
               <span className="itens__nome">
                 {item.productName}
@@ -318,12 +384,23 @@ export function DrawerDoPedido({
             <small>Total do pedido</small>
             <strong className="num">{moeda.format(pedido.total)}</strong>
           </span>
+          {/*
+            O meio de pagamento em disco, com o estado ao lado. São duas
+            perguntas diferentes — "como paga" e "já pagou" — e antes só a
+            segunda tinha resposta visível aqui; a primeira estava três linhas
+            abaixo, na tabela.
+          */}
           <span
             className="valores__pagamento"
             data-pago={pedido.paymentStatus === 'paid' || undefined}
           >
-            <Icone nome={pedido.paymentStatus === 'paid' ? 'check' : 'relogio'} tamanho={14} />
-            {pedido.paymentStatus === 'paid' ? 'Pago' : 'A receber'}
+            <span className="valores__meio" aria-hidden="true">
+              <Icone nome={ICONE_DO_PAGAMENTO[pedido.paymentMethod] ?? 'dinheiro'} tamanho={16} />
+            </span>
+            <span>
+              <small>{ROTULO_DO_PAGAMENTO[pedido.paymentMethod] ?? pedido.paymentMethod}</small>
+              {pedido.paymentStatus === 'paid' ? 'Pago' : 'A receber'}
+            </span>
           </span>
         </div>
 

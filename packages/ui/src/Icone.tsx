@@ -46,8 +46,16 @@ export type NomeDoIcone =
   | 'impressora'
   | 'olho'
   | 'olho-cortado'
+  | 'cartao'
+  | 'pix'
+  | 'dinheiro'
 
 const CAMINHOS: Record<NomeDoIcone, string> = {
+  cartao: 'M2 8a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3zM2 10h20M6 15h3',
+  // O losango do Pix, com as quatro pontas — é a forma que a marca registrou
+  // e a única coisa dela que se reconhece em 16px.
+  pix: 'm12 2.6 4.3 4.3M12 2.6 7.7 6.9M2.6 12l4.3-4.3M2.6 12l4.3 4.3M21.4 12l-4.3-4.3M21.4 12l-4.3 4.3M12 21.4l4.3-4.3M12 21.4l-4.3-4.3M9.2 9.2h5.6v5.6H9.2z',
+  dinheiro: 'M2 7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M5.5 9v.01M18.5 15v.01',
   check: 'M20 6 9 17l-5-5',
   x: 'M18 6 6 18M6 6l12 12',
   relogio: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 7v5l3 2',

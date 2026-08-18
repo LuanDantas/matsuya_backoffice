@@ -38,6 +38,16 @@ export interface DescricaoDaAcao {
   confirmar: boolean
   /** Destaque visual do botão no quadro. */
   enfase: 'primaria' | 'secundaria' | 'destrutiva'
+  /**
+   * Cor do botão, quando ela precisa contradizer a ênfase.
+   *
+   * Separado de `enfase` de propósito: a ênfase diz **o papel** da ação — é
+   * `enfase === 'primaria'` que o cartão do quadro usa para escolher qual das
+   * ações vira o botão grande. Tingir "Pedido pronto" de verde mexendo na
+   * ênfase tiraria dele esse papel, e o cartão em preparo ficaria sem ação
+   * nenhuma. Aqui a cor muda e o papel fica.
+   */
+  tom?: 'sucesso'
 }
 
 export const ORDER_ACTION_INFO: Record<OrderAction, DescricaoDaAcao> = {
@@ -73,9 +83,12 @@ export const ORDER_ACTION_INFO: Record<OrderAction, DescricaoDaAcao> = {
     para: 'ready',
     permissao: 'orders:ready',
     motivo: null,
-    rotulo: 'Pronto',
+    rotulo: 'Pedido pronto',
     confirmar: false,
     enfase: 'primaria',
+    // Verde: é a única transição do fluxo que encerra o trabalho da cozinha.
+    // As outras passam o pedido adiante; esta diz que ele ficou pronto.
+    tom: 'sucesso',
   },
   dispatch: {
     de: ['ready'],
@@ -136,7 +149,7 @@ export const ORDER_ACTION_INFO: Record<OrderAction, DescricaoDaAcao> = {
     para: 'cancelled',
     permissao: 'orders:cancel',
     motivo: 'CAN',
-    rotulo: 'Cancelar',
+    rotulo: 'Cancelar pedido',
     confirmar: true,
     enfase: 'destrutiva',
   },

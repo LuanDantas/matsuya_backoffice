@@ -97,6 +97,21 @@
 
 /* Destrutiva é contornada, não preenchida: peso visual de ação irreversível
    deve ser menor que o da ação desejada, não maior. */
+/* Verde claro, e não verde sólido: sólido é o peso do botão primário, e num
+   rodapé com "Cancelar pedido" ao lado dois botões cheios brigam. Aqui o
+   preenchimento suave com o texto forte diz "confirme" sem gritar. */
+.ui-botao[data-enfase='sucesso'] {
+  background: var(--sucesso-suave);
+  border-color: color-mix(in srgb, var(--sucesso) 40%, transparent);
+  color: var(--sucesso);
+  font-weight: var(--peso-forte);
+}
+
+.ui-botao[data-enfase='sucesso']:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--sucesso) 16%, var(--sucesso-suave));
+  border-color: var(--sucesso);
+}
+
 .ui-botao[data-enfase='destrutiva'] {
   background: transparent;
   border-color: var(--perigo);

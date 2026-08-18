@@ -107,6 +107,14 @@ export interface PedidoDoQuadro {
     cancelledQty?: number
     unitPrice: number
     lineTotal?: number
+    /**
+     * Foto do produto no catálogo — **não** um instantâneo do pedido.
+     *
+     * É a única coisa do produto que viaja junto do item, e serve para a
+     * miniatura da lista. Nula é comum e legítima: produto sem foto cadastrada,
+     * ou pedido cujo produto foi removido do catálogo depois.
+     */
+    imageUrl?: string | null
     /** Opções escolhidas, congeladas no momento do pedido. */
     optionsSnapshot?: Array<{
       groupId: number

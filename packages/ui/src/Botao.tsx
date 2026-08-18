@@ -15,7 +15,14 @@ import { Icone, type NomeDoIcone } from './Icone'
  *   ao lado, para o dedo não perder o alvo no meio do gesto.
  */
 
-export type EnfaseDoBotao = 'primaria' | 'secundaria' | 'destrutiva' | 'fantasma'
+/**
+ * `sucesso` existe para uma ação só: "Pedido pronto".
+ *
+ * É a única transição do fluxo que **encerra** trabalho em vez de passar o
+ * pedido adiante, e o verde é o que já diz encerramento no resto do sistema.
+ * Continua sendo uma ação primária no papel — ver `tom` em `DescricaoDaAcao`.
+ */
+export type EnfaseDoBotao = 'primaria' | 'secundaria' | 'destrutiva' | 'fantasma' | 'sucesso'
 
 export interface PropsDoBotao extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className'> {
   enfase?: EnfaseDoBotao

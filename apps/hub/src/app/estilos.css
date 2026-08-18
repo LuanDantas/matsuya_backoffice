@@ -2414,10 +2414,25 @@
   color: var(--capa-texto);
 }
 
+/*
+ * O crachá do modo.
+ *
+ * Ganha corpo porque é o que muda o que a loja faz com o pedido pronto —
+ * chamar o entregador ou o cliente no balcão. Como palavra cinza no meio da
+ * linha de metadados ele se lia como categoria; em vidro sólido, com o ícone
+ * do veículo ou da casa, ele se lê como instrução.
+ */
 .capa__modo {
-  padding: 2px var(--e-2);
-  border: 1px solid rgb(255 255 255 / 0.35);
+  gap: var(--e-2);
+  padding: var(--e-1) var(--e-3);
+  border: 1px solid rgb(255 255 255 / 0.4);
   border-radius: var(--raio-total);
+  background: rgb(255 255 255 / 0.16);
+  color: var(--capa-texto);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 /*
@@ -2659,10 +2674,11 @@
 .trilha li::before {
   content: '';
   position: absolute;
-  top: 8px;
+  top: 10px;
   right: 50%;
   left: -50%;
-  height: 2px;
+  height: 3px;
+  border-radius: var(--raio-total);
   background: var(--borda);
   transition: background-color var(--duracao) var(--curva);
 }
@@ -2676,17 +2692,31 @@
   background: var(--sucesso);
 }
 
+/*
+ * O ponto fica **acima** do trilho.
+ *
+ * Os dois são posicionados e irmãos, e sem `z-index` quem pinta por último
+ * vence — o trilho, que vem depois na ordem do documento. O risco atravessava
+ * a bolinha e cortava o visto branco no meio. Uma camada explícita resolve, e
+ * é explícita de propósito: a ordem do documento aqui é acidente de marcação,
+ * não decisão de desenho.
+ *
+ * O anel branco em volta separa o ponto do trilho quando os dois estão na
+ * mesma cor — sem ele, etapa cumprida e caminho cumprido viram uma barra só.
+ */
 .trilha__ponto {
   position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   border: 2px solid var(--borda-forte);
   border-radius: 50%;
   background: var(--superficie-1);
   color: var(--texto-inverso);
+  box-shadow: 0 0 0 3px var(--superficie-1);
   transition:
     background-color var(--duracao) var(--curva),
     border-color var(--duracao) var(--curva);
@@ -2746,17 +2776,29 @@
 
 /* ── Avisos ─────────────────────────────────────────────────────────────── */
 
+/*
+ * A observação do cliente.
+ *
+ * É a linha que a cozinha erra, e ela precisa parar o olho que está descendo
+ * o painel. Três coisas fazem isso sem gritar: a faixa âmbar na borda
+ * esquerda, o texto no corpo do texto normal — e não no tamanho de nota — e o
+ * disco do ícone, que dá ao bloco a mesma âncora à esquerda que os cartões têm.
+ *
+ * Âmbar e não vermelho: uma observação não é um alarme, é uma instrução. O
+ * vermelho deste sistema está reservado para o que deu errado.
+ */
 .aviso-d {
   display: flex;
   align-items: flex-start;
   gap: var(--e-3);
   margin: 0;
-  padding: var(--e-3);
-  border: 1px solid color-mix(in srgb, var(--atencao) 32%, transparent);
-  border-radius: 14px;
+  padding: var(--e-4);
+  border: 1px solid color-mix(in srgb, var(--atencao) 30%, transparent);
+  border-left: 4px solid var(--atencao);
+  border-radius: 16px;
   background: var(--atencao-suave);
   color: var(--atencao);
-  font-size: var(--texto-sm);
+  font-size: var(--texto-base);
   line-height: var(--linha-normal);
 }
 
@@ -2764,19 +2806,19 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--atencao) 16%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--atencao) 18%, transparent);
 }
 
 .aviso-d span:last-child {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--e-1);
   min-width: 0;
-  padding-top: 5px;
+  padding-top: 2px;
 }
 
 .aviso-d small {
@@ -2864,61 +2906,123 @@
  * que muda por conta de alguém que não está aqui: ele chega, sai, some. A cor
  * à esquerda é onde essa mudança aparece.
  */
-.cartao-d--corrida {
+.corrida {
   display: flex;
   align-items: center;
   gap: var(--e-3);
+  padding: var(--e-4);
+  border: 1px solid var(--borda);
   border-left: 4px solid var(--borda-forte);
+  border-radius: 16px;
+  background: var(--superficie-1);
+  transition: border-color var(--duracao) var(--curva);
 }
 
-.cartao-d--corrida h3 {
+.corrida__dizer {
+  min-width: 0;
+}
+
+.corrida h3 {
   margin: 0;
-  font-size: var(--texto-base);
+  font-size: var(--texto-lg);
   font-weight: var(--peso-forte);
+  line-height: var(--linha-apertada);
 }
 
-.cartao-d__quem {
+.corrida__estado {
   margin: 2px 0 0;
   font-size: var(--texto-sm);
   color: var(--texto-corpo);
 }
 
-.cartao-d__apoio {
-  margin: 2px 0 0;
+.corrida__apoio {
+  display: flex;
+  align-items: center;
+  gap: var(--e-1);
+  margin: var(--e-1) 0 0;
   font-size: var(--texto-sm);
   color: var(--texto-fraco);
 }
 
-.cartao-d--corrida[data-tom='sucesso'] { border-left-color: var(--sucesso); }
-.cartao-d--corrida[data-tom='atencao'] { border-left-color: var(--atencao); }
-.cartao-d--corrida[data-tom='critico'] { border-left-color: var(--alarme-fundo); }
-
-.cartao-d__medalha {
+/*
+ * O avatar em iniciais.
+ *
+ * **Não há foto de entregador na API** — nem avaliação. Duas letras que
+ * pertencem a esta pessoa dizem mais do que uma silhueta genérica, e não
+ * fingem um dado que não existe. Quando a API passar a mandar foto e nota, é
+ * aqui que elas entram: a moldura, o tamanho e o selo já estão no lugar.
+ */
+.corrida__avatar {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--superficie-3);
+  color: var(--texto-corpo);
+  font-size: var(--texto-base);
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.02em;
+}
+
+/* O selo do estado no canto do avatar: quem é a pessoa e o que ela está
+   fazendo são duas informações, e empilhá-las no mesmo círculo é o que faz o
+   cartão caber numa linha em vez de duas. */
+.corrida__selo {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--superficie-1);
+  border-radius: 50%;
+  background: var(--texto-fraco);
+  color: var(--texto-inverso);
+}
+
+.corrida__medalha {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
   flex-shrink: 0;
   border-radius: 50%;
   background: var(--superficie-3);
   color: var(--texto-corpo);
 }
 
-.cartao-d--corrida[data-tom='sucesso'] .cartao-d__medalha {
+.corrida[data-tom='sucesso'] { border-left-color: var(--sucesso); }
+.corrida[data-tom='atencao'] { border-left-color: var(--atencao); }
+.corrida[data-tom='critico'] { border-left-color: var(--alarme-fundo); }
+
+.corrida[data-tom='sucesso'] .corrida__avatar,
+.corrida[data-tom='sucesso'] .corrida__medalha {
   background: var(--sucesso-suave);
   color: var(--sucesso);
 }
 
-.cartao-d--corrida[data-tom='atencao'] .cartao-d__medalha {
+.corrida[data-tom='atencao'] .corrida__avatar,
+.corrida[data-tom='atencao'] .corrida__medalha {
   background: var(--atencao-suave);
   color: var(--atencao);
 }
 
-.cartao-d--corrida[data-tom='critico'] .cartao-d__medalha {
+.corrida[data-tom='critico'] .corrida__avatar,
+.corrida[data-tom='critico'] .corrida__medalha {
   background: var(--alarme-suave);
   color: var(--alarme-suave-texto);
 }
+
+.corrida[data-tom='sucesso'] .corrida__selo { background: var(--sucesso); }
+.corrida[data-tom='atencao'] .corrida__selo { background: var(--atencao); }
+.corrida[data-tom='critico'] .corrida__selo { background: var(--alarme-fundo); }
 
 /* ── Endereço ───────────────────────────────────────────────────────────── */
 
@@ -2953,25 +3057,64 @@
   flex-direction: column;
 }
 
+/*
+ * A linha do item: foto, quantidade, nome, preço.
+ *
+ * `align-items: center` e não `baseline`: com a miniatura de 44 px na primeira
+ * coluna, alinhar pela linha de base do texto deixaria a foto pendurada.
+ *
+ * O realce do ponteiro sangra até a borda do cartão pela margem negativa —
+ * numa lista de dez itens com opções, é o que mantém o olho na linha certa ao
+ * cruzar do nome para o preço.
+ */
 .itens li {
   display: grid;
-  grid-template-columns: 38px 1fr auto;
+  grid-template-columns: 44px 34px 1fr auto;
   gap: var(--e-3);
-  align-items: baseline;
+  align-items: center;
   padding: var(--e-2);
   margin: 0 calc(var(--e-2) * -1);
-  border-radius: 10px;
   transition: background-color var(--duracao) var(--curva);
 }
 
-/* Realce da linha sob o ponteiro. Numa lista de dez itens com opções, é o que
-   mantém o olho na linha certa ao cruzar do nome para o preço. */
 .itens li:hover {
   background: var(--superficie-3);
 }
 
+/*
+ * A divisória é reta, sem canto arredondado.
+ *
+ * O realce do ponteiro tinha 10 px de raio, e o arredondado sobrava nas pontas
+ * da linha divisória logo abaixo — duas curvas soltas onde deveria haver um
+ * risco. Uma lista de conferência quer réguas, não fichas empilhadas.
+ */
 .itens li + li {
   border-top: 1px solid var(--borda);
+}
+
+/*
+ * A miniatura, com fundo tingido por baixo.
+ *
+ * É ele que aparece se a foto não carregar, e produto sem foto cadastrada é
+ * comum. Dimensões declaradas para o espaço existir antes de a imagem chegar:
+ * sem isso a lista pula conforme as fotos entram, uma a uma.
+ */
+.itens__foto {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--superficie-3);
+  color: var(--texto-fraco);
+}
+
+.itens__foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* Quantidade em disco: numa lista longa a coluna de números é o que a cozinha
@@ -2980,7 +3123,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 2px 0;
+  padding: 3px 0;
   border-radius: 8px;
   background: var(--superficie-3);
   font-weight: var(--peso-forte);
@@ -3060,16 +3203,50 @@
   line-height: var(--linha-apertada);
 }
 
+/*
+ * Meio de pagamento e estado, juntos.
+ *
+ * São duas perguntas — "como paga" e "já pagou" — e só a segunda tinha
+ * resposta visível aqui; a primeira estava três linhas abaixo, na tabela. Na
+ * entrega em dinheiro a diferença entre elas é o troco que sai da gaveta.
+ */
 .valores__pagamento {
   display: inline-flex;
   align-items: center;
-  gap: var(--e-1);
-  padding: var(--e-1) var(--e-3);
+  gap: var(--e-2);
+  padding: var(--e-1) var(--e-3) var(--e-1) var(--e-1);
   border-radius: var(--raio-total);
   background: var(--atencao-suave);
   color: var(--atencao);
-  font-size: var(--texto-xs);
+  font-size: var(--texto-sm);
   font-weight: var(--peso-forte);
+  line-height: var(--linha-apertada);
+}
+
+.valores__pagamento > span:last-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.valores__pagamento small {
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-medio);
+  opacity: 0.75;
+}
+
+.valores__meio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--atencao) 18%, transparent);
+}
+
+.valores__pagamento[data-pago] .valores__meio {
+  background: color-mix(in srgb, var(--sucesso) 18%, transparent);
 }
 
 /* Pago é conclusão de etapa, não ação pendente — o mesmo verde do chip de
