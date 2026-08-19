@@ -1,7 +1,7 @@
 import { FalhaDaApi, FalhaDeRede } from './cliente'
 
 /**
- * Entrar, sair e recuperar senha.
+ * Entrar, recuperar a senha e trocá-la já estando dentro.
  *
  * ## Por que este módulo não usa o `ApiClient`
  *
@@ -46,24 +46,44 @@ export interface OpcoesDaApiDeSessao {
   fetchImpl?: typeof fetch
 }
 
+interface Extras {
+  metodo?: 'POST' | 'PUT'
+  /** Token de sessão. Sem ele, nenhum cabeçalho de autorização é enviado. */
+  token?: string
+}
+
 async function enviar<T>(
   opcoes: OpcoesDaApiDeSessao,
   caminho: string,
-  corpo: unknown
+  corpo: unknown,
+  extras?: Extras
 ): Promise<T> {
   const executar = opcoes.fetchImpl ?? globalThis.fetch
+
+  const cabecalhos: Record<string, string> = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+  }
+  if (extras?.token) cabecalhos.Authorization = `Bearer ${extras.token}`
 
   let resposta: Response
 
   try {
     resposta = await executar(`${opcoes.origem.replace(/\/$/, '')}${caminho}`, {
-      method: 'POST',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      // O padrão é `POST` para que as quatro rotas que já usavam esta função
+      // continuem idênticas ao que eram.
+      method: extras?.metodo ?? 'POST',
+      headers: cabecalhos,
       body: JSON.stringify(corpo),
     })
   } catch (causa) {
     throw new FalhaDeRede(causa)
   }
+
+  // `204 No Content` **antes** de tentar ler o corpo. Sem isto o `json()` lança
+  // e o `catch` abaixo devolve `null` — funciona por acidente, e um acidente
+  // some quando alguém mexe no tratamento de erro.
+  if (resposta.status === 204) return undefined as T
 
   let lido: unknown = null
   try {
@@ -113,6 +133,30 @@ export function criarApiDeSessao(opcoes: OpcoesDaApiDeSessao) {
         token,
         newPassword: novaSenha,
       }),
+
+    /**
+     * Troca a senha de quem já está dentro.
+     *
+     * `PUT /users/current/password` → `204` sem corpo. A senha atual é conferida
+     * no servidor; quando não bate, vem `400 { message: 'Senha incorreta' }` — a
+     * única mensagem que aquele controlador emite de propósito, e por isso a
+     * única sobre a qual vale ramificar.
+     *
+     * Mora aqui, e não no `ApiClient`, pelos três motivos do cabeçalho deste
+     * arquivo: a rota está na raiz e não em `/api/v1`, a resposta não vem
+     * envelopada em `{ data, meta }`, e o erro é `{ message }` cru. O transporte
+     * novo quebraria na desserialização do envelope antes de chegar ao erro.
+     *
+     * O `401` aqui é sessão morta de verdade — quem chama decide o que fazer,
+     * porque este módulo não conhece o gancho global de expiração.
+     */
+    alterarSenha: (token: string, atual: string, nova: string) =>
+      enviar<void>(
+        opcoes,
+        '/users/current/password',
+        { currentPassword: atual, newPassword: nova },
+        { metodo: 'PUT', token }
+      ),
   }
 }
 
