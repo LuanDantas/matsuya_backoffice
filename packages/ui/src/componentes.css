@@ -1001,3 +1001,47 @@ button.ui-painel__alerta[aria-pressed='true'] {
     animation: none;
   }
 }
+
+/* ── Campo de senha ───────────────────────────────────────────────────────
+ *
+ * Veio de `estilos.css` do Hub junto com o componente: a folha do aplicativo
+ * não é lugar de estilo de primitivo, e as três telas que usam o campo não
+ * podem depender de qual delas carregou o CSS primeiro.
+ */
+.ui-senha {
+  position: relative;
+}
+
+.ui-senha input {
+  padding-right: calc(var(--alvo) + var(--e-2));
+}
+
+.ui-senha__olho {
+  position: absolute;
+  /*
+   * Ancorado no topo do input, e não centralizado no bloco: o campo cresce para
+   * baixo quando aparece mensagem de erro ou de ajuda, e centralizar faria o
+   * botão descer junto, saindo de dentro do input.
+   *
+   * A conta é a altura do rótulo mais o gap do `.ui-campo`, e vem dos tokens em
+   * vez de um número cravado — se a escala de tipo mudar, o botão acompanha em
+   * vez de sair do lugar sem ninguém notar.
+   */
+  top: calc(var(--texto-sm) * var(--linha-normal) + var(--e-2));
+  right: 0;
+  width: var(--alvo);
+  height: var(--alvo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: none;
+  color: var(--texto-apagado);
+  cursor: pointer;
+  border-radius: var(--raio-1);
+  transition: color var(--duracao-rapida) var(--curva);
+}
+
+.ui-senha__olho:hover {
+  color: var(--texto);
+}

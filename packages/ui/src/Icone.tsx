@@ -47,6 +47,7 @@ export type NomeDoIcone =
   | 'som-cortado'
   | 'impressora'
   | 'lixeira'
+  | 'cadeado'
   | 'olho'
   | 'olho-cortado'
   | 'cartao'
@@ -131,6 +132,7 @@ const CAMINHOS: Record<NomeDoIcone, string> = {
   /* Lixeira de contorno: o conjunto não tinha nenhuma, e "revogar" sem glifo
      depende só da palavra para se distinguir dos outros botões do cartão. */
   lixeira: 'M4 7h16M10 11v6M14 11v6M5 7l1 13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-13M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3',
+  cadeado: 'M7 11V7a5 5 0 0 1 10 0v4M5 11h14v10H5z',
   impressora: 'M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M6 14h12v7H6z',
 }
 

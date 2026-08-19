@@ -149,7 +149,7 @@ export function Diagnostico({
         `details` nativo: teclado e leitor de tela de graça, sem estado em React
         e sem nenhuma linha de JavaScript para abrir e fechar.
       */}
-      <details className="diag__detalhes">
+      <details className="ajustes__detalhes">
         <summary>Detalhes técnicos</summary>
 
         <dl className="diag__lista">

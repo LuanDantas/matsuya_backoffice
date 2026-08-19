@@ -1345,43 +1345,6 @@
  * para ele. Ao lado, empurraria o input e quebraria o alinhamento com o campo
  * de e-mail logo acima.
  */
-.entrada__senha {
-  position: relative;
-}
-
-.entrada__senha input {
-  padding-right: calc(var(--alvo) + var(--e-2));
-}
-
-.entrada__olho {
-  position: absolute;
-  /*
-   * Ancorado no topo do input, e não centralizado no bloco: o campo cresce para
-   * baixo quando aparece mensagem de erro ou de ajuda, e centralizar faria o
-   * botão descer junto, saindo de dentro do input.
-   *
-   * A conta é a altura do rótulo mais o gap do `.ui-campo`, e vem dos tokens em
-   * vez de um número cravado — se a escala de tipo mudar, o botão acompanha em
-   * vez de sair do lugar sem ninguém notar.
-   */
-  top: calc(var(--texto-sm) * var(--linha-normal) + var(--e-2));
-  right: 0;
-  width: var(--alvo);
-  height: var(--alvo);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  background: none;
-  color: var(--texto-apagado);
-  cursor: pointer;
-  border-radius: var(--raio-1);
-  transition: color var(--duracao-rapida) var(--curva);
-}
-
-.entrada__olho:hover {
-  color: var(--texto);
-}
 
 /*
  * "Esqueci minha senha" centralizado, acima do botão.
@@ -9094,13 +9057,21 @@
 
 /* ── Os detalhes, recolhidos ────────────────────────────────────────────── */
 
-.diag__detalhes {
+/*
+ * O bloco recolhido de detalhes.
+ *
+ * Nasceu no Diagnóstico e virou `ajustes__` quando a página de Minha conta
+ * pediu o mesmo: a terceira tela copiaria de novo, e três cópias de um
+ * `summary` com triângulo próprio é como uma delas para de girar sem ninguém
+ * notar.
+ */
+.ajustes__detalhes {
   margin-top: var(--e-6);
   border-top: 1px solid var(--borda);
   padding-top: var(--e-4);
 }
 
-.diag__detalhes > summary {
+.ajustes__detalhes > summary {
   display: inline-flex;
   align-items: center;
   gap: var(--e-2);
@@ -9114,11 +9085,11 @@
   list-style: none;
 }
 
-.diag__detalhes > summary::-webkit-details-marker {
+.ajustes__detalhes > summary::-webkit-details-marker {
   display: none;
 }
 
-.diag__detalhes > summary::before {
+.ajustes__detalhes > summary::before {
   content: '';
   width: 0;
   height: 0;
@@ -9128,15 +9099,15 @@
   transition: transform var(--duracao-rapida) var(--curva);
 }
 
-.diag__detalhes[open] > summary::before {
+.ajustes__detalhes[open] > summary::before {
   transform: rotate(90deg);
 }
 
-.diag__detalhes > summary:hover {
+.ajustes__detalhes > summary:hover {
   color: var(--texto);
 }
 
-.diag__detalhes > summary:focus-visible {
+.ajustes__detalhes > summary:focus-visible {
   outline: 2px solid var(--foco);
   outline-offset: 2px;
   border-radius: var(--raio-1);
@@ -9192,4 +9163,352 @@
   align-items: baseline;
   gap: var(--e-2);
   margin-right: var(--e-4);
+}
+
+/* ── Minha conta ──────────────────────────────────────────────────────────
+ *
+ * A página responde três perguntas — com que autoridade estou aqui, o que isso
+ * abre, e o que acontece se eu sair — e o desenho segue essa ordem de cima para
+ * baixo. Nada aqui é decorativo: cada bloco é uma das respostas.
+ */
+
+.conta__cabecalho {
+  display: flex;
+  align-items: center;
+  gap: var(--e-4);
+  margin-bottom: var(--e-5);
+}
+
+/*
+ * Iniciais e não silhueta genérica: duas letras que pertencem a esta pessoa
+ * dizem mais do que um boneco cinza. A cor vem do nome (`corDoNome`, 45% 30%),
+ * calibrada para **letras** brancas por cima a 4,5:1 — a régua de texto, não a
+ * de elemento gráfico.
+ */
+.conta__avatar {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--raio-total);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.02em;
+}
+
+.conta__quem {
+  min-width: 0;
+}
+
+.conta__nome {
+  margin: 0;
+  font-size: var(--texto-xl);
+  font-weight: var(--peso-forte);
+  line-height: var(--linha-apertada);
+}
+
+.conta__email {
+  margin: 2px 0 0;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+  overflow-wrap: anywhere;
+}
+
+/* ── Papéis ──────────────────────────────────────────────────────────────── */
+
+.conta__papeis {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+.conta__papel {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-2);
+  background: var(--superficie-1);
+}
+
+.conta__papel[data-vencido] {
+  border-style: dashed;
+  background: var(--superficie-2);
+}
+
+/* Vencido continua legível: ele explica por que o acesso mudou, e riscar ou
+   apagar transformaria a explicação em enigma. */
+.conta__papel[data-vencido] .conta__papel-nome {
+  color: var(--texto-fraco);
+}
+
+.conta__papel-nome {
+  font-size: var(--texto-base);
+  font-weight: var(--peso-medio);
+}
+
+.conta__papel-onde {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--texto-sm);
+  color: var(--texto-fraco);
+}
+
+/* A ressalva de cada bloco: pequena, mas nunca apagada a ponto de não ser lida. */
+.conta__nota {
+  margin: var(--e-3) 0 0;
+  font-size: var(--texto-xs);
+  line-height: var(--linha-normal);
+  color: var(--texto-apagado);
+}
+
+/* ── Telas ───────────────────────────────────────────────────────────────── */
+
+.conta__telas {
+  list-style: none;
+  margin: var(--e-3) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--e-2);
+}
+
+@media (max-width: 900px) {
+  .conta__telas {
+    grid-template-columns: 1fr;
+  }
+}
+
+.conta__tela {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  min-height: var(--alvo);
+  padding: var(--e-2) var(--e-3);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-2);
+  background: var(--superficie-1);
+}
+
+/*
+ * A tela sem acesso fica na mesma lista, recuada por cor e não removida: a
+ * pergunta que traz alguém aqui é "por que eu não vejo Cardápio?", e ela só se
+ * responde mostrando o Cardápio ausente.
+ */
+.conta__tela[data-fechada] {
+  background: var(--superficie-2);
+  border-style: dashed;
+}
+
+.conta__tela-marca {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--raio-1);
+  background: var(--superficie-3);
+  color: var(--texto-fraco);
+}
+
+.conta__tela[data-fechada] .conta__tela-marca {
+  color: var(--texto-apagado);
+}
+
+.conta__tela-nome {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+}
+
+.conta__tela-nome small {
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-normal);
+  color: var(--texto-apagado);
+}
+
+/* Ícone **e** palavra: liberado e bloqueado nunca se distinguem só por cor. */
+.conta__tela-estado {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--texto-xs);
+  color: var(--texto-apagado);
+}
+
+.conta__tela-estado[data-aberta] {
+  color: var(--sucesso);
+}
+
+/* ── Permissões ──────────────────────────────────────────────────────────── */
+
+.conta__contagem {
+  margin-left: var(--e-2);
+  padding: 1px var(--e-2);
+  border-radius: var(--raio-total);
+  background: var(--superficie-3);
+  font-size: var(--texto-xs);
+  color: var(--texto-fraco);
+}
+
+.conta__grupos {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--e-5);
+  margin-top: var(--e-3);
+}
+
+@media (max-width: 900px) {
+  .conta__grupos {
+    grid-template-columns: 1fr;
+  }
+}
+
+.conta__grupo h4 {
+  margin: 0 0 var(--e-2);
+  padding-bottom: var(--e-1);
+  border-bottom: 1px solid var(--borda);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--texto-apagado);
+}
+
+.conta__grupo ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-2);
+}
+
+.conta__grupo li {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.conta__permissao {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  font-size: var(--texto-sm);
+  line-height: var(--linha-normal);
+}
+
+/* A chave crua fica embaixo, pequena: ela não serve à loja, serve a quem abrir
+   um chamado — e é o que o suporte vai pedir. */
+.conta__chave {
+  font-size: var(--texto-xs);
+  color: var(--texto-apagado);
+}
+
+/* ── Lojas ───────────────────────────────────────────────────────────────── */
+
+.conta__lojas {
+  list-style: none;
+  margin: var(--e-3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.conta__loja {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  min-height: var(--alvo);
+  padding: var(--e-2) 0;
+  border-bottom: 1px solid var(--borda);
+}
+
+.conta__loja:last-child {
+  border-bottom: 0;
+}
+
+/*
+ * Disco com ícone, e não com letra. As lojas se chamam "MATSUYA ⟨bairro⟩" e a
+ * inicial seria "M" em todas — além disso o ícone baixa a exigência de
+ * contraste de 4,5:1 (texto) para 3:1 (gráfico), que é o que estes tons a 38%
+ * sustentam em qualquer matiz.
+ */
+.conta__loja-disco {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--raio-total);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+/* O componente não pinta a órfã, então basta declarar o cinza aqui — sem
+   `!important` a disputar com um estilo em linha. */
+.conta__loja[data-orfa] .conta__loja-disco {
+  background: var(--superficie-3);
+  color: var(--texto-apagado);
+}
+
+.conta__loja-nome {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+}
+
+.conta__loja-nome small {
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-normal);
+  color: var(--texto-apagado);
+}
+
+.conta__loja-estado {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--texto-xs);
+  color: var(--sucesso);
+}
+
+/* ── Aviso da fila, na hora de sair ──────────────────────────────────────── */
+
+.conta__aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-2);
+  margin: var(--e-2) 0 0;
+  font-size: var(--texto-xs);
+  line-height: var(--linha-normal);
+  color: var(--atencao);
+}
+
+.conta__aviso svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+/* ── Diálogo de senha ────────────────────────────────────────────────────── */
+
+.conta__forma {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-4);
 }

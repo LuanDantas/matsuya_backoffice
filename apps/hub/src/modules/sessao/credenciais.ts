@@ -8,6 +8,20 @@ import { FalhaDaApi, FalhaDeRede } from '@matsuya/api-client'
  * salão cheio. Testá-las exige zero DOM.
  */
 
+/**
+ * O menor tamanho de senha que este aplicativo aceita.
+ *
+ * Mora aqui e não na tela porque **dois** fluxos gravam senha — recuperar por
+ * e-mail e trocar já estando dentro — e dois mínimos diferentes na mesma
+ * aplicação é o tipo de divergência que só aparece quando alguém escolhe uma
+ * senha por um caminho e não consegue usá-la pelo outro.
+ *
+ * Seis é o que a API exige em `/auth/reset-password`. Exigir mais **aqui**
+ * criaria a contradição de recusar uma senha que o próprio produto acabou de
+ * aceitar por e-mail; a recomendação de usar mais fica como dica, sem barrar.
+ */
+export const MINIMO_DA_SENHA = 6
+
 export interface Credenciais {
   email: string
   senha: string

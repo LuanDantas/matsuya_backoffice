@@ -12,6 +12,7 @@ import type { SaudeDoAgente } from '../../impressao/saudeDoAgente'
 import { config } from '../../app/config'
 import { Dispositivos } from './Dispositivos'
 import { SomDosAlertas } from './SomDosAlertas'
+import { Conta } from './Conta'
 import { Diagnostico } from './Diagnostico'
 import { cartoesDeDiagnostico, saudeGeral, type SinaisDoDiagnostico } from './sinais'
 import {
@@ -72,6 +73,9 @@ export function Ajustes({
   nomesDasUnidades,
   identidade,
   permissoes,
+  unidadesAtuais,
+  expiraEm,
+  aoAlterarSenha,
   aoSair,
 }: {
   som: {
@@ -117,6 +121,17 @@ export function Ajustes({
   nomesDasUnidades: ReadonlyMap<number, string>
   identidade: Identidade | null
   permissoes: ReadonlySet<string>
+  /** As lojas que este dispositivo escolheu acompanhar — preferência local. */
+  unidadesAtuais: readonly number[]
+  /**
+   * Quando o acesso vence, já lido do `exp` do token pela `Casca`.
+   *
+   * O token não desce até aqui de propósito: o mesmo payload carrega CPF e
+   * telefone, e uma tela de configurações não tem por que ter a credencial em
+   * mãos para escrever uma frase sobre horário.
+   */
+  expiraEm: number | null
+  aoAlterarSenha: (atual: string, nova: string) => Promise<void>
   aoSair: () => void
 }) {
   const [escolhida, definirEscolhida] = useState<PaginaDeAjustes | null>(null)
@@ -356,50 +371,16 @@ export function Ajustes({
         )}
 
         {ativa === 'conta' && (
-          <section className="ajustes__secao">
-            <h3 className="ajustes__rotulo">Sessão</h3>
-
-            <div className="ajustes__linha">
-              <div className="ajustes__sobre">
-                <p className="ajustes__titulo">{identidade?.user.name ?? 'Sessão'}</p>
-                <p className="ajustes__descricao num">{identidade?.user.email ?? '—'}</p>
-              </div>
-            </div>
-
-            <div className="ajustes__linha">
-              <div className="ajustes__sobre">
-                <p className="ajustes__titulo">Alcance</p>
-                <p className="ajustes__descricao">
-                  {identidade?.scope.network
-                    ? 'Todas as lojas da rede.'
-                    : `${identidade?.units.length ?? 0} ${
-                        (identidade?.units.length ?? 0) === 1 ? 'loja' : 'lojas'
-                      }.`}
-                </p>
-              </div>
-              <Selo tom="informativo">
-                {identidade?.scope.network ? 'Rede' : 'Loja'}
-              </Selo>
-            </div>
-
-            {/*
-              O sair vive na barra do topo desde sempre. Ele fica aqui também
-              porque é onde as pessoas procuram — e separado por uma divisória,
-              como manda a regra de não encostar ação destrutiva no resto.
-            */}
-            <div className="ajustes__linha ajustes__linha--separada">
-              <div className="ajustes__sobre">
-                <p className="ajustes__titulo">Sair deste dispositivo</p>
-                <p className="ajustes__descricao">
-                  Encerra a sessão aqui. As lojas escolhidas e os ajustes deste
-                  dispositivo continuam guardados.
-                </p>
-              </div>
-              <Botao enfase="destrutiva" icone="sair" onClick={aoSair}>
-                Sair
-              </Botao>
-            </div>
-          </section>
+          <Conta
+            identidade={identidade}
+            permissoes={permissoes}
+            unidadesAtuais={unidadesAtuais}
+            expiraEm={expiraEm}
+            desvioMs={desvioMs}
+            pendentesNaFila={fila.pendentes}
+            aoAlterarSenha={aoAlterarSenha}
+            aoSair={aoSair}
+          />
         )}
       </div>
     </main>

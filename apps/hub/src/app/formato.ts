@@ -64,6 +64,24 @@ function duracao(segundos: number): string {
  * cronômetro de SLA errado é pior do que nenhum: faz o operador confiar num
  * número falso.
  */
+/**
+ * Data curta, sem hora: `18/08/2026`.
+ *
+ * Existe porque validade de papel e de acesso são datas, não instantes — e
+ * `toLocaleDateString` espalhado por componente reconstrói o formatador a cada
+ * render, além de deixar o formato à mercê de quem escreveu a chamada.
+ */
+const dataDeCalendario = new Intl.DateTimeFormat('pt-BR', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+})
+
+export function dataCurta(iso: string): string {
+  const quando = new Date(iso)
+  return Number.isNaN(quando.getTime()) ? '—' : dataDeCalendario.format(quando)
+}
+
 export function decorrido(desde: string, agora: number): string {
   return duracao(Math.floor((agora - new Date(desde).getTime()) / 1000))
 }

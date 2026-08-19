@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Botao, CampoLinha, Faixa, Icone } from '@matsuya/ui'
+import { Botao, CampoDeSenha, CampoLinha, Faixa } from '@matsuya/ui'
 import { LayoutDeEntrada } from './LayoutDeEntrada'
 import {
   mensagemDeFalha,
@@ -42,7 +42,6 @@ export function Entrada({
 }) {
   const [email, definirEmail] = useState('')
   const [senha, definirSenha] = useState('')
-  const [mostrarSenha, definirMostrarSenha] = useState(false)
   const [errosDoCampo, definirErrosDoCampo] = useState<ErrosDoFormulario>({})
   const [erroDoServidor, definirErroDoServidor] = useState<string | null>(null)
   const [entrando, definirEntrando] = useState(false)
@@ -112,33 +111,16 @@ export function Entrada({
           onChange={(e) => definirEmail(e.target.value)}
         />
 
-        <div className="entrada__senha">
-          <CampoLinha
-            id="senha"
-            rotulo="Senha"
-            type={mostrarSenha ? 'text' : 'password'}
-            autoComplete="current-password"
-            placeholder="Digite sua senha"
-            ref={campoDeSenha}
-            value={senha}
-            erro={errosDoCampo.senha}
-            onChange={(e) => definirSenha(e.target.value)}
-          />
-          {/*
-            Ver a senha existe porque teclado de tablet erra, e a alternativa é
-            apagar tudo e digitar de novo às cegas. O rótulo muda junto com o
-            ícone: quem usa leitor de tela precisa saber o estado, não só a ação.
-          */}
-          <button
-            type="button"
-            className="entrada__olho"
-            onClick={() => definirMostrarSenha((v) => !v)}
-            aria-label={mostrarSenha ? 'Ocultar a senha' : 'Mostrar a senha'}
-            aria-pressed={mostrarSenha}
-          >
-            <Icone nome={mostrarSenha ? 'olho-cortado' : 'olho'} tamanho={20} />
-          </button>
-        </div>
+        <CampoDeSenha
+          id="senha"
+          rotulo="Senha"
+          autoComplete="current-password"
+          placeholder="Digite sua senha"
+          ref={campoDeSenha}
+          value={senha}
+          erro={errosDoCampo.senha}
+          onChange={(e) => definirSenha(e.target.value)}
+        />
 
         <button type="button" className="entrada__link" onClick={aoEsquecerSenha}>
           Esqueci minha senha

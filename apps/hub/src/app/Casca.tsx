@@ -3,9 +3,11 @@ import { Botao, Faixa, Icone, Selo } from '@matsuya/ui'
 import {
   criarApiDeImpressao,
   criarApiDePedidos,
+  criarApiDeSessao,
   type PedidoDoQuadro,
 } from '@matsuya/api-client'
 import { criarCliente } from '../dados/cliente'
+import { expiracaoDoToken } from '../dados/validadeDoToken'
 import { ORDER_ACTION_INFO, type OrderAction } from '@matsuya/contracts'
 import type { useSessao } from '../dados/useSessao'
 import { useQuadro } from '../dados/useQuadro'
@@ -158,6 +160,30 @@ export function Casca({
   const api = useMemo(() => criarApiDePedidos(clienteDaApi), [clienteDaApi])
 
   const apiDeImpressao = useMemo(() => criarApiDeImpressao(clienteDaApi), [clienteDaApi])
+
+  /*
+   * A troca de senha mora na superfície legada da API — rota na raiz, resposta
+   * `204` sem corpo, erro `{ message }` cru — e por isso não passa pelo
+   * `clienteDaApi`, que assume `/api/v1` e o envelope `{ data, meta }`.
+   *
+   * O token fica preso neste fechamento em vez de descer como prop, do mesmo
+   * jeito que `apiDeImpressao` esconde o cliente: uma tela de configurações não
+   * precisa ter a credencial em mãos.
+   */
+  const apiDaConta = useMemo(() => {
+    const legado = criarApiDeSessao({ origem: config.socketUrl })
+    return {
+      alterarSenha: (atual: string, nova: string) =>
+        legado.alterarSenha(sessao.token ?? '', atual, nova),
+    }
+  }, [sessao.token])
+
+  /*
+   * O `exp` do token, lido aqui e não na tela: a decodificação devolve só o
+   * número, e assim o JWT — que carrega CPF e telefone no payload — não entra na
+   * árvore de Ajustes.
+   */
+  const expiraEm = useMemo(() => expiracaoDoToken(sessao.token), [sessao.token])
 
   const nomesDasUnidades = useMemo(() => {
     const mapa = new Map<number, string>()
@@ -866,6 +892,9 @@ export function Casca({
             nomesDasUnidades={nomesDasUnidades}
             identidade={sessao.identidade ?? null}
             permissoes={sessao.permissoes}
+            unidadesAtuais={lojas}
+            expiraEm={expiraEm}
+            aoAlterarSenha={apiDaConta.alterarSenha}
             aoSair={sessao.sair}
           />
         )}

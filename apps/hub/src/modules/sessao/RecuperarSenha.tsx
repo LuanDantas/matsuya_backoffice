@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
-import { Botao, CampoLinha, Faixa, Icone } from '@matsuya/ui'
+import { Botao, CampoDeSenha, CampoLinha, Faixa, Icone } from '@matsuya/ui'
 import { criarApiDeSessao } from '@matsuya/api-client'
 import { LayoutDeEntrada } from './LayoutDeEntrada'
 import { config } from '../../app/config'
-import { mensagemDeFalha } from './credenciais'
+import { MINIMO_DA_SENHA, mensagemDeFalha } from './credenciais'
 
 /**
  * Recuperar a senha, em três passos.
@@ -30,14 +30,12 @@ import { mensagemDeFalha } from './credenciais'
 type Passo = 'pedir' | 'conferir' | 'trocar' | 'pronto'
 
 const TAMANHO_DO_CODIGO = 6
-const MINIMO_DA_SENHA = 6
 
 export function RecuperarSenha({ aoVoltar }: { aoVoltar: () => void }) {
   const [passo, definirPasso] = useState<Passo>('pedir')
   const [email, definirEmail] = useState('')
   const [codigo, definirCodigo] = useState('')
   const [senha, definirSenha] = useState('')
-  const [mostrarSenha, definirMostrarSenha] = useState(false)
   const [tokenDeTroca, definirTokenDeTroca] = useState<string | null>(null)
   const [erro, definirErro] = useState<string | null>(null)
   const [ocupado, definirOcupado] = useState(false)
@@ -171,27 +169,15 @@ export function RecuperarSenha({ aoVoltar }: { aoVoltar: () => void }) {
 
         {passo === 'trocar' && (
           <>
-            <div className="entrada__senha">
-              <CampoLinha
-                id="nova-senha"
-                rotulo="Nova senha"
-                type={mostrarSenha ? 'text' : 'password'}
-                autoComplete="new-password"
-                autoFocus
-                value={senha}
-                ajuda={`Pelo menos ${MINIMO_DA_SENHA} caracteres.`}
-                onChange={(e) => definirSenha(e.target.value)}
-              />
-              <button
-                type="button"
-                className="entrada__olho"
-                onClick={() => definirMostrarSenha((v) => !v)}
-                aria-label={mostrarSenha ? 'Ocultar a senha' : 'Mostrar a senha'}
-                aria-pressed={mostrarSenha}
-              >
-                <Icone nome={mostrarSenha ? 'olho-cortado' : 'olho'} tamanho={20} />
-              </button>
-            </div>
+            <CampoDeSenha
+              id="nova-senha"
+              rotulo="Nova senha"
+              autoComplete="new-password"
+              autoFocus
+              value={senha}
+              ajuda={`Pelo menos ${MINIMO_DA_SENHA} caracteres.`}
+              onChange={(e) => definirSenha(e.target.value)}
+            />
             <Botao
               type="submit"
               enfase="primaria"
